@@ -22,6 +22,7 @@ import SeedsLayout from "./components/SeedsLayout";
 import { CartProvider } from "./context/CartContext";
 import { LanguageProvider } from "./context/LanguageContext";
 import WhatsAppFloat from "./components/WhatsAppFloat";
+import ScrollToTop from "./components/ScrollToTop";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import LandingView from "./components/LandingView";
@@ -160,6 +161,7 @@ export default function App() {
       <Router>
         {/* Initialize smooth scroll - runs once on mount */}
         {!isLoading && <SmoothScroll />}
+        {!isLoading && <ScrollToTop />}
         {isLoading && <LoadingScreen onComplete={handleLoadingComplete} />}
         {!isLoading && (
           <>

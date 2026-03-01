@@ -247,7 +247,7 @@ const About = () => {
         </div>
 
         {/* Team Section */}
-        <div>
+        {/* <div>
           <h2
             style={{
               fontFamily:"Nunito Sans",
@@ -325,7 +325,7 @@ const About = () => {
               </div>
             ))}
           </div>
-        </div>
+        </div> */}
       </div>
     </div>
   );
