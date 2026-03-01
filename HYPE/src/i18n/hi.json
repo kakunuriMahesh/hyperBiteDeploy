@@ -1,0 +1,18 @@
+{
+  "welcome": "HYPE में आपका स्वागत है",
+  "browse_products": "उत्पाद देखें",
+  "custom_packs": "कस्टम पैक",
+  "view_details": "विवरण देखें",
+  "add_to_cart": "कार्ट में जोड़ें",
+  "customize_pack": "पैक कस्टमाइज़ करें",
+  "order_now": "अभी ऑर्डर करें",
+  "cart_empty": "आपकी कार्ट खाली है",
+  "total": "कुल",
+  "ingredients": "सामग्री",
+  "benefits": "लाभ",
+  "nutritional_info": "पोषण संबंधी जानकारी",
+  "delivering_to": "डिलीवरी का स्थान",
+  "check": "जांचें",
+  "change": "बदलें",
+  "enter_pincode": "पिनकोड दर्ज करें"
+}

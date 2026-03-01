@@ -1,0 +1,18 @@
+{
+  "welcome": "Welcome to HYPE",
+  "browse_products": "Browse Products",
+  "custom_packs": "Custom Packs",
+  "view_details": "View Details",
+  "add_to_cart": "Add to Cart",
+  "customize_pack": "Customize Pack",
+  "order_now": "Order Now",
+  "cart_empty": "Your Cart is Empty",
+  "total": "Total",
+  "ingredients": "Ingredients",
+  "benefits": "Benefits",
+  "nutritional_info": "Nutritional Information",
+  "delivering_to": "Delivering to",
+  "check": "Check",
+  "change": "Change",
+  "enter_pincode": "Enter Pincode"
+}
