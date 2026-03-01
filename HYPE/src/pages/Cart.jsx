@@ -4,7 +4,7 @@ import { useCart } from "../context/CartContext";
 import Navbar from "../components/Navbar";
 import { formatCartMessage } from "../utils/whatsapp";
 import { getCookie, setCookie } from "../utils/cookies";
-import { FaTrash, FaPlus, FaMinus } from "react-icons/fa";
+import { FaTrash, FaPlus, FaMinus, FaEdit, FaChevronDown, FaChevronUp } from "react-icons/fa";
 import { toast } from "react-toastify";
 import { allowedPincodes } from "../config/allowedPincodes";
 import { productDetails } from "../config/productDetails";
@@ -21,18 +21,15 @@ const PackItemCard = ({
   const { startOrUpdateInProgressPack } = useCart();
 
   const handleEdit = () => {
-    // Load this pack into progress
     startOrUpdateInProgressPack({
       packId: pack.packId,
       packName: pack.packName,
       packPrice: pack.packPrice,
       packOffPrice: pack.packOffPrice,
       items: pack.items,
-      total: pack.total || pack.packPrice, // Best guess if total not saved
+      total: pack.total || pack.packPrice,
     });
-    // Remove from cart (to avoid duplication when they add it back)
     removePackFromCart(pack.instanceId);
-    // Navigate
     navigate(`/customize-pack/${pack.packId}`);
   };
 
@@ -41,115 +38,153 @@ const PackItemCard = ({
       style={{
         display: "flex",
         flexDirection: breakpoint === "mobile" ? "column" : "row",
-        gap: "20px",
-        padding: "20px",
-        marginBottom: "20px",
-        backgroundColor: "#f0f8ff",
-        borderRadius: "12px",
-        border: "2px solid #4a90e2",
+        gap: "16px",
+        padding: "16px",
+        marginBottom: "16px",
+        backgroundColor: "#ffffff",
+        borderRadius: "16px",
+        boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
+        border: "1px solid #f0f0f0",
+        transition: "all 0.3s ease",
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.boxShadow = "0 8px 24px rgba(0,0,0,0.1)";
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.boxShadow = "0 4px 12px rgba(0,0,0,0.05)";
       }}
     >
-      {/* Pack Icon */}
       <div
         style={{
-          width: breakpoint === "mobile" ? "100%" : "150px",
-          height: "150px",
-          borderRadius: "8px",
+          width: breakpoint === "mobile" ? "150px" : "120px",
+          height: "120px",
+          borderRadius: "12px",
           overflow: "hidden",
-          backgroundColor: "#fff",
+          backgroundColor: "#f8f9fa",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          fontSize: "48px",
+          flexShrink: 0,
         }}
       >
-        <img src="/assets/CustomizePack.jpeg" alt="Customize Pack" />
+        <img
+          src="/assets/CustomizePack.jpeg"
+          alt="Customize Pack"
+          style={{
+            width: "50%",
+            height: "50%",
+            objectFit: "cover",
+            transition: "transform 0.3s ease",
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.transform = "scale(1.05)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = "scale(1)";
+          }}
+        />
       </div>
 
-      {/* Pack Info */}
-      <div style={{ flex: 1 }}>
-        <h3
-          style={{
-            fontFamily: "'Permanent_Marker-Regular', Helvetica",
-            fontSize: breakpoint === "mobile" ? "24px" : "28px",
-            marginBottom: "8px",
-            color: "#000",
-          }}
-        >
-          {pack.packName}
-        </h3>
-        <p
-          style={{
-            fontFamily: "'Inter', sans-serif",
-            fontSize: "14px",
-            color: "#666",
-            marginBottom: "8px",
-          }}
-        >
-          {pack.items?.reduce(
-            (total, item) => total + (item.quantity || 0),
-            0,
-          ) || 0}{" "}
-          items selected
-        </p>
-        <p
-          style={{
-            fontFamily: "'Permanent_Marker-Regular', Helvetica",
-            fontSize: breakpoint === "mobile" ? "20px" : "24px",
-            color: "#000",
-            marginBottom: "12px",
-          }}
-        >
-          ₹{pack.packPrice}
-          <span
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+        <div>
+          <h3
+            style={{
+              fontFamily: "'Permanent Marker', cursive",
+              fontSize: breakpoint === "mobile" ? "20px" : "24px",
+              marginBottom: "4px",
+              color: "#1a1a1a",
+              fontWeight: 400,
+            }}
+          >
+            {pack.packName}
+          </h3>
+          <p
             style={{
               fontFamily: "'Inter', sans-serif",
-              fontSize: "14px",
-              color: "#999",
-              textDecoration: "line-through",
-              marginLeft: "8px",
+              fontSize: "13px",
+              color: "#6b7280",
+              marginBottom: "8px",
             }}
           >
-            ₹{pack.packOffPrice}
-          </span>
-        </p>
-
-        {/* Buttons Row */}
-        {pack.packPrice !== 250 && (
-          <div
+            {pack.items?.reduce((total, item) => total + (item.quantity || 0), 0) || 0} items
+          </p>
+          <p
             style={{
-              display: "flex",
-              gap: "10px",
-              marginBottom: "16px",
-              flexWrap: "wrap",
+              fontFamily: "'Permanent Marker', cursive",
+              fontSize: breakpoint === "mobile" ? "18px" : "20px",
+              color: "#1a1a1a",
+              marginBottom: "8px",
             }}
           >
+            ₹{pack.packPrice.toFixed(2)}
+            {pack.packOffPrice && (
+              <span
+                style={{
+                  fontFamily: "'Inter', sans-serif",
+                  fontSize: "13px",
+                  color: "#9ca3af",
+                  textDecoration: "line-through",
+                  marginLeft: "8px",
+                }}
+              >
+                ₹{pack.packOffPrice.toFixed(2)}
+              </span>
+            )}
+          </p>
+        </div>
+
+        {pack.packPrice !== 250 && (
+          <div style={{ display: "flex", gap: "12px", marginBottom: "12px" }}>
             <button
               onClick={() => setShowDetails(!showDetails)}
               style={{
-                background: "none",
+                display: "flex",
+                alignItems: "center",
+                gap: "4px",
+                background: "transparent",
                 border: "none",
-                color: "#4a90e2",
+                color: "#3b82f6",
                 cursor: "pointer",
+                fontSize: "13px",
+                fontFamily: "'Inter', sans-serif",
                 textDecoration: "underline",
-                fontSize: "14px",
+                transition: "color 0.2s ease",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.color = "#2563eb";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.color = "#3b82f6";
               }}
             >
-              {showDetails ? "Hide Items" : "View Items"}
+              {showDetails ? "Hide" : "View"} Items {showDetails ? <FaChevronUp size={12} /> : <FaChevronDown size={12} />}
             </button>
             <button
               onClick={handleEdit}
               style={{
-                background: "#4a90e2",
-                border: "none",
+                display: "flex",
+                alignItems: "center",
+                gap: "4px",
+                background: "#3b82f6",
                 color: "#fff",
-                borderRadius: "4px",
+                border: "none",
+                borderRadius: "6px",
                 padding: "4px 12px",
                 cursor: "pointer",
-                fontSize: "14px",
+                fontSize: "13px",
+                fontFamily: "'Inter', sans-serif",
+                transition: "all 0.2s ease",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = "#2563eb";
+                e.currentTarget.style.transform = "scale(1.05)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = "#3b82f6";
+                e.currentTarget.style.transform = "scale(1)";
               }}
             >
-              Edit Pack
+              <FaEdit size={12} /> Edit
             </button>
           </div>
         )}
@@ -157,109 +192,132 @@ const PackItemCard = ({
         {showDetails && (
           <div
             style={{
-              marginBottom: "16px",
-              padding: "10px",
-              background: "rgba(255,255,255,0.5)",
+              marginBottom: "12px",
+              padding: "8px",
+              background: "#f9fafb",
               borderRadius: "8px",
+              border: "1px solid #f0f0f0",
+              maxHeight: "150px",
+              overflowY: "auto",
             }}
           >
-            {pack.items &&
-              pack.items.map((item, i) => {
-                const pDetails = productDetails[item.id];
-                return (
-                  <div
-                    key={i}
-                    style={{ fontSize: "14px", marginBottom: "4px" }}
-                  >
-                    <strong>{pDetails?.name || item.id}</strong>:{" "}
-                    {item.quantity} units
-                  </div>
-                );
-              })}
+            {pack.items?.map((item, i) => {
+              const pDetails = productDetails[item.id];
+              return (
+                <div
+                  key={i}
+                  style={{
+                    fontSize: "13px",
+                    marginBottom: "4px",
+                    color: "#4b5563",
+                    display: "flex",
+                    justifyContent: "space-between",
+                  }}
+                >
+                  <strong>{pDetails?.name || item.id}</strong>
+                  <span>{item.quantity} units</span>
+                </div>
+              );
+            })}
           </div>
         )}
 
-        {/* Quantity Controls */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "12px",
-          }}
-        >
-          <button
-            onClick={() =>
-              updatePackQuantity(
-                pack.instanceId || pack.packId,
-                pack.quantity - 1,
-              )
-            }
+        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          <div
             style={{
-              width: "36px",
-              height: "36px",
               display: "flex",
               alignItems: "center",
-              justifyContent: "center",
-              backgroundColor: "#fff",
-              border: "1px solid #ddd",
-              borderRadius: "4px",
-              cursor: "pointer",
-              color: "#000",
+              background: "#f3f4f6",
+              borderRadius: "6px",
+              overflow: "hidden",
             }}
           >
-            <FaMinus size={14} />
-          </button>
-          <span
-            style={{
-              fontFamily: "'Permanent_Marker-Regular', Helvetica",
-              fontSize: "20px",
-              minWidth: "40px",
-              textAlign: "center",
-            }}
-          >
-            {pack.quantity}
-          </span>
-          <button
-            onClick={() =>
-              updatePackQuantity(
-                pack.instanceId || pack.packId,
-                pack.quantity + 1,
-              )
-            }
-            style={{
-              width: "36px",
-              height: "36px",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              backgroundColor: "#fff",
-              border: "1px solid #ddd",
-              borderRadius: "4px",
-              cursor: "pointer",
-              color: "#000",
-            }}
-          >
-            <FaPlus size={14} />
-          </button>
+            <button
+              onClick={() => updatePackQuantity(pack.instanceId || pack.packId, pack.quantity - 1)}
+              disabled={pack.quantity <= 1}
+              style={{
+                width: "32px",
+                height: "32px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                background: "transparent",
+                border: "none",
+                cursor: pack.quantity > 1 ? "pointer" : "not-allowed",
+                color: pack.quantity > 1 ? "#1a1a1a" : "#d1d5db",
+                transition: "background 0.2s ease",
+              }}
+              onMouseEnter={(e) => {
+                if (pack.quantity > 1) e.currentTarget.style.background = "#e5e7eb";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = "transparent";
+              }}
+            >
+              <FaMinus size={12} />
+            </button>
+            <span
+              style={{
+                fontFamily: "'Permanent Marker', cursive",
+                fontSize: "18px",
+                minWidth: "40px",
+                textAlign: "center",
+                color: "#1a1a1a",
+              }}
+            >
+              {pack.quantity}
+            </span>
+            <button
+              onClick={() => updatePackQuantity(pack.instanceId || pack.packId, pack.quantity + 1)}
+              style={{
+                width: "32px",
+                height: "32px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                background: "transparent",
+                border: "none",
+                cursor: "pointer",
+                color: "#1a1a1a",
+                transition: "background 0.2s ease",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = "#e5e7eb";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = "transparent";
+              }}
+            >
+              <FaPlus size={12} />
+            </button>
+          </div>
           <button
             onClick={() => removePackFromCart(pack.instanceId || pack.packId)}
             style={{
               marginLeft: "auto",
-              padding: "8px 16px",
-              backgroundColor: "#ff4444",
+              padding: "6px 12px",
+              background: "#ef4444",
               color: "#fff",
               border: "none",
-              borderRadius: "4px",
+              borderRadius: "6px",
               cursor: "pointer",
               display: "flex",
               alignItems: "center",
-              gap: "8px",
-              fontFamily: "'Just_Me_Again_Down_Here-Regular', Helvetica",
-              fontSize: "16px",
+              gap: "4px",
+              fontFamily: "'Inter', sans-serif",
+              fontSize: "13px",
+              transition: "all 0.2s ease",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = "#dc2626";
+              e.currentTarget.style.transform = "scale(1.05)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = "#ef4444";
+              e.currentTarget.style.transform = "scale(1)";
             }}
           >
-            <FaTrash size={14} />
-            Remove
+            <FaTrash size={12} /> Remove
           </button>
         </div>
       </div>
@@ -297,6 +355,7 @@ const Cart = () => {
   });
   const [pincodeError, setPincodeError] = useState("");
   const [isPaymentLoading, setIsPaymentLoading] = useState(false);
+  const [isFormSubmitting, setIsFormSubmitting] = useState(false);
 
   useEffect(() => {
     const updateBreakpoint = () => {
@@ -315,40 +374,27 @@ const Cart = () => {
     return () => window.removeEventListener("resize", updateBreakpoint);
   }, []);
 
-  // Load saved user details from cookies
   useEffect(() => {
     const savedDetails = getCookie("userDetails");
     if (savedDetails) {
       setFormData(savedDetails);
     }
-    // Pre-fill pincode if already verified in context
     if (pincode) {
-      setFormData((prev) => ({
-        ...prev,
-        pincode: pincode,
-      }));
+      setFormData((prev) => ({ ...prev, pincode }));
     }
   }, [pincode]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-    // Clear pincode error when user starts typing
-    if (name === "pincode") {
-      setPincodeError("");
-    }
+    setFormData((prev) => ({ ...prev, [name]: value }));
+    if (name === "pincode") setPincodeError("");
   };
 
   const handlePayNow = () => {
-    // Validate pincode before showing payment form
     if (!formData.pincode.trim()) {
       setPincodeError("Please enter a pincode");
       return;
     }
-    // Start Razorpay checkout flow
     initiateRazorpay();
   };
 
@@ -371,7 +417,6 @@ const Cart = () => {
     try {
       setIsPaymentLoading(true);
 
-      // Prepare items for server calculation
       const items = [];
       cartItems.forEach((it) => {
         items.push({ id: it.id, name: it.name, price: Number(it.price) || 0, quantity: it.quantity || 1 });
@@ -380,7 +425,6 @@ const Cart = () => {
         items.push({ id: p.packId || p.instanceId, name: p.packName, price: Number(p.packPrice) || 0, quantity: p.quantity || 1 });
       });
 
-      // const resp = await fetch("http://localhost:5000/api/payment/create-order", {
       const resp = await fetch("https://hyperbitedeploy.onrender.com/api/payment/create-order", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -414,7 +458,6 @@ const Cart = () => {
         order_id: data.razorpayOrder.id,
         handler: async function (response) {
           try {
-            // const verifyRes = await fetch("http://localhost:5000/api/payment/verify", {
             const verifyRes = await fetch("https://hyperbitedeploy.onrender.com/api/payment/verify", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
@@ -425,12 +468,15 @@ const Cart = () => {
             if (verifyRes.ok && verifyJson.success) {
               toast.success("Payment successful and verified.", { position: "bottom-center" });
               clearCart();
+              setIsPaymentLoading(false);
               navigate("/");
             } else {
               toast.error("Payment verification failed.");
+              setIsPaymentLoading(false);
             }
           } catch (err) {
             toast.error("Verification error: " + (err.message || err));
+            setIsPaymentLoading(false);
           }
         },
         prefill: {
@@ -438,17 +484,18 @@ const Cart = () => {
           email: formData.email,
           contact: formData.phone,
         },
-        theme: { color: "#4a90e2" },
+        theme: { color: "#1e3a8a" }, // Premium blue
       };
 
       const rzp = new window.Razorpay(options);
+      setIsPaymentLoading(false);
       rzp.on("payment.failed", function (response) {
-        toast.error("Payment failed. " + (response.error && response.error.description ? response.error.description : ""));
+        toast.error("Payment failed. " + (response.error?.description || ""));
+        setIsPaymentLoading(false);
       });
       rzp.open();
     } catch (error) {
       toast.error(error.message || "Payment init failed");
-    } finally {
       setIsPaymentLoading(false);
     }
   };
@@ -456,114 +503,118 @@ const Cart = () => {
   const handlePlaceOrder = (e) => {
     e.preventDefault();
 
-    // Validate pincode
     if (!formData.pincode.trim()) {
       setPincodeError("Please enter a pincode");
       return;
     }
 
-    //FIXME: Pincode validation check - commented out to allow any pincode
+    // FIXME: Pincode validation commented out
     // if (!allowedPincodes.includes(formData.pincode)) {
     //   setPincodeError("Currently we are not delivering in your location");
     //   return;
     // }
 
-    // Save user details to cookies (30 days)
     setCookie("userDetails", formData, 30);
+    setIsFormSubmitting(true);
 
-    // Format and send WhatsApp message
-    const message = formatCartMessage(cartItems, packItems, formData);
-    const encodedMessage = encodeURIComponent(message);
-    //FIXME: Updated WhatsApp number to '+91 99859 44466'
-    const whatsappUrl = `https://wa.me/919985944466?text=${encodedMessage}`;
-    window.open(whatsappUrl, "_blank");
+    setTimeout(() => {
+      const message = formatCartMessage(cartItems, packItems, formData);
+      const encodedMessage = encodeURIComponent(message);
+      const whatsappUrl = `https://wa.me/919985944466?text=${encodedMessage}`;
+      window.open(whatsappUrl, "_blank");
 
-    // Clear cart after order
-    clearCart();
-
-    // Show success message
-    toast.success("Order placed successfully!.", {
-      position: "bottom-center",
-      autoClose: 12000,
-    });
-
-    // Navigate to home
-    navigate("/");
+      clearCart();
+      toast.success("Order placed successfully!", { position: "bottom-center", autoClose: 12000 });
+      setIsFormSubmitting(false);
+      navigate("/");
+    }, 1500);
   };
 
-  if (
-    cartItems.length === 0 &&
-    packItems.length === 0 &&
-    inProgressPacks.length === 0
-  ) {
+  if (cartItems.length === 0 && packItems.length === 0 && inProgressPacks.length === 0) {
     return (
-      <div
-        style={{
-          backgroundColor: "#fff",
-          minHeight: "100vh",
-          paddingTop: "70px",
-        }}
-      >
+      <div style={{ backgroundColor: "#f9fafb", minHeight: "100vh", paddingTop: "80px" }}>
         <div
           style={{
             maxWidth: "1200px",
             margin: "0 auto",
-            padding: breakpoint === "mobile" ? "40px 20px" : "60px 40px",
+            padding: breakpoint === "mobile" ? "40px 20px" : "80px 40px",
             textAlign: "center",
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
             justifyContent: "center",
-            height: "85vh",
+            height: "calc(100vh - 80px)",
           }}
         >
-          <h1
+          <div
             style={{
-              fontFamily: "Nunito Sans",
-              fontSize: breakpoint === "mobile" ? "28px" : "36px",
-              marginBottom: "18px",
-              color: "#111",
-              fontWeight: 700,
+              width: "120px",
+              height: "120px",
+              borderRadius: "50%",
+              background: "linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              marginBottom: "24px",
+              boxShadow: "0 4px 12px rgba(59,130,246,0.1)",
             }}
           >
-            Your Cart is Empty
+            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" strokeWidth="1.5">
+              <path d="M6 3h12M6 7h12M6 11h6" strokeLinecap="round" strokeLinejoin="round"/>
+              <circle cx="17" cy="17" r="4" stroke="#3b82f6"/>
+              <circle cx="7" cy="17" r="4" stroke="#3b82f6"/>
+              <path d="M11 17h2" stroke="#3b82f6" strokeLinecap="round"/>
+            </svg>
+          </div>
+          <h1
+            style={{
+              fontFamily: "'Nunito Sans', sans-serif",
+              fontSize: breakpoint === "mobile" ? "28px" : "36px",
+              marginBottom: "12px",
+              color: "#1f2937",
+              fontWeight: 800,
+            }}
+          >
+            Your Cart Awaits Adventure
           </h1>
           <p
             style={{
               fontFamily: "'Inter', sans-serif",
-              fontSize: breakpoint === "mobile" ? "14px" : "16px",
-              marginBottom: "30px",
-              color: "#666",
+              fontSize: breakpoint === "mobile" ? "16px" : "18px",
+              marginBottom: "32px",
+              color: "#6b7280",
+              maxWidth: "400px",
             }}
           >
-            Add some products to your cart to get started!
+            Discover our premium selection of nuts, dates, and seeds. Start filling your cart with nature's finest!
           </p>
           <button
             onClick={() => navigate("/products")}
             style={{
-              padding: breakpoint === "mobile" ? "14px 28px" : "16px 32px",
+              padding: breakpoint === "mobile" ? "12px 24px" : "14px 28px",
               fontFamily: "'Inter', sans-serif",
-              fontSize: breakpoint === "mobile" ? "14px" : "16px",
-              backgroundColor: "#000",
+              fontSize: "16px",
+              background: "linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)",
               color: "#fff",
-              fontWeight: 700,
+              fontWeight: 600,
               textTransform: "uppercase",
-              letterSpacing: "0.6px",
+              letterSpacing: "0.5px",
               border: "none",
               borderRadius: "8px",
               cursor: "pointer",
               transition: "all 0.3s ease",
+              boxShadow: "0 4px 12px rgba(59,130,246,0.2)",
             }}
             onMouseEnter={(e) => {
-              e.target.style.backgroundColor = "#333";
-              e.target.style.transform = "scale(1.05)";
+              e.target.style.transform = "translateY(-2px)";
+              e.target.style.boxShadow = "0 6px 16px rgba(59,130,246,0.3)";
             }}
             onMouseLeave={(e) => {
-              e.target.style.backgroundColor = "#000";
-              e.target.style.transform = "scale(1)";
+              e.target.style.transform = "translateY(0)";
+              e.target.style.boxShadow = "0 4px 12px rgba(59,130,246,0.2)";
             }}
           >
-            Browse Products
+            Explore Products
           </button>
         </div>
       </div>
@@ -571,329 +622,406 @@ const Cart = () => {
   }
 
   return (
-    <div
-      style={{
-        backgroundColor: "#fff",
-        minHeight: "100vh",
-        paddingTop: "70px",
-      }}
-    >
+    <div style={{ backgroundColor: "#f9fafb", minHeight: "100vh", paddingTop: "80px" }}>
       <div
         style={{
           maxWidth: "1200px",
-          margin: breakpoint === "mobile" ? "10px auto" : "100px auto",
-          padding: breakpoint === "mobile" ? "20px" : "40px",
+          margin: "0 auto",
+          padding: breakpoint === "mobile" ? "24px 16px" : "48px 32px",
         }}
       >
         <h1
           style={{
-            fontFamily: "Nunito Sans",
+            fontFamily: "'Nunito Sans', sans-serif",
             fontSize: breakpoint === "mobile" ? "28px" : "36px",
-            marginBottom: "24px",
-            color: "#111",
-            fontWeight: 700,
+            marginBottom: "32px",
+            color: "#1f2937",
+            fontWeight: 800,
+            letterSpacing: "-0.025em",
           }}
         >
-          Your Cart
+          Your Premium Selection
         </h1>
 
-        {/* Cart Items */}
-        <div style={{ marginBottom: "40px" }}>
-          {/* Regular Products */}
+        <div style={{ marginBottom: "48px" }}>
           {cartItems.map((item, index) => (
             <div
               key={`${item.id}-${item.variation || "default"}-${index}`}
               style={{
                 display: "flex",
                 flexDirection: breakpoint === "mobile" ? "column" : "row",
-                gap: "20px",
-                padding: "20px",
-                marginBottom: "20px",
-                backgroundColor: "#f9f9f9",
-                borderRadius: "12px",
-                border: "1px solid #eee",
+                gap: "16px",
+                padding: "16px",
+                marginBottom: "16px",
+                backgroundColor: "#ffffff",
+                borderRadius: "16px",
+                boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
+                border: "1px solid #f0f0f0",
+                transition: "all 0.3s ease",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.boxShadow = "0 8px 24px rgba(0,0,0,0.1)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.boxShadow = "0 4px 12px rgba(0,0,0,0.05)";
               }}
             >
-              {/* Product Image */}
               <div
                 style={{
-                  width: breakpoint === "mobile" ? "100%" : "150px",
-                  height: "150px",
-                  borderRadius: "8px",
+                  width: breakpoint === "mobile" ? "100%" : "120px",
+                  height: "120px",
+                  borderRadius: "12px",
                   overflow: "hidden",
-                  backgroundColor: "#fff",
+                  backgroundColor: "#f8f9fa",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
+                  flexShrink: 0,
                 }}
               >
                 <img
                   src={item.image || item.images?.[0]}
-                  alt={item.name}
-                  style={{
-                    width: "100%",
-                    height: "100%",
-                    objectFit: "contain",
-                    padding: "8px",
-                  }}
+                  // alt={item.name}
+                  // style={{
+                  //   width: "50%",
+                  //   height: "50%",
+                  //   objectFit: "cover",
+                  //   transition: "transform 0.3s ease",
+                  // }}
+                  // onMouseEnter={(e) => {
+                  //   e.currentTarget.style.transform = "scale(1.05)";
+                  // }}
+                  // onMouseLeave={(e) => {
+                  //   e.currentTarget.style.transform = "scale(1)";
+                  // }}
                 />
               </div>
 
-              {/* Product Info */}
-              <div style={{ flex: 1 }}>
-                <h3
-                  style={{
-                    fontFamily: "'Permanent_Marker-Regular', Helvetica",
-                    fontSize: breakpoint === "mobile" ? "24px" : "28px",
-                    marginBottom: "8px",
-                    color: "#000",
-                  }}
-                >
-                  {item.name}
-                </h3>
-                {item.variation && item.variation !== "default" && (
+              <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+                <div>
+                  <h3
+                    style={{
+                      fontFamily: "'Permanent Marker', cursive",
+                      fontSize: breakpoint === "mobile" ? "20px" : "24px",
+                      marginBottom: "4px",
+                      color: "#1a1a1a",
+                      fontWeight: 400,
+                    }}
+                  >
+                    {item.name}
+                  </h3>
+                  {item.variation && item.variation !== "default" && (
+                    <p
+                      style={{
+                        fontFamily: "'Inter', sans-serif",
+                        fontSize: "13px",
+                        color: "#6b7280",
+                        marginBottom: "8px",
+                      }}
+                    >
+                      Variant: {item.variation}
+                    </p>
+                  )}
                   <p
                     style={{
-                      fontFamily:
-                        "'Just_Me_Again_Down_Here-Regular', Helvetica",
-                      fontSize: "16px",
-                      color: "#666",
+                      fontFamily: "'Permanent Marker', cursive",
+                      fontSize: breakpoint === "mobile" ? "18px" : "20px",
+                      color: "#1a1a1a",
                       marginBottom: "8px",
                     }}
                   >
-                    Variation: {item.variation}
+                    ₹{item.price.toFixed(2)}
                   </p>
-                )}
-                <p
-                  style={{
-                    fontFamily: "'Permanent_Marker-Regular', Helvetica",
-                    fontSize: breakpoint === "mobile" ? "20px" : "24px",
-                    color: "#000",
-                    marginBottom: "12px",
-                  }}
-                >
-                  {item.price}
-                </p>
+                </div>
 
-                {/* Quantity Controls */}
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "12px",
-                  }}
-                >
-                  <button
-                    onClick={() =>
-                      updateQuantity(
-                        item.id,
-                        item.variation || "default",
-                        item.quantity - 1,
-                      )
-                    }
+                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                  <div
                     style={{
-                      width: "36px",
-                      height: "36px",
                       display: "flex",
                       alignItems: "center",
-                      justifyContent: "center",
-                      backgroundColor: "#fff",
-                      border: "1px solid #ddd",
-                      borderRadius: "4px",
-                      cursor: "pointer",
-                      color: "#000",
+                      background: "#f3f4f6",
+                      borderRadius: "6px",
+                      overflow: "hidden",
                     }}
                   >
-                    <FaMinus size={14} />
-                  </button>
-                  <span
-                    style={{
-                      fontFamily: "'Permanent_Marker-Regular', Helvetica",
-                      fontSize: "20px",
-                      minWidth: "40px",
-                      textAlign: "center",
-                    }}
-                  >
-                    {item.quantity}
-                  </span>
+                    <button
+                      onClick={() => updateQuantity(item.id, item.variation || "default", item.quantity - 1)}
+                      disabled={item.quantity <= 1}
+                      style={{
+                        width: "32px",
+                        height: "32px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        background: "transparent",
+                        border: "none",
+                        cursor: item.quantity > 1 ? "pointer" : "not-allowed",
+                        color: item.quantity > 1 ? "#1a1a1a" : "#d1d5db",
+                        transition: "background 0.2s ease",
+                      }}
+                      onMouseEnter={(e) => {
+                        if (item.quantity > 1) e.currentTarget.style.background = "#e5e7eb";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = "transparent";
+                      }}
+                    >
+                      <FaMinus size={12} />
+                    </button>
+                    <span
+                      style={{
+                        fontFamily: "'Permanent Marker', cursive",
+                        fontSize: "18px",
+                        minWidth: "40px",
+                        textAlign: "center",
+                        color: "#1a1a1a",
+                      }}
+                    >
+                      {item.quantity}
+                    </span>
+                    <button
+                      onClick={() => updateQuantity(item.id, item.variation || "default", item.quantity + 1)}
+                      style={{
+                        width: "32px",
+                        height: "32px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        background: "transparent",
+                        border: "none",
+                        cursor: "pointer",
+                        color: "#1a1a1a",
+                        transition: "background 0.2s ease",
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = "#e5e7eb";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = "transparent";
+                      }}
+                    >
+                      <FaPlus size={12} />
+                    </button>
+                  </div>
                   <button
-                    onClick={() =>
-                      updateQuantity(
-                        item.id,
-                        item.variation || "default",
-                        item.quantity + 1,
-                      )
-                    }
-                    style={{
-                      width: "36px",
-                      height: "36px",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      backgroundColor: "#fff",
-                      border: "1px solid #ddd",
-                      borderRadius: "4px",
-                      cursor: "pointer",
-                      color: "#000",
-                    }}
-                  >
-                    <FaPlus size={14} />
-                  </button>
-                  <button
-                    onClick={() =>
-                      removeFromCart(item.id, item.variation || "default")
-                    }
+                    onClick={() => removeFromCart(item.id, item.variation || "default")}
                     style={{
                       marginLeft: "auto",
-                      padding: "8px 16px",
-                      backgroundColor: "#ff4444",
+                      padding: "6px 12px",
+                      background: "#ef4444",
                       color: "#fff",
                       border: "none",
-                      borderRadius: "4px",
+                      borderRadius: "6px",
                       cursor: "pointer",
                       display: "flex",
                       alignItems: "center",
-                      gap: "8px",
-                      fontFamily:
-                        "'Just_Me_Again_Down_Here-Regular', Helvetica",
-                      fontSize: "16px",
+                      gap: "4px",
+                      fontFamily: "'Inter', sans-serif",
+                      fontSize: "13px",
+                      transition: "all 0.2s ease",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = "#dc2626";
+                      e.currentTarget.style.transform = "scale(1.05)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = "#ef4444";
+                      e.currentTarget.style.transform = "scale(1)";
                     }}
                   >
-                    <FaTrash size={14} />
-                    Remove
+                    <FaTrash size={12} /> Remove
                   </button>
                 </div>
               </div>
             </div>
           ))}
 
-          {/* Pack Items */}
-          {/* In-Progress Packs */}
           {inProgressPacks.map((pack, idx) => {
             const min = pack.packPrice || pack.total || 0;
-            const progress =
-              min > 0 ? Math.min((pack.total / min) * 100, 100) : 0;
+            const currentTotal = pack.total || 0;
+            const progress = min > 0 ? Math.min((currentTotal / min) * 100, 100) : 0;
             return (
               <div
                 key={`inprogress-${pack.packId}-${idx}`}
                 style={{
                   display: "flex",
                   flexDirection: breakpoint === "mobile" ? "column" : "row",
-                  gap: "20px",
-                  padding: "20px",
-                  marginBottom: "20px",
-                  backgroundColor: "#fff8e1",
-                  borderRadius: "12px",
-                  border: "2px dashed #ffb300",
+                  gap: "16px",
+                  padding: "16px",
+                  marginBottom: "16px",
+                  backgroundColor: "#ffffff",
+                  borderRadius: "16px",
+                  boxShadow: "0 4px 12px rgba(245,158,11,0.1)",
+                  border: "1px solid #fef3c7",
+                  transition: "all 0.3s ease",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.boxShadow = "0 8px 24px rgba(245,158,11,0.2)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.boxShadow = "0 4px 12px rgba(245,158,11,0.1)";
                 }}
               >
                 <div
                   style={{
-                    width: breakpoint === "mobile" ? "100%" : "150px",
-                    height: "150px",
-                    borderRadius: "8px",
+                    width: breakpoint === "mobile" ? "150px" : "120px",
+                    height: "120px",
+                    borderRadius: "12px",
                     overflow: "hidden",
-                    backgroundColor: "#fff",
+                    backgroundColor: "#fffbeb",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    fontSize: "48px",
+                    flexShrink: 0,
                   }}
                 >
-                  <img src="/assets/CustomizePack.jpeg" alt="CustomizePack" />
+                  <img
+                    src="/assets/CustomizePack.jpeg"
+                    alt="Customize Pack"
+                    style={{
+                      width: "50%",
+                      height: "50%",
+                      objectFit: "cover",
+                      transition: "transform 0.3s ease",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.transform = "scale(1.05)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = "scale(1)";
+                    }}
+                  />
                 </div>
 
-                <div style={{ flex: 1 }}>
-                  <h3
-                    style={{
-                      fontFamily: "'Permanent_Marker-Regular', Helvetica",
-                      fontSize: breakpoint === "mobile" ? "22px" : "26px",
-                      marginBottom: "8px",
-                      color: "#000",
-                    }}
-                  >
-                    {pack.packName}
-                  </h3>
-                  <p
-                    style={{
-                      fontFamily: "'Inter', sans-serif",
-                      fontSize: "14px",
-                      color: "#666",
-                      marginBottom: "8px",
-                    }}
-                  >
-                    {pack.items?.reduce(
-                      (total, item) => total + (item.quantity || 0),
-                      0,
-                    ) || 0}{" "}
-                    items selected
-                  </p>
+                <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+                  <div>
+                    <h3
+                      style={{
+                        fontFamily: "'Permanent Marker', cursive",
+                        fontSize: breakpoint === "mobile" ? "20px" : "24px",
+                        marginBottom: "4px",
+                        color: "#1a1a1a",
+                        fontWeight: 400,
+                      }}
+                    >
+                      {pack.packName}
+                    </h3>
+                    <p
+                      style={{
+                        fontFamily: "'Inter', sans-serif",
+                        fontSize: "13px",
+                        color: "#6b7280",
+                        marginBottom: "8px",
+                      }}
+                    >
+                      {pack.items?.reduce((total, item) => total + (item.quantity || 0), 0) || 0} items
+                    </p>
+                  </div>
 
-                  <div style={{ margin: "12px 0" }}>
+                  <div style={{ margin: "8px 0" }}>
                     <div
                       style={{
-                        height: "8px",
-                        backgroundColor: "#f0f0f0",
-                        borderRadius: 8,
+                        height: "6px",
+                        backgroundColor: "#f3f4f6",
+                        borderRadius: "3px",
                         overflow: "hidden",
                       }}
                     >
                       <div
                         style={{
-                          height: "8px",
+                          height: "100%",
                           width: `${progress}%`,
-                          backgroundColor:
-                            progress >= 100 ? "#4caf50" : "#ff9800",
+                          background: "linear-gradient(90deg, #f59e0b 0%, #eab308 100%)",
+                          transition: "width 0.3s ease",
                         }}
                       />
                     </div>
-                    <div style={{ marginTop: 8, fontWeight: 700 }}>
-                      ₹
-                      {(pack.total || 0).toFixed
-                        ? pack.total.toFixed(2)
-                        : pack.total}{" "}
-                      / ₹{min}
+                    <div
+                      style={{
+                        marginTop: "6px",
+                        fontFamily: "'Inter', sans-serif",
+                        fontSize: "13px",
+                        color: "#1a1a1a",
+                        fontWeight: 600,
+                      }}
+                    >
+                      ₹{currentTotal.toFixed(2)} / ₹{min.toFixed(2)}
                     </div>
                   </div>
 
-                  <div style={{ display: "flex", gap: 12 }}>
-                    {pack.total < min ? (
-                      <p style={{ color: "#ff5722", fontWeight: 600 }}>
-                        Add ₹{(min - (pack.total || 0)).toFixed(2)} more to
-                        &nbsp;
+                  <div style={{ display: "flex", gap: "12px" }}>
+                    {currentTotal < min ? (
+                      <p
+                        style={{
+                          fontFamily: "'Inter', sans-serif",
+                          fontSize: "13px",
+                          color: "#ef4444",
+                          fontWeight: 600,
+                          margin: 0,
+                        }}
+                      >
+                        Add ₹{(min - currentTotal).toFixed(2)} more to{" "}
                         <Link
+                          to={`/customize-pack/${pack.packId}`}
                           style={{
-                            color: "#ff5722",
+                            color: "#3b82f6",
                             textDecoration: "underline",
+                            transition: "color 0.2s ease",
                           }}
-                          to="/customize-pack/pack500"
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.color = "#2563eb";
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.color = "#3b82f6";
+                          }}
                         >
-                          order this pack.
+                          complete
                         </Link>
                       </p>
                     ) : (
                       <button
                         onClick={() => finalizeInProgressPack(pack.packId)}
                         style={{
-                          padding: "8px 16px",
-                          backgroundColor: "#000",
+                          padding: "6px 12px",
+                          background: "linear-gradient(135deg, #22c55e 0%, #16a34a 100%)",
                           color: "#fff",
                           border: "none",
-                          borderRadius: 8,
+                          borderRadius: "6px",
+                          cursor: "pointer",
+                          fontFamily: "'Inter', sans-serif",
+                          fontSize: "13px",
+                          transition: "all 0.2s ease",
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.transform = "scale(1.05)";
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.transform = "scale(1)";
                         }}
                       >
-                        Order Now
+                        Add to Cart
                       </button>
                     )}
-
                     <button
                       onClick={() => removeInProgressPack(pack.packId)}
                       style={{
-                        padding: "8px 16px",
-                        backgroundColor: "#ff4444",
+                        padding: "6px 12px",
+                        background: "#ef4444",
                         color: "#fff",
                         border: "none",
-                        borderRadius: 8,
+                        borderRadius: "6px",
+                        cursor: "pointer",
+                        fontFamily: "'Inter', sans-serif",
+                        fontSize: "13px",
+                        transition: "all 0.2s ease",
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = "#dc2626";
+                        e.currentTarget.style.transform = "scale(1.05)";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = "#ef4444";
+                        e.currentTarget.style.transform = "scale(1)";
                       }}
                     >
                       Discard
@@ -903,6 +1031,7 @@ const Cart = () => {
               </div>
             );
           })}
+
           {packItems.map((pack, index) => (
             <PackItemCard
               key={`pack-${pack.instanceId || index}`}
@@ -916,23 +1045,23 @@ const Cart = () => {
           ))}
         </div>
 
-        {/* Order Summary */}
         <div
           style={{
-            backgroundColor: "#f9f9f9",
-            padding: "30px",
-            borderRadius: "12px",
-            marginBottom: "30px",
-            border: "1px solid #eee",
+            backgroundColor: "#ffffff",
+            padding: "24px",
+            borderRadius: "16px",
+            marginBottom: "32px",
+            boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
+            border: "1px solid #f0f0f0",
           }}
         >
           <h2
             style={{
-              fontFamily: "Nunito Sans",
+              fontFamily: "'Nunito Sans', sans-serif",
               fontSize: breakpoint === "mobile" ? "20px" : "22px",
               marginBottom: "16px",
-              color: "#111",
-              fontWeight: 600,
+              color: "#1f2937",
+              fontWeight: 700,
             }}
           >
             Order Summary
@@ -942,450 +1071,417 @@ const Cart = () => {
               display: "flex",
               justifyContent: "space-between",
               alignItems: "center",
-              padding: "16px 0",
-              borderTop: "1px solid #ddd",
-              borderBottom: "1px solid #ddd",
-              marginTop: "20px",
+              padding: "12px 0",
+              borderTop: "1px solid #f0f0f0",
+              borderBottom: "1px solid #f0f0f0",
+              marginTop: "16px",
             }}
           >
             <span
               style={{
                 fontFamily: "'Inter', sans-serif",
-                fontSize: breakpoint === "mobile" ? "16px" : "18px",
-                color: "#666",
-                fontWeight: 600,
+                fontSize: "16px",
+                color: "#6b7280",
+                fontWeight: 500,
               }}
             >
-              Total:
+              Grand Total
             </span>
             <span
               style={{
-                fontFamily: "Nunito Sans",
-                fontSize: breakpoint === "mobile" ? "18px" : "22px",
-                color: "#111",
-                fontWeight: 700,
+                fontFamily: "'Nunito Sans', sans-serif",
+                fontSize: "22px",
+                color: "#1f2937",
+                fontWeight: 800,
               }}
             >
-              {getCartTotal().toFixed(2)} RS
+              ₹{getCartTotal().toFixed(2)}
             </span>
           </div>
         </div>
 
-        {/* Place Order Button */}
         {!showForm && (
-          <div style={{ display: "flex", gap: "12px", flexDirection: breakpoint === "mobile" ? "column" : "row" }}>
-            <button
-              onClick={() => setShowForm(true)}
-              style={{
-                flex: 1,
-                padding: breakpoint === "mobile" ? "14px" : "18px",
-                fontFamily: "'Inter', sans-serif",
-                fontSize: breakpoint === "mobile" ? "14px" : "16px",
-                backgroundColor: "#25D366",
-                color: "#fff",
-                fontWeight: 700,
-                textTransform: "uppercase",
-                letterSpacing: "0.6px",
-                border: "none",
-                borderRadius: "8px",
-                cursor: "pointer",
-                transition: "all 0.3s ease",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: "12px",
-              }}
-              onMouseEnter={(e) => {
-                e.target.style.backgroundColor = "#20BA5A";
-                e.target.style.transform = "scale(1.02)";
-              }}
-              onMouseLeave={(e) => {
-                e.target.style.backgroundColor = "#25D366";
-                e.target.style.transform = "scale(1)";
-              }}
-            >
-              <svg
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="currentColor"
-                style={{ marginRight: "8px" }}
-              >
-                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z" />
-              </svg>
-              Place Order
-            </button>
-            <button
-              onClick={handlePayNow}
-              disabled={isPaymentLoading}
-              style={{
-                flex: 1,
-                padding: breakpoint === "mobile" ? "14px" : "18px",
-                fontFamily: "'Inter', sans-serif",
-                fontSize: breakpoint === "mobile" ? "14px" : "16px",
-                backgroundColor: isPaymentLoading ? "#cccccc" : "#4a90e2",
-                color: "#fff",
-                fontWeight: 700,
-                textTransform: "uppercase",
-                letterSpacing: "0.6px",
-                border: "none",
-                borderRadius: "8px",
-                cursor: isPaymentLoading ? "not-allowed" : "pointer",
-                transition: "all 0.3s ease",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: "12px",
-              }}
-              onMouseEnter={(e) => {
-                if (!isPaymentLoading) {
-                  e.target.style.backgroundColor = "#3a7bc8";
-                  e.target.style.transform = "scale(1.02)";
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (!isPaymentLoading) {
-                  e.target.style.backgroundColor = "#4a90e2";
-                  e.target.style.transform = "scale(1)";
-                }
-              }}
-            >
-              <svg
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="currentColor"
-                style={{ marginRight: "8px" }}
-              >
-                <path d="M20 8H4V6h16m0 10v-2H4v2m0 4h16v-2H4m15-7H9v5h6V9z"/>
-              </svg>
-              {isPaymentLoading ? "Processing..." : "Pay Now"}
-            </button>
-          </div>
+          <button
+            onClick={() => setShowForm(true)}
+            style={{
+              width: "100%",
+              padding: breakpoint === "mobile" ? "14px" : "16px",
+              fontFamily: "'Inter', sans-serif",
+              fontSize: "16px",
+              background: "linear-gradient(135deg, #1e3a8a 0%, #1d4ed8 100%)",
+              color: "#fff",
+              fontWeight: 600,
+              textTransform: "uppercase",
+              letterSpacing: "0.5px",
+              border: "none",
+              borderRadius: "8px",
+              cursor: "pointer",
+              transition: "all 0.3s ease",
+              boxShadow: "0 4px 12px rgba(30,58,138,0.2)",
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.transform = "translateY(-2px)";
+              e.target.style.boxShadow = "0 6px 16px rgba(30,58,138,0.3)";
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.transform = "translateY(0)";
+              e.target.style.boxShadow = "0 4px 12px rgba(30,58,138,0.2)";
+            }}
+          >
+            Proceed to Checkout
+          </button>
         )}
 
-        {/* Order Form */}
         {showForm && (
           <form
             onSubmit={handlePlaceOrder}
             style={{
-              backgroundColor: "#f9f9f9",
-              padding: "30px",
-              borderRadius: "12px",
-              marginTop: "30px",
-              border: "1px solid #eee",
+              backgroundColor: "#ffffff",
+              padding: "24px",
+              borderRadius: "16px",
+              marginTop: "32px",
+              boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
+              border: "1px solid #f0f0f0",
             }}
           >
             <h2
               style={{
-                fontFamily: "Nunito Sans",
+                fontFamily: "'Nunito Sans', sans-serif",
                 fontSize: breakpoint === "mobile" ? "20px" : "22px",
-                marginBottom: "18px",
-                color: "#111",
-                fontWeight: 600,
+                marginBottom: "24px",
+                color: "#1f2937",
+                fontWeight: 700,
               }}
             >
-              Delivery Information
+              Delivery Details
             </h2>
 
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns:
-                  breakpoint === "mobile" ? "1fr" : "repeat(2, 1fr)",
-                gap: "20px",
-                marginBottom: "20px",
+                gridTemplateColumns: breakpoint === "mobile" ? "1fr" : "repeat(2, 1fr)",
+                gap: "16px",
+                marginBottom: "24px",
               }}
             >
-              <div>
-                <label
-                  style={{
-                    display: "block",
-                    fontFamily: "'Inter', sans-serif",
-                    fontSize: "14px",
-                    marginBottom: "8px",
-                    color: "#333",
-                    fontWeight: 600,
-                  }}
-                >
-                  Name *
-                </label>
-                <input
-                  type="text"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleInputChange}
-                  required
-                  style={{
-                    width: "100%",
-                    padding: "12px",
-                    border: "1px solid #ddd",
-                    borderRadius: "8px",
-                    fontFamily: "'Inter', sans-serif",
-                    fontSize: "14px",
-                  }}
-                />
-              </div>
-
-              <div>
-                <label
-                  style={{
-                    display: "block",
-                    fontFamily: "'Inter', sans-serif",
-                    fontSize: "14px",
-                    marginBottom: "8px",
-                    color: "#333",
-                    fontWeight: 600,
-                  }}
-                >
-                  Phone *
-                </label>
-                <input
-                  type="tel"
-                  name="phone"
-                  value={formData.phone}
-                  onChange={handleInputChange}
-                  required
-                  style={{
-                    width: "100%",
-                    padding: "12px",
-                    border: "1px solid #ddd",
-                    borderRadius: "8px",
-                    fontFamily: "'Inter', sans-serif",
-                    fontSize: "14px",
-                  }}
-                />
-              </div>
-
-              <div>
-                <label
-                  style={{
-                    display: "block",
-                    fontFamily: "'Inter', sans-serif",
-                    fontSize: "14px",
-                    marginBottom: "8px",
-                    color: "#333",
-                    fontWeight: 600,
-                  }}
-                >
-                  Email *
-                </label>
-                <input
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  required
-                  style={{
-                    width: "100%",
-                    padding: "12px",
-                    border: "1px solid #ddd",
-                    borderRadius: "8px",
-                    fontFamily: "'Inter', sans-serif",
-                    fontSize: "14px",
-                  }}
-                />
-              </div>
-
-              <div>
-                <label
-                  style={{
-                    display: "block",
-                    fontFamily: "'Inter', sans-serif",
-                    fontSize: "14px",
-                    marginBottom: "8px",
-                    color: "#333",
-                    fontWeight: 600,
-                  }}
-                >
-                  WhatsApp Number *
-                </label>
-                <input
-                  type="tel"
-                  name="whatsapp"
-                  value={formData.whatsapp}
-                  onChange={handleInputChange}
-                  required
-                  style={{
-                    width: "100%",
-                    padding: "12px",
-                    border: "1px solid #ddd",
-                    borderRadius: "8px",
-                    fontFamily: "'Inter', sans-serif",
-                    fontSize: "14px",
-                  }}
-                />
-              </div>
-
-              <div>
-                <label
-                  style={{
-                    display: "block",
-                    fontFamily: "'Inter', sans-serif",
-                    fontSize: "14px",
-                    marginBottom: "8px",
-                    color: "#333",
-                    fontWeight: 600,
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "8px",
-                  }}
-                >
-                  Pincode *
-                  {pincode && (
-                    <span
-                      style={{
-                        backgroundColor: "#4caf50",
-                        color: "#fff",
-                        padding: "2px 8px",
-                        borderRadius: "12px",
-                        fontSize: "11px",
-                        fontWeight: 600,
-                      }}
-                    >
-                      ✓ Verified
-                    </span>
-                  )}
-                </label>
-                <input
-                  type="text"
-                  name="pincode"
-                  value={formData.pincode}
-                  onChange={handleInputChange}
-                  required
-                  style={{
-                    width: "100%",
-                    padding: "12px",
-                    border: pincodeError
-                      ? "2px solid #ff4444"
-                      : pincode
-                        ? "2px solid #4caf50"
-                        : "1px solid #ddd",
-                    borderRadius: "8px",
-                    fontFamily: "'Inter', sans-serif",
-                    fontSize: "14px",
-                    backgroundColor: pincodeError
-                      ? "#fff5f5"
-                      : pincode
-                        ? "#e8f5e9"
-                        : "#fff",
-                  }}
-                />
-                {pincodeError && (
-                  <p
+              {[
+                { name: "name", label: "Full Name", type: "text", required: true },
+                { name: "phone", label: "Phone Number", type: "tel", required: true },
+                { name: "email", label: "Email Address", type: "email", required: true },
+                { name: "whatsapp", label: "WhatsApp Number", type: "tel", required: true },
+                { name: "pincode", label: "Pincode", type: "text", required: true },
+                { name: "country", label: "City / State", type: "text", required: true },
+              ].map((field) => (
+                <div key={field.name}>
+                  <label
                     style={{
-                      color: "#ff4444",
-                      fontSize: "12px",
-                      marginTop: "6px",
+                      display: "block",
                       fontFamily: "'Inter', sans-serif",
+                      fontSize: "13px",
+                      marginBottom: "6px",
+                      color: "#4b5563",
+                      fontWeight: 500,
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "4px",
                     }}
                   >
-                    {pincodeError}
-                  </p>
-                )}
-              </div>
-
-              <div>
-                <label
-                  style={{
-                    display: "block",
-                    fontFamily: "'Just_Me_Again_Down_Here-Regular', Helvetica",
-                    fontSize: "18px",
-                    marginBottom: "8px",
-                    color: "#333",
-                  }}
-                >
-                  Country *
-                </label>
-                <input
-                  type="text"
-                  name="country"
-                  value={formData.country}
-                  onChange={handleInputChange}
-                  required
-                  style={{
-                    width: "100%",
-                    padding: "12px",
-                    border: "1px solid #ddd",
-                    borderRadius: "8px",
-                    fontFamily: "'Just_Me_Again_Down_Here-Regular', Helvetica",
-                    fontSize: "16px",
-                  }}
-                />
-              </div>
+                    {field.label} {field.required && <span style={{ color: "#ef4444" }}>*</span>}
+                    {field.name === "pincode" && pincode && (
+                      <span
+                        style={{
+                          background: "linear-gradient(135deg, #22c55e 0%, #16a34a 100%)",
+                          color: "#fff",
+                          padding: "2px 8px",
+                          borderRadius: "12px",
+                          fontSize: "11px",
+                          fontWeight: 500,
+                        }}
+                      >
+                        Verified
+                      </span>
+                    )}
+                  </label>
+                  <input
+                    type={field.type}
+                    name={field.name}
+                    value={formData[field.name]}
+                    onChange={handleInputChange}
+                    required={field.required}
+                    style={{
+                      width: "100%",
+                      padding: "10px 12px",
+                      border: pincodeError && field.name === "pincode"
+                        ? "1px solid #ef4444"
+                        : pincode && field.name === "pincode"
+                          ? "1px solid #22c55e"
+                          : "1px solid #d1d5db",
+                      borderRadius: "8px",
+                      fontFamily: "'Inter', sans-serif",
+                      fontSize: "14px",
+                      backgroundColor: "#fff",
+                      transition: "border-color 0.2s ease",
+                    }}
+                    onFocus={(e) => {
+                      e.target.style.borderColor = "#3b82f6";
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.borderColor = pincodeError && field.name === "pincode"
+                        ? "#ef4444"
+                        : pincode && field.name === "pincode"
+                          ? "#22c55e"
+                          : "#d1d5db";
+                    }}
+                  />
+                  {pincodeError && field.name === "pincode" && (
+                    <p
+                      style={{
+                        color: "#ef4444",
+                        fontSize: "12px",
+                        marginTop: "4px",
+                        fontFamily: "'Inter', sans-serif",
+                      }}
+                    >
+                      {pincodeError}
+                    </p>
+                  )}
+                </div>
+              ))}
             </div>
 
-            <div style={{ marginBottom: "24px" }}>
+            <div style={{ marginBottom: "32px" }}>
               <label
                 style={{
                   display: "block",
                   fontFamily: "'Inter', sans-serif",
-                  fontSize: "14px",
-                  marginBottom: "8px",
-                  color: "#333",
-                  fontWeight: 600,
+                  fontSize: "13px",
+                  marginBottom: "6px",
+                  color: "#4b5563",
+                  fontWeight: 500,
                 }}
               >
-                Landmark *
+                Landmark / Address Details <span style={{ color: "#ef4444" }}>*</span>
               </label>
-              <input
-                type="text"
+              <textarea
                 name="landmark"
                 value={formData.landmark}
                 onChange={handleInputChange}
                 required
                 style={{
                   width: "100%",
-                  padding: "12px",
-                  border: "1px solid #ddd",
+                  padding: "10px 12px",
+                  border: "1px solid #d1d5db",
                   borderRadius: "8px",
                   fontFamily: "'Inter', sans-serif",
                   fontSize: "14px",
+                  backgroundColor: "#fff",
+                  minHeight: "80px",
+                  transition: "border-color 0.2s ease",
+                }}
+                onFocus={(e) => {
+                  e.target.style.borderColor = "#3b82f6";
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = "#d1d5db";
                 }}
               />
             </div>
 
+            <div style={{ display: "grid", gridTemplateColumns: breakpoint === "mobile" ? "1fr" : "repeat(2, 1fr)", gap: "12px", marginBottom: "12px" }}>
+              <button
+                type="button"
+                disabled={isFormSubmitting}
+                onClick={handlePlaceOrder}
+                style={{
+                  padding: "12px",
+                  fontFamily: "'Inter', sans-serif",
+                  fontSize: "14px",
+                  background: isFormSubmitting
+                    ? "#9ca3af"
+                    : "linear-gradient(135deg, #22c55e 0%, #16a34a 100%)",
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: "8px",
+                  cursor: isFormSubmitting ? "not-allowed" : "pointer",
+                  transition: "all 0.3s ease",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "8px",
+                  fontWeight: 600,
+                  boxShadow: "0 2px 8px rgba(34,197,94,0.2)",
+                }}
+                onMouseEnter={(e) => {
+                  if (!isFormSubmitting) {
+                    e.target.style.transform = "translateY(-2px)";
+                    e.target.style.boxShadow = "0 4px 12px rgba(34,197,94,0.3)";
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!isFormSubmitting) {
+                    e.target.style.transform = "translateY(0)";
+                    e.target.style.boxShadow = "0 2px 8px rgba(34,197,94,0.2)";
+                  }
+                }}
+              >
+                {isFormSubmitting ? (
+                  <>
+                    <div style={{ width: "16px", height: "16px", border: "2px solid #fff", borderTop: "2px solid transparent", borderRadius: "50%", animation: "spin 1s linear infinite" }} />
+                    Processing...
+                  </>
+                ) : (
+                  <>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z" />
+                    </svg>
+                    Place via WhatsApp
+                  </>
+                )}
+              </button>
+
+              <button
+                type="button"
+                disabled={isPaymentLoading}
+                onClick={handlePayNow}
+                style={{
+                  padding: "12px",
+                  fontFamily: "'Inter', sans-serif",
+                  fontSize: "14px",
+                  background: isPaymentLoading
+                    ? "#9ca3af"
+                    : "linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)",
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: "8px",
+                  cursor: isPaymentLoading ? "not-allowed" : "pointer",
+                  transition: "all 0.3s ease",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "8px",
+                  fontWeight: 600,
+                  boxShadow: "0 2px 8px rgba(59,130,246,0.2)",
+                }}
+                onMouseEnter={(e) => {
+                  if (!isPaymentLoading) {
+                    e.target.style.transform = "translateY(-2px)";
+                    e.target.style.boxShadow = "0 4px 12px rgba(59,130,246,0.3)";
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!isPaymentLoading) {
+                    e.target.style.transform = "translateY(0)";
+                    e.target.style.boxShadow = "0 2px 8px rgba(59,130,246,0.2)";
+                  }
+                }}
+              >
+                {isPaymentLoading ? (
+                  <>
+                    <div style={{ width: "16px", height: "16px", border: "2px solid #fff", borderTop: "2px solid transparent", borderRadius: "50%", animation: "spin 1s linear infinite" }} />
+                    Processing...
+                  </>
+                ) : (
+                  <>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M3 5h18M3 19h18M3 12h18" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                    Pay Securely
+                  </>
+                )}
+              </button>
+            </div>
+
             <button
-              type="submit"
+              type="button"
+              onClick={() => setShowForm(false)}
               style={{
                 width: "100%",
-                padding: breakpoint === "mobile" ? "14px" : "18px",
+                padding: "10px",
                 fontFamily: "'Inter', sans-serif",
-                fontSize: breakpoint === "mobile" ? "14px" : "16px",
-                backgroundColor: "#25D366",
-                color: "#fff",
+                fontSize: "13px",
+                backgroundColor: "#f3f4f6",
+                color: "#4b5563",
                 border: "none",
                 borderRadius: "8px",
                 cursor: "pointer",
-                transition: "all 0.3s ease",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: "12px",
-                fontWeight: 700,
-                textTransform: "uppercase",
-                letterSpacing: "0.6px",
+                transition: "all 0.2s ease",
               }}
               onMouseEnter={(e) => {
-                e.target.style.backgroundColor = "#20BA5A";
-                e.target.style.transform = "scale(1.02)";
+                e.target.style.backgroundColor = "#e5e7eb";
               }}
               onMouseLeave={(e) => {
-                e.target.style.backgroundColor = "#25D366";
-                e.target.style.transform = "scale(1)";
+                e.target.style.backgroundColor = "#f3f4f6";
               }}
             >
-              <svg
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="currentColor"
-              >
-                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z" />
-              </svg>
-              Place Order via WhatsApp
+              Back to Cart
             </button>
           </form>
+        )}
+
+        {(isPaymentLoading || isFormSubmitting) && (
+          <div
+            style={{
+              position: "fixed",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: "rgba(255,255,255,0.8)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              zIndex: 9999,
+              backdropFilter: "blur(8px)",
+            }}
+          >
+            <div
+              style={{
+                backgroundColor: "#ffffff",
+                padding: "32px",
+                borderRadius: "16px",
+                textAlign: "center",
+                boxShadow: "0 8px 32px rgba(0,0,0,0.15)",
+                minWidth: "280px",
+              }}
+            >
+              <div
+                style={{
+                  width: "48px",
+                  height: "48px",
+                  border: "3px solid #f3f4f6",
+                  borderTop: "3px solid #3b82f6",
+                  borderRadius: "50%",
+                  animation: "spin 1s linear infinite",
+                  margin: "0 auto 16px",
+                }}
+              />
+              <h3
+                style={{
+                  fontFamily: "'Nunito Sans', sans-serif",
+                  fontSize: "18px",
+                  color: "#1f2937",
+                  marginBottom: "8px",
+                  fontWeight: 700,
+                }}
+              >
+                {isPaymentLoading ? "Securing Payment" : "Verifying Order"}
+              </h3>
+              <p
+                style={{
+                  fontFamily: "'Inter', sans-serif",
+                  fontSize: "14px",
+                  color: "#6b7280",
+                }}
+              >
+                Please wait a moment...
+              </p>
+            </div>
+            <style>{`
+              @keyframes spin {
+                to { transform: rotate(360deg); }
+              }
+            `}</style>
+          </div>
         )}
       </div>
     </div>
