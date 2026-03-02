@@ -427,8 +427,8 @@ const Cart = () => {
         items.push({ id: p.packId || p.instanceId, name: p.packName, price: Number(p.packPrice) || 0, quantity: p.quantity || 1 });
       });
 
-      // const resp = await fetch("https://hyperbitedeploy.onrender.com/api/payment/create-order", {
-      const resp = await fetch("http://localhost:5000/api/payment/create-order", {
+      const resp = await fetch("https://hyperbitedeploy.onrender.com/api/payment/create-order", {
+      // const resp = await fetch("http://localhost:5000/api/payment/create-order", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -466,8 +466,8 @@ const Cart = () => {
         order_id: data.razorpayOrder.id,
         handler: async function (response) {
           try {
-            // const verifyRes = await fetch("https://hyperbitedeploy.onrender.com/api/payment/verify", {
-            const verifyRes = await fetch("http://localhost:5000/api/payment/verify", {
+            const verifyRes = await fetch("https://hyperbitedeploy.onrender.com/api/payment/verify", {
+            // const verifyRes = await fetch("http://localhost:5000/api/payment/verify", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify(response),
