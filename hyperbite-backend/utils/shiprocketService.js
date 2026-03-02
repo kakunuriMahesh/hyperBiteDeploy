@@ -17,6 +17,17 @@ exports.createShiprocketOrder = async (order) => {
     console.log("[Shiprocket] Generating token...");
     const token = await generateToken();
     console.log("[Shiprocket] Token generated successfully");
+    console.log('[Shiprocket] Order customer details:', {
+      name: order.customer.name,
+      email: order.customer.email,
+      phone: order.customer.phone,
+      whatsapp: order.customer.whatsapp,
+      address: order.customer.address,
+      city: order.customer.city,
+      state: order.customer.state,
+      country: order.customer.country,
+      pincode: order.customer.pincode
+    });
 
     // Build order_items array from order.items (if available)
     let orderItems = [];
@@ -34,7 +45,7 @@ exports.createShiprocketOrder = async (order) => {
           name: "Order Items",
           sku: "GENERAL",
           units: 1,
-          selling_price: order.amount || 0
+          selling_price: order.totalAmount || 0
         }
       ];
     }
@@ -47,14 +58,15 @@ exports.createShiprocketOrder = async (order) => {
       billing_address: order.customer.address,
       billing_city: order.customer.city,
       billing_pincode: order.customer.pincode,
-      billing_state: "Telangana", // change to your real state
-      billing_country: "India",
+      billing_state: order.customer.state,
+      billing_country: order.customer.country,
+      billing_email: order.customer.email,
       billing_phone: order.customer.phone,
       shipping_is_billing: true,
       payment_method: "Prepaid",
       order_items: orderItems,
-      payment_method: "Prepaid",
-      sub_total: order.amount,
+      // some payloads come with totalAmount, others with amount
+      sub_total: order.totalAmount || order.amount || 0,
       weight: 0.5,     // in KG (MANDATORY)
       length: 10,      // in CM
       breadth: 10,     // in CM

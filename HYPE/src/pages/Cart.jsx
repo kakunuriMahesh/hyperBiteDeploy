@@ -349,9 +349,11 @@ const Cart = () => {
     phone: "",
     email: "",
     whatsapp: "",
-    pincode: "",
+    address: "",
+    city: "",
+    state: "",
     country: "",
-    landmark: "",
+    pincode: "",
   });
   const [pincodeError, setPincodeError] = useState("");
   const [isPaymentLoading, setIsPaymentLoading] = useState(false);
@@ -425,16 +427,22 @@ const Cart = () => {
         items.push({ id: p.packId || p.instanceId, name: p.packName, price: Number(p.packPrice) || 0, quantity: p.quantity || 1 });
       });
 
-      const resp = await fetch("https://hyperbitedeploy.onrender.com/api/payment/create-order", {
+      // const resp = await fetch("https://hyperbitedeploy.onrender.com/api/payment/create-order", {
+      const resp = await fetch("http://localhost:5000/api/payment/create-order", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          customerName: formData.name,
-          email: formData.email,
-          phone: formData.phone,
-          address: `${formData.landmark || ""} ${formData.pincode || ""}`,
-          city: formData.country || "",
-          pincode: formData.pincode || "",
+          customer: {
+            name: formData.name,
+            email: formData.email,
+            phone: formData.phone,
+            whatsapp: formData.whatsapp,
+            address: formData.address,
+            city: formData.city,
+            state: formData.state,
+            country: formData.country,
+            pincode: formData.pincode,
+          },
           items,
         }),
       });
@@ -458,7 +466,8 @@ const Cart = () => {
         order_id: data.razorpayOrder.id,
         handler: async function (response) {
           try {
-            const verifyRes = await fetch("https://hyperbitedeploy.onrender.com/api/payment/verify", {
+            // const verifyRes = await fetch("https://hyperbitedeploy.onrender.com/api/payment/verify", {
+            const verifyRes = await fetch("http://localhost:5000/api/payment/verify", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify(response),
@@ -1170,7 +1179,9 @@ const Cart = () => {
                 { name: "email", label: "Email Address", type: "email", required: true },
                 { name: "whatsapp", label: "WhatsApp Number", type: "tel", required: true },
                 { name: "pincode", label: "Pincode", type: "text", required: true },
-                { name: "country", label: "City / State", type: "text", required: true },
+                { name: "city", label: "City / Town", type: "text", required: true },
+                { name: "state", label: "State", type: "text", required: true },
+                { name: "country", label: "Country", type: "text", required: true },
               ].map((field) => (
                 <div key={field.name}>
                   <label
@@ -1260,13 +1271,14 @@ const Cart = () => {
                   fontWeight: 500,
                 }}
               >
-                Landmark / Address Details <span style={{ color: "#ef4444" }}>*</span>
+                Full Address / Landmark Details <span style={{ color: "#ef4444" }}>*</span>
               </label>
               <textarea
-                name="landmark"
-                value={formData.landmark}
+                name="address"
+                value={formData.address}
                 onChange={handleInputChange}
                 required
+                placeholder="Enter your complete address with landmark details"
                 style={{
                   width: "100%",
                   padding: "10px 12px",

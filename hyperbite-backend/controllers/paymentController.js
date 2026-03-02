@@ -14,7 +14,9 @@ function calculateTotal(items = []) {
 
 exports.createOrder = async (req, res) => {
   try {
-    const { customerName, email, phone, address, items, city, pincode } = req.body;
+    const { customer, items } = req.body;
+
+    console.log("[PaymentController] createOrder payload", JSON.stringify(req.body));
 
     const totalAmount = calculateTotal(items);
 
@@ -30,17 +32,24 @@ exports.createOrder = async (req, res) => {
     });
 
     const order = await Order.create({
-      customerName,
-      email,
-      phone,
-      address,
-      city,
-      pincode,
+      customer: {
+        name: customer?.name || "",
+        email: customer?.email || "",
+        phone: customer?.phone || "",
+        whatsapp: customer?.whatsapp || "",
+        address: customer?.address || "",
+        city: customer?.city || "",
+        state: customer?.state || "",
+        country: customer?.country || "",
+        pincode: customer?.pincode || "",
+      },
       items,
       totalAmount,
       razorpayOrderId: razorpayOrder.id,
       paymentStatus: "pending"
     });
+
+    console.log("[PaymentController] Order created", JSON.stringify(order));
 
     res.json({
       razorpayOrder,
@@ -77,7 +86,7 @@ exports.verifyPayment = async (req, res) => {
           paymentStatus: "paid",
           razorpayPaymentId: razorpay_payment_id
         },
-        { new: true }
+        { returnDocument: 'after' } // use modern option
       );
 
       console.log("[PaymentController] Order updated - Payment Status: paid");

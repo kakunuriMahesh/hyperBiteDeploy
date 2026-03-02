@@ -1,16 +1,22 @@
 const mongoose = require("mongoose");
 
 const orderSchema = new mongoose.Schema({
-  customerName: String,
-  email: String,
-  phone: String,
-  address: String,
-  city: String,
-  pincode: String,
-
+  customer: {
+    name: String,
+    email: String,
+    phone: String,
+    whatsapp: String,
+    address: String,
+    city: String,
+    state: String,
+    country: String,
+    pincode: String,
+  },
+  
   items: [
     {
       productId: String,
+      id: String,
       name: String,
       price: Number,
       quantity: Number,
