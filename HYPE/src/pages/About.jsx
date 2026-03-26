@@ -1,335 +1,204 @@
-import React, { useState, useEffect } from "react";
-import Navbar from "../components/Navbar";
-import { useLanguage } from "../context/LanguageContext";
+import { motion } from "framer-motion";
+import {
+  FaLeaf,
+  FaBolt,
+  FaFlask,
+  FaRunning,
+  FaCheckCircle,
+  FaBoxOpen
+} from "react-icons/fa";
 
-const About = () => {
-  const { t } = useLanguage();
-  const [breakpoint, setBreakpoint] = useState('desktop');
-
-  useEffect(() => {
-    const updateBreakpoint = () => {
-      const viewportWidth = window.innerWidth;
-      if (viewportWidth < 768) {
-        setBreakpoint('mobile');
-      } else if (viewportWidth < 1024) {
-        setBreakpoint('tablet');
-      } else {
-        setBreakpoint('desktop');
-      }
-    };
-
-    updateBreakpoint();
-    window.addEventListener('resize', updateBreakpoint);
-    return () => window.removeEventListener('resize', updateBreakpoint);
-  }, []);
-
+export default function AboutPage() {
   return (
-    <div style={{ backgroundColor: '#fff', minHeight: '100vh', paddingTop: '70px' }}>
-      {/* <Navbar /> */}
-      
-      <div
-        style={{
-          maxWidth: breakpoint === 'desktop' ? '1200px' : '100%',
-          margin: '0 auto',
-          padding: breakpoint === 'mobile' ? '20px' : '40px',
-        }}
-      >
-        {/* Header */}
-        <div style={{ textAlign: 'center', marginBottom: breakpoint === 'mobile' ? '40px' : '60px' }}>
-          <h1
-            style={{
-              fontFamily:"Nunito Sans",
-              fontSize: breakpoint === 'mobile' ? '28px' : breakpoint === 'tablet' ? '36px' : '44px',
-              marginBottom: '12px',
-              color: '#111',
-              fontWeight: 700,
-            }}
-          >
-            About Us
-          </h1>
-          <h1>{t('welcome')}</h1>
-      <h1>{t('benefits')}</h1>
-          <p
-            style={{
-              fontFamily: "'Inter', sans-serif",
-              fontSize: breakpoint === 'mobile' ? '14px' : '16px',
-              color: '#666',
-              maxWidth: '640px',
-              margin: '0 auto',
-              lineHeight: 1.6,
-            }}
-          >
-            Your trusted source for premium natural products
+    <div style={{ paddingTop: '70px' }} className="bg-[#f8f9fb] text-gray-900">
+
+      {/* HERO */}
+      <section className="px-6 md:px-20 py-20 max-w-6xl mx-auto">
+        <h1 className="text-4xl md:text-6xl font-bold mb-6 leading-tight">
+          The End of "Fake Healthy." <br />
+          <span className="text-gray-500">
+            The Era of Authentic Fuel.
+          </span>
+        </h1>
+
+        <p className="text-lg text-gray-600 max-w-3xl leading-7">
+          At HyperBite, we didn't start with a recipe; we started with a realization:
+          the modern health-food industry is broken.
+        </p>
+      </section>
+
+      {/* INDUSTRY PROBLEM */}
+      <section className="px-6 md:px-20 pb-16 max-w-6xl mx-auto grid md:grid-cols-2 gap-10">
+        <p className="text-gray-600 leading-7">
+          We watched as "healthy" brands flooded shelves with products replacing
+          white sugar with jaggery or syrups — claiming benefits that don’t exist.
+          To the human body, a sugar spike is a sugar spike.
+        </p>
+
+        <p className="text-gray-600 leading-7">
+          We saw the rush for sales compromising ingredient integrity. We saw
+          ancient grains stripped of their value for convenience. So we chose a
+          different path.
+        </p>
+      </section>
+
+      {/* PHILOSOPHY */}
+      <section className="bg-white py-20 px-6 md:px-20">
+        <div className="max-w-5xl mx-auto">
+          <h2 className="text-3xl md:text-4xl font-semibold mb-8">
+            Our Philosophy
+          </h2>
+
+          <p className="text-gray-600 leading-7 mb-5">
+            We don’t just manufacture snacks; we engineer superfoods for the modern,
+            fast-paced lifestyle.
+          </p>
+
+          <p className="text-gray-600 leading-7 mb-5">
+            We are a clear and bold brand built on transparency. While others try
+            to mask sugar behind labels like "jaggery," we call it out — sugar is sugar.
+          </p>
+
+          <p className="text-gray-600 leading-7">
+            We are not in a rush for sales. We are in a rush to build authentic value.
+            Our products contain zero added sugar and zero jaggery, sweetened only
+            through Raw Honey and Dates.
           </p>
         </div>
+      </section>
 
-        {/* Company Story */}
-        <div style={{ marginBottom: breakpoint === 'mobile' ? '40px' : '60px' }}>
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: breakpoint === 'mobile' ? '1fr' : '1fr 1fr',
-              gap: breakpoint === 'mobile' ? '24px' : '40px',
-              alignItems: 'center',
-            }}
-          >
-            <div>
-              <h2
-                style={{
-                  fontFamily:"Nunito Sans",
-                  fontSize: breakpoint === 'mobile' ? '20px' : '24px',
-                  marginBottom: '16px',
-                  color: '#111',
-                  fontWeight: 600,
-                }}
-              >
-                Our Story
-              </h2>
-              <p
-                style={{
-                  fontFamily: "'Inter', sans-serif",
-                  fontSize: breakpoint === 'mobile' ? '14px' : '16px',
-                  lineHeight: '1.75',
-                  color: '#333',
-                  marginBottom: '16px',
-                }}
-              >
-                Hyper Bite was founded with a simple mission: to provide the highest quality natural products that nourish your body and support your wellness journey. We believe that nature provides everything we need for optimal health.
-              </p>
-              <p
-                style={{
-                  fontFamily: "'Just_Me_Again_Down_Here-Regular', Helvetica",
-                  fontSize: breakpoint === 'mobile' ? '16px' : '18px',
-                  lineHeight: '1.8',
-                  color: '#333',
-                }}
-              >
-                Our products are carefully sourced, ensuring freshness and quality in every package. From premium mixed nuts to organic dates and nutritious seeds, we bring you nature's best.
-              </p>
-            </div>
-            <div
-              style={{
-                backgroundColor: '#f9f9f9',
-                borderRadius: '12px',
-                height: breakpoint === 'mobile' ? '250px' : '300px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                border: '1px solid #eee',
-              }}
-            >
-              <div
-                style={{
-                  fontFamily: "'Just_Me_Again_Down_Here-Regular', Helvetica",
-                  fontSize: breakpoint === 'mobile' ? '16px' : '18px',
-                  color: '#999',
-                  textAlign: 'center',
-                }}
-              >
-                [Company Image Placeholder]
-              </div>
-            </div>
+      {/* USP */}
+      <section className="px-6 md:px-20 py-20 max-w-6xl mx-auto">
+        <div className="bg-gradient-to-r from-green-50 to-yellow-50 p-10 rounded-3xl flex flex-col md:flex-row gap-6 items-center">
+          <FaBolt className="text-4xl text-green-600" />
+
+          <div>
+            <h2 className="text-3xl font-semibold mb-3">
+              Pocket-Friendly Bio-Fuel
+            </h2>
+            <p className="text-gray-600 leading-7">
+              Every HyperBite SKU is designed for extreme portability. Whether
+              trekking, in a boardroom, at the gym, or in a lecture hall,
+              HyperBite fits in your pocket to deliver clean, steady energy
+              without the sugar crash.
+            </p>
           </div>
         </div>
+      </section>
 
-        {/* Mission & Values */}
-        <div style={{ marginBottom: breakpoint === 'mobile' ? '40px' : '60px' }}>
-          <h2
-            style={{
-              fontFamily:"Nunito Sans",
-              fontSize: breakpoint === 'mobile' ? '20px' : '22px',
-              marginBottom: '18px',
-              textAlign: 'center',
-              color: '#111',
-              fontWeight: 600,
-            }}
-          >
-            Our Mission & Values
+      {/* MANIFESTO */}
+      <section className="bg-white py-20 px-6 md:px-20">
+        <div className="max-w-6xl mx-auto">
+          <h2 className="text-3xl md:text-4xl font-semibold mb-12">
+            Our Core Manifesto
           </h2>
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: breakpoint === 'mobile' ? '1fr' : breakpoint === 'tablet' ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)',
-              gap: breakpoint === 'mobile' ? '24px' : '32px',
-            }}
-          >
-            <div
-              style={{
-                padding: breakpoint === 'mobile' ? '20px' : '24px',
-                backgroundColor: '#f9f9f9',
-                borderRadius: '12px',
-                border: '1px solid #eee',
-              }}
-            >
-              <h3
-                style={{
-                  fontFamily:"Nunito Sans",
-                  fontSize: breakpoint === 'mobile' ? '16px' : '18px',
-                  marginBottom: '10px',
-                  color: '#111',
-                  fontWeight: 600,
-                }}
-              >
-                Quality First
+
+          <div className="grid md:grid-cols-3 gap-8">
+
+            {/* CARD 1 */}
+            <motion.div whileHover={{ y: -5 }} className="p-6 rounded-2xl border bg-gray-50">
+              <FaLeaf className="text-green-600 text-2xl mb-4" />
+              <h3 className="font-semibold text-lg mb-3">
+                Zero Compromise on Sweetness
               </h3>
-              <p
-                style={{
-                  fontFamily: "'Inter', sans-serif",
-                  fontSize: breakpoint === 'mobile' ? '14px' : '15px',
-                  lineHeight: '1.6',
-                  color: '#333',
-                }}
-              >
-                We source only the finest ingredients, ensuring every product meets our high standards for freshness and quality.
+              <p className="text-gray-600 text-sm leading-6">
+                No added sugar, syrup, or jaggery. Only Raw Honey and Dates.
+                If we can’t make it taste incredible naturally, we don’t make it.
               </p>
-            </div>
-            <div
-              style={{
-                padding: breakpoint === 'mobile' ? '20px' : '24px',
-                backgroundColor: '#f9f9f9',
-                borderRadius: '12px',
-                border: '1px solid #eee',
-              }}
-            >
-              <h3
-                style={{
-                  fontFamily:"Nunito Sans",
-                  fontSize: breakpoint === 'mobile' ? '16px' : '18px',
-                  marginBottom: '10px',
-                  color: '#111',
-                  fontWeight: 600,
-                }}
-              >
-                Natural & Pure
+            </motion.div>
+
+            {/* CARD 2 */}
+            <motion.div whileHover={{ y: -5 }} className="p-6 rounded-2xl border bg-gray-50">
+              <FaFlask className="text-blue-600 text-2xl mb-4" />
+              <h3 className="font-semibold text-lg mb-3">
+                Research-Led, Not Market-Led
               </h3>
-              <p
-                style={{
-                  fontFamily: "'Inter', sans-serif",
-                  fontSize: breakpoint === 'mobile' ? '14px' : '15px',
-                  lineHeight: '1.6',
-                  color: '#333',
-                }}
-              >
-                All our products are 100% natural with no artificial additives, preservatives, or chemicals.
+              <p className="text-gray-600 text-sm leading-6">
+                We are not chasing trends. We are in the lab researching,
+                developing, and manufacturing products with real biochemical integrity.
               </p>
-            </div>
-            <div
-              style={{
-                padding: breakpoint === 'mobile' ? '20px' : '24px',
-                backgroundColor: '#f9f9f9',
-                borderRadius: '12px',
-                border: '1px solid #eee',
-              }}
-            >
-              <h3
-                style={{
-                  fontFamily:"Nunito Sans",
-                  fontSize: breakpoint === 'mobile' ? '16px' : '18px',
-                  marginBottom: '10px',
-                  color: '#111',
-                  fontWeight: 600,
-                }}
-              >
-                Customer Focus
+            </motion.div>
+
+            {/* CARD 3 */}
+            <motion.div whileHover={{ y: -5 }} className="p-6 rounded-2xl border bg-gray-50">
+              <FaRunning className="text-orange-500 text-2xl mb-4" />
+              <h3 className="font-semibold text-lg mb-3">
+                Engineered for the Modern Nomad
               </h3>
-              <p
-                style={{
-                  fontFamily: "'Inter', sans-serif",
-                  fontSize: breakpoint === 'mobile' ? '14px' : '15px',
-                  lineHeight: '1.6',
-                  color: '#333',
-                }}
-              >
-                Your satisfaction is our priority. We're committed to providing exceptional products and service.
+              <p className="text-gray-600 text-sm leading-6">
+                Designed for fast, mobile lifestyles — from trekking mountains
+                to long flights, gym sessions, and lectures. Energy should never
+                be a variable.
               </p>
-            </div>
+            </motion.div>
+
           </div>
         </div>
+      </section>
 
-        {/* Team Section */}
-        {/* <div>
-          <h2
-            style={{
-              fontFamily:"Nunito Sans",
-              fontSize: breakpoint === 'mobile' ? '20px' : '22px',
-              marginBottom: '18px',
-              textAlign: 'center',
-              color: '#111',
-              fontWeight: 600,
-            }}
-          >
-            Our Team
-          </h2>
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: breakpoint === 'mobile' ? '1fr' : breakpoint === 'tablet' ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)',
-              gap: breakpoint === 'mobile' ? '24px' : '32px',
-            }}
-          >
-            {[
-              { name: 'Ahmed Al-Mansoori', role: 'Founder & CEO' },
-              { name: 'Fatima Hassan', role: 'Head of Quality' },
-              { name: 'Omar Abdullah', role: 'Product Manager' },
-              { name: 'Layla Ibrahim', role: 'Customer Relations' },
-            ].map((member, index) => (
-              <div
-                key={index}
-                style={{
-                  textAlign: 'center',
-                }}
-              >
-                <div
-                  style={{
-                    width: '100%',
-                    aspectRatio: '1',
-                    backgroundColor: '#f9f9f9',
-                    borderRadius: '50%',
-                    marginBottom: '16px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    border: '1px solid #eee',
-                  }}
-                >
-                  <div
-                    style={{
-                      fontFamily: "'Inter', sans-serif",
-                      fontSize: breakpoint === 'mobile' ? '12px' : '14px',
-                      color: '#999',
-                    }}
-                  >
-                    [Photo]
-                  </div>
-                </div>
-                <h3
-                  style={{
-                    fontFamily:"Nunito Sans",
-                    fontSize: breakpoint === 'mobile' ? '15px' : '16px',
-                    marginBottom: '8px',
-                    color: '#111',
-                    fontWeight: 600,
-                  }}
-                >
-                  {member.name}
-                </h3>
-                <p
-                  style={{
-                    fontFamily: "'Inter', sans-serif",
-                    fontSize: breakpoint === 'mobile' ? '13px' : '14px',
-                    color: '#666',
-                  }}
-                >
-                  {member.role}
-                </p>
-              </div>
-            ))}
+      {/* STANDARD */}
+      <section className="px-6 md:px-20 py-20 max-w-6xl mx-auto">
+        <h2 className="text-3xl md:text-4xl font-semibold mb-10">
+          The HyperBite Standard
+        </h2>
+
+        <div className="grid md:grid-cols-3 gap-6">
+
+          <div className="bg-white p-6 rounded-2xl shadow-sm border">
+            <FaCheckCircle className="text-green-600 mb-3" />
+            <h3 className="font-semibold mb-2">Authenticity</h3>
+            <p className="text-gray-600 text-sm">
+              Real ingredients, visible and untampered.
+            </p>
           </div>
-        </div> */}
-      </div>
+
+          <div className="bg-white p-6 rounded-2xl shadow-sm border">
+            <FaBoxOpen className="text-blue-600 mb-3" />
+            <h3 className="font-semibold mb-2">Value</h3>
+            <p className="text-gray-600 text-sm">
+              Maximum nutrient density in every gram.
+            </p>
+          </div>
+
+          <div className="bg-white p-6 rounded-2xl shadow-sm border">
+            <FaBolt className="text-yellow-600 mb-3" />
+            <h3 className="font-semibold mb-2">Performance</h3>
+            <p className="text-gray-600 text-sm">
+              Steady, clean energy with zero sugar crashes.
+            </p>
+          </div>
+
+        </div>
+      </section>
+
+      {/* PROMISE */}
+      <section className="px-6 md:px-20 py-20 max-w-4xl mx-auto text-center">
+        <h2 className="text-3xl md:text-4xl font-semibold mb-6">
+          Our Promise
+        </h2>
+        <p className="text-gray-600 leading-7">
+          HyperBite stands as a solid brand for those who look for real products.
+          We don’t chase trends — we set the standard for what modern nutrition
+          should be.
+        </p>
+      </section>
+
+      {/* ===== Mission Block ===== */}
+        <motion.div
+          initial={{ opacity: 0, y: 50 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+          className="mt-20 border-t border-gray-200 pt-10 text-center"
+        >
+          <h3 className="text-2xl md:text-3xl font-bold text-gray-900 mb-4">
+            Our Mission
+          </h3>
+
+          <p className="text-gray-700 max-w-2xl mx-auto leading-relaxed text-lg">
+            To fuel the extraordinary in the everyday — powering a community that dreams bigger, moves faster, and gives back harder.
+          </p>
+        </motion.div>
+
     </div>
   );
-};
-
-export default About;
-
+}

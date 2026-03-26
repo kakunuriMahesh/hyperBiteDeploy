@@ -61,7 +61,7 @@ const Footer = () => {
 
   return (
     <footer 
-      className="bg-white w-full border-t border-gray-200"
+      className="bg-amber-50 w-full border-t border-gray-200"
       style={{
         paddingTop: breakpoint === 'mobile' ? '40px' : breakpoint === 'tablet' ? '50px' : '60px',
         paddingBottom: breakpoint === 'mobile' ? '30px' : breakpoint === 'tablet' ? '40px' : '50px',

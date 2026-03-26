@@ -32,6 +32,10 @@ import PrivacyPolicy from "./pages/PrivacyPolicy";
 import RefundPolicy from "./pages/RefundPolicy";
 import ShippingPolicy from "./pages/ShippingPolicy";
 import ReturnPolicy from "./pages/ReturnPolicy";
+import ImpactPage from "./pages/ImpactPage";
+import ChallengesPage from "./pages/ChallengesPage";
+import ChessPage from "./pages/ChessPage";
+import RidesPage from "./pages/RidesPage";
 
 function HomePage() {
   const navigate = useNavigate();
@@ -181,6 +185,10 @@ export default function App() {
               <Route path="/shipping-policy" element={<ShippingPolicy />} />
               <Route path="/return-policy" element={<ReturnPolicy />} />
               <Route path="*" element={<NotFound />} />
+              <Route path="/impact" element={<ImpactPage />} />
+              <Route path="/challenges" element={<ChallengesPage />} />
+              <Route path="/chess" element={<ChessPage />} />
+              <Route path="/rides" element={<RidesPage />} />
             </Routes>
             <Footer />
           </>
