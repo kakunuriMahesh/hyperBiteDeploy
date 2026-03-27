@@ -1,7 +1,7 @@
 // Product details for each product type
 export const productDetails = {
     milletMatrix:{
-  id: 'millet-matrix',
+  id: 'milletMatrix',
   name: 'Millet Matrix',
   description: 'A nutrient-dense blend of millets and seeds for sustained energy.',
   ingredients: [
@@ -58,7 +58,7 @@ export const productDetails = {
   reviewCount: 156
 },
 oatsOctane:{
-  id: 'oats-octane',
+  id: 'oatsOctane',
   name: 'Oats Octane',
   description: 'A nutrient-dense blend of millets and seeds for sustained energy.',
   ingredients: [
@@ -115,7 +115,7 @@ oatsOctane:{
   reviewCount: 156
 },
 cashewCharge:{
-  id: 'cashew-charge',
+  id: 'cashewCharge',
   name: 'Cashew Charge',
   description: 'A nutrient-dense blend of millets and seeds for sustained energy.',
   ingredients: [
@@ -172,7 +172,7 @@ cashewCharge:{
   reviewCount: 156
 },
 seedBoost:{
-  id: 'seed-boost',
+  id: 'seedBoost',
   name: 'Seed Boost',
   description: 'A nutrient-dense blend of millets and seeds for sustained energy.',
   ingredients: [
@@ -229,7 +229,7 @@ seedBoost:{
   reviewCount: 156
 },
 powerChunk:{
-  id: 'power-chunk',
+  id: 'powerChunk',
   name: 'Power Chunk',
   description: 'A nutrient-dense blend of millets and seeds for sustained energy.',
   ingredients: [
