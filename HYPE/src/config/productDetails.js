@@ -1,5 +1,290 @@
 // Product details for each product type
 export const productDetails = {
+    milletMatrix:{
+  id: 'millet-matrix',
+  name: 'Millet Matrix',
+  description: 'A nutrient-dense blend of millets and seeds for sustained energy.',
+  ingredients: [
+    'Foxtail Millet',
+    'Kodo Millet',
+    'Sunflower Seeds',
+    'Pumpkin Seeds',
+    'Chia Seeds'
+  ],
+  benefits: [
+    'High in fiber',
+    'Rich in antioxidants',
+    'Supports digestive health',
+    'Gluten-free',
+    'Sustained energy release'
+  ],
+  nutritionalInfo: {
+    servingSize: '30g',
+    calories: '150',
+    protein: '5g',
+    fat: '8g',
+    carbs: '15g',
+    fiber: '4g'
+  },
+  price: '30 RS',
+  image: '/assets/Millet-matrix.png',
+  packImg: '/assets/Millet-matrix.png',
+  images: [
+    '/assets/Millet-matrix.png',
+    '/assets/Millet-matrix.png',
+    '/assets/Millet-matrix.png',
+    '/assets/Millet-matrix.png'
+  ],
+  reviews: [
+    {
+      id: 1,
+      name: 'Noor Al-Mansoori',
+      rating: 5,
+      comment: 'Excellent seed mix! So nutritious and tasty. Perfect addition to my morning smoothie or yogurt.'
+    },
+    {
+      id: 2,
+      name: 'Khalid Al-Zahra',
+      rating: 5,
+      comment: 'Love the variety of seeds in this collection. Great source of protein and healthy fats. Highly recommended!'
+    },
+    {
+      id: 3,
+      name: 'Aisha Mohammed',
+      rating: 4,
+      comment: 'Good quality seeds, very fresh. Great for adding to salads and baked goods. Very satisfied!'
+    }
+  ],
+  reviewCount: 156
+},
+oatsOctane:{
+  id: 'oats-octane',
+  name: 'Oats Octane',
+  description: 'A nutrient-dense blend of millets and seeds for sustained energy.',
+  ingredients: [
+    'Foxtail Millet',
+    'Kodo Millet',
+    'Sunflower Seeds',
+    'Pumpkin Seeds',
+    'Chia Seeds'
+  ],
+  benefits: [
+    'High in fiber',
+    'Rich in antioxidants',
+    'Supports digestive health',
+    'Gluten-free',
+    'Sustained energy release'
+  ],
+  nutritionalInfo: {
+    servingSize: '30g',
+    calories: '150',
+    protein: '5g',
+    fat: '8g',
+    carbs: '15g',
+    fiber: '4g'
+  },
+  price: '30 RS',
+  image: '/assets/Oats-Octane.png',
+  packImg: '/assets/Oats-Octane.png',
+  images: [
+    '/assets/Oats-Octane.png',
+    '/assets/Oats-Octane.png',
+    '/assets/Oats-Octane.png',
+    '/assets/Oats-Octane.png'
+  ],
+  reviews: [
+    {
+      id: 1,
+      name: 'Noor Al-Mansoori',
+      rating: 5,
+      comment: 'Excellent seed mix! So nutritious and tasty. Perfect addition to my morning smoothie or yogurt.'
+    },
+    {
+      id: 2,
+      name: 'Khalid Al-Zahra',
+      rating: 5,
+      comment: 'Love the variety of seeds in this collection. Great source of protein and healthy fats. Highly recommended!'
+    },
+    {
+      id: 3,
+      name: 'Aisha Mohammed',
+      rating: 4,
+      comment: 'Good quality seeds, very fresh. Great for adding to salads and baked goods. Very satisfied!'
+    }
+  ],
+  reviewCount: 156
+},
+cashewCharge:{
+  id: 'cashew-charge',
+  name: 'Cashew Charge',
+  description: 'A nutrient-dense blend of millets and seeds for sustained energy.',
+  ingredients: [
+    'Foxtail Millet',
+    'Kodo Millet',
+    'Sunflower Seeds',
+    'Pumpkin Seeds',
+    'Chia Seeds'
+  ],
+  benefits: [
+    'High in fiber',
+    'Rich in antioxidants',
+    'Supports digestive health',
+    'Gluten-free',
+    'Sustained energy release'
+  ],
+  nutritionalInfo: {
+    servingSize: '30g',
+    calories: '150',
+    protein: '5g',
+    fat: '8g',
+    carbs: '15g',
+    fiber: '4g'
+  },
+  price: '30 RS',
+  image: '/assets/cashew-charge.png',
+  packImg: '/assets/cashew-charge.png',
+  images: [
+    '/assets/cashew-charge.png',
+    '/assets/cashew-charge.png',
+    '/assets/cashew-charge.png',
+    '/assets/cashew-charge.png'
+  ],
+  reviews: [
+    {
+      id: 1,
+      name: 'Noor Al-Mansoori',
+      rating: 5,
+      comment: 'Excellent seed mix! So nutritious and tasty. Perfect addition to my morning smoothie or yogurt.'
+    },
+    {
+      id: 2,
+      name: 'Khalid Al-Zahra',
+      rating: 5,
+      comment: 'Love the variety of seeds in this collection. Great source of protein and healthy fats. Highly recommended!'
+    },
+    {
+      id: 3,
+      name: 'Aisha Mohammed',
+      rating: 4,
+      comment: 'Good quality seeds, very fresh. Great for adding to salads and baked goods. Very satisfied!'
+    }
+  ],
+  reviewCount: 156
+},
+seedBoost:{
+  id: 'seed-boost',
+  name: 'Seed Boost',
+  description: 'A nutrient-dense blend of millets and seeds for sustained energy.',
+  ingredients: [
+    'Foxtail Millet',
+    'Kodo Millet',
+    'Sunflower Seeds',
+    'Pumpkin Seeds',
+    'Chia Seeds'
+  ],
+  benefits: [
+    'High in fiber',
+    'Rich in antioxidants',
+    'Supports digestive health',
+    'Gluten-free',
+    'Sustained energy release'
+  ],
+  nutritionalInfo: {
+    servingSize: '30g',
+    calories: '150',
+    protein: '5g',
+    fat: '8g',
+    carbs: '15g',
+    fiber: '4g'
+  },
+  price: '30 RS',
+  image: '/assets/seed-boost.png',
+  packImg: '/assets/seed-boost.png',
+  images: [
+    '/assets/seed-boost.png',
+    '/assets/seed-boost.png',
+    '/assets/seed-boost.png',
+    '/assets/seed-boost.png'
+  ],
+  reviews: [
+    {
+      id: 1,
+      name: 'Noor Al-Mansoori',
+      rating: 5,
+      comment: 'Excellent seed mix! So nutritious and tasty. Perfect addition to my morning smoothie or yogurt.'
+    },
+    {
+      id: 2,
+      name: 'Khalid Al-Zahra',
+      rating: 5,
+      comment: 'Love the variety of seeds in this collection. Great source of protein and healthy fats. Highly recommended!'
+    },
+    {
+      id: 3,
+      name: 'Aisha Mohammed',
+      rating: 4,
+      comment: 'Good quality seeds, very fresh. Great for adding to salads and baked goods. Very satisfied!'
+    }
+  ],
+  reviewCount: 156
+},
+powerChunk:{
+  id: 'power-chunk',
+  name: 'Power Chunk',
+  description: 'A nutrient-dense blend of millets and seeds for sustained energy.',
+  ingredients: [
+    'Foxtail Millet',
+    'Kodo Millet',
+    'Sunflower Seeds',
+    'Pumpkin Seeds',
+    'Chia Seeds'
+  ],
+  benefits: [
+    'High in fiber',
+    'Rich in antioxidants',
+    'Supports digestive health',
+    'Gluten-free',
+    'Sustained energy release'
+  ],
+  nutritionalInfo: {
+    servingSize: '30g',
+    calories: '150',
+    protein: '5g',
+    fat: '8g',
+    carbs: '15g',
+    fiber: '4g'
+  },
+  price: '30 RS',
+  image: '/assets/closeCover.png',
+  packImg: '/assets/closeCover.png',
+  images: [
+    '/assets/closeCover.png',
+    '/assets/closeCover.png',
+    '/assets/closeCover.png',
+    '/assets/closeCover.png'
+  ],
+  reviews: [
+    {
+      id: 1,
+      name: 'Noor Al-Mansoori',
+      rating: 5,
+      comment: 'Excellent seed mix! So nutritious and tasty. Perfect addition to my morning smoothie or yogurt.'
+    },
+    {
+      id: 2,
+      name: 'Khalid Al-Zahra',
+      rating: 5,
+      comment: 'Love the variety of seeds in this collection. Great source of protein and healthy fats. Highly recommended!'
+    },
+    {
+      id: 3,
+      name: 'Aisha Mohammed',
+      rating: 4,
+      comment: 'Good quality seeds, very fresh. Great for adding to salads and baked goods. Very satisfied!'
+    }
+  ],
+  reviewCount: 156
+},
   nuts: {
     id: 'nuts',
     name: 'Nuts Mix',
@@ -86,7 +371,7 @@ export const productDetails = {
       carbs: '75g',
       fiber: '6.7g'
     },
-    price: '35 RS',
+    price: '30 RS',
     image: '/assets/date.webp',
     packImg:'/assets/DatePackImg.jpeg',
     images: [
@@ -145,7 +430,7 @@ export const productDetails = {
       carbs: '4g',
       fiber: '4g'
     },
-    price: '40 RS',
+    price: '30 RS',
     image: '/assets/sunflowerseed.webp',
     packImg:'/assets/DarkChocoPackImg.jpeg',
     images: [
@@ -175,6 +460,16 @@ export const productDetails = {
       }
     ],
     reviewCount: 156
-  }
+  },
+
+  // new products
+//   Products names:
+
+// Millet matrix
+// oats octane
+// cashew charge
+// seed boost
+// power chunk
+
 };
 

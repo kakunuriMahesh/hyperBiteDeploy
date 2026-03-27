@@ -61,7 +61,7 @@ const Footer = () => {
 
   return (
     <footer 
-      className="bg-amber-50 w-full border-t border-gray-200"
+      className="bg-blue-950 w-full border-t border-gray-200"
       style={{
         paddingTop: breakpoint === 'mobile' ? '40px' : breakpoint === 'tablet' ? '50px' : '60px',
         paddingBottom: breakpoint === 'mobile' ? '30px' : breakpoint === 'tablet' ? '40px' : '50px',
@@ -90,13 +90,13 @@ const Footer = () => {
           }}
         >
           <div 
-            className="[font-family:'Playfair Display',Inter,sans-serif] font-normal text-black tracking-[0] leading-[normal]"
+            className="[font-family:'Playfair Display',Inter,sans-serif] font-normal text-white tracking-[0] leading-[normal]"
             style={{
               fontSize: breakpoint === 'mobile' ? '24px' : breakpoint === 'tablet' ? '28px' : '34px',
               fontWeight: 700,
             }}
           >
-            Hyper Bite
+            HyperBite
           </div>
         </div>
 
@@ -113,7 +113,7 @@ const Footer = () => {
             style={{
               fontSize: breakpoint === 'mobile' ? '14px' : breakpoint === 'tablet' ? '16px' : '18px',
               fontWeight: '600',
-              color: '#333',
+              color: '#fff',
               marginBottom: '10px',
             }}
           >
@@ -134,7 +134,7 @@ const Footer = () => {
                 rel="noopener noreferrer"
                 aria-label={social.name}
                 style={{
-                  color: '#333',
+                  color: '#000',
                   transition: 'all 0.3s ease',
                   display: 'flex',
                   alignItems: 'center',
@@ -152,7 +152,7 @@ const Footer = () => {
                   e.currentTarget.style.borderColor = '#d1d5db';
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.color = '#333';
+                  e.currentTarget.style.color = '#fff';
                   e.currentTarget.style.backgroundColor = '#f9fafb';
                   e.currentTarget.style.transform = 'translateY(0)';
                   e.currentTarget.style.borderColor = '#e5e7eb';
@@ -171,7 +171,7 @@ const Footer = () => {
           <Link to="/terms-and-conditions"
             style={{
               fontSize: breakpoint === 'mobile' ? '13px' : breakpoint === 'tablet' ? '14px' : '16px',
-              color: '#333',
+              color: '#fff',
               marginRight: '20px',
               textDecoration: 'none',
               transition: 'color 0.3s ease',
@@ -180,7 +180,7 @@ const Footer = () => {
               e.currentTarget.style.color = '#000';
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.color = '#333';
+              e.currentTarget.style.color = '#fff';
             }}
           >
             Terms and Conditions
@@ -188,7 +188,7 @@ const Footer = () => {
           <Link to="/privacy-policy"
             style={{
               fontSize: breakpoint === 'mobile' ? '13px' : breakpoint === 'tablet' ? '14px' : '16px',
-              color: '#333',
+              color: '#fff',
               textDecoration: 'none',
               transition: 'color 0.3s ease',
             }}  
@@ -196,7 +196,7 @@ const Footer = () => {
               e.currentTarget.style.color = '#000';
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.color = '#333';
+              e.currentTarget.style.color = '#fff';
             }}
           >
             Privacy Policy
@@ -204,7 +204,7 @@ const Footer = () => {
           <Link to="/refund-policy"
             style={{
               fontSize: breakpoint === 'mobile' ? '13px' : breakpoint === 'tablet' ? '14px' : '16px',
-              color: '#333',
+              color: '#fff',
               textDecoration: 'none',
               transition: 'color 0.3s ease',
             }}
@@ -212,7 +212,7 @@ const Footer = () => {
               e.currentTarget.style.color = '#000';
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.color = '#333';
+              e.currentTarget.style.color = '#fff';
             }}
           >
             Refund Policy
@@ -220,7 +220,7 @@ const Footer = () => {
           <Link to="/shipping-policy"
             style={{
               fontSize: breakpoint === 'mobile' ? '13px' : breakpoint === 'tablet' ? '14px' : '16px',
-              color: '#333',
+              color: '#fff',
               textDecoration: 'none',
               transition: 'color 0.3s ease',
             }}
@@ -228,7 +228,7 @@ const Footer = () => {
               e.currentTarget.style.color = '#000';
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.color = '#333';
+              e.currentTarget.style.color = '#fff';
             }}
           >
             Shipping Policy
@@ -236,7 +236,7 @@ const Footer = () => {
           <Link to="/return-policy"
             style={{
               fontSize: breakpoint === 'mobile' ? '13px' : breakpoint === 'tablet' ? '14px' : '16px',
-              color: '#333',
+              color: '#fff',
               textDecoration: 'none',
               transition: 'color 0.3s ease',
             }}
@@ -244,7 +244,7 @@ const Footer = () => {
               e.currentTarget.style.color = '#000';
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.color = '#333';
+              e.currentTarget.style.color = '#fff';
             }}
           >
             Return Policy
@@ -261,7 +261,7 @@ const Footer = () => {
         }}
       >
         <p 
-          className="[font-family:'Inter',sans-serif] font-normal text-gray-600 tracking-[0] leading-[normal]"
+          className="[font-family:'Inter',sans-serif] font-normal text-white tracking-[0] leading-[normal]"
           style={{
             fontSize: breakpoint === 'mobile' ? '13px' : breakpoint === 'tablet' ? '14px' : '16px',
           }}

@@ -4,7 +4,7 @@ import { useCart } from "../context/CartContext";
 import Navbar from "../components/Navbar";
 import { formatCartMessage } from "../utils/whatsapp";
 import { getCookie, setCookie } from "../utils/cookies";
-import { FaTrash, FaPlus, FaMinus, FaEdit, FaChevronDown, FaChevronUp } from "react-icons/fa";
+import { FaTrash, FaPlus, FaMinus, FaEdit, FaChevronDown, FaChevronUp, FaArrowLeft } from "react-icons/fa";
 import { toast } from "react-toastify";
 import { allowedPincodes } from "../config/allowedPincodes";
 import { productDetails } from "../config/productDetails";
@@ -89,11 +89,11 @@ const PackItemCard = ({
         <div>
           <h3
             style={{
-              fontFamily: "'Permanent Marker', cursive",
+              fontFamily: "'Nunito Sans', sans-serif",
               fontSize: breakpoint === "mobile" ? "20px" : "24px",
               marginBottom: "4px",
               color: "#1a1a1a",
-              fontWeight: 400,
+              fontWeight: 700,
             }}
           >
             {pack.packName}
@@ -110,9 +110,10 @@ const PackItemCard = ({
           </p>
           <p
             style={{
-              fontFamily: "'Permanent Marker', cursive",
+              fontFamily: "'Nunito Sans', sans-serif",
               fontSize: breakpoint === "mobile" ? "18px" : "20px",
               color: "#1a1a1a",
+              fontWeight: 700,
               marginBottom: "8px",
             }}
           >
@@ -258,8 +259,9 @@ const PackItemCard = ({
             </button>
             <span
               style={{
-                fontFamily: "'Permanent Marker', cursive",
+                fontFamily: "'Nunito Sans', sans-serif",
                 fontSize: "18px",
+                fontWeight: 700,
                 minWidth: "40px",
                 textAlign: "center",
                 color: "#1a1a1a",
@@ -358,6 +360,8 @@ const Cart = () => {
   const [pincodeError, setPincodeError] = useState("");
   const [isPaymentLoading, setIsPaymentLoading] = useState(false);
   const [isFormSubmitting, setIsFormSubmitting] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [successData, setSuccessData] = useState({ points: 0, email: '' });
 
   useEffect(() => {
     const updateBreakpoint = () => {
@@ -475,10 +479,11 @@ const Cart = () => {
 
             const verifyJson = await verifyRes.json();
             if (verifyRes.ok && verifyJson.success) {
-              toast.success("Payment successful and verified.", { position: "bottom-center" });
+              const paidAmount = Math.round((data.razorpayOrder.amount || 0) / 100);
               clearCart();
               setIsPaymentLoading(false);
-              navigate("/");
+              setSuccessData({ points: paidAmount, email: formData.email });
+              setShowSuccessModal(true);
             } else {
               toast.error("Payment verification failed.");
               setIsPaymentLoading(false);
@@ -542,6 +547,188 @@ const Cart = () => {
   if (cartItems.length === 0 && packItems.length === 0 && inProgressPacks.length === 0) {
     return (
       <div style={{ backgroundColor: "#f9fafb", minHeight: "100vh", paddingTop: "80px" }}>
+        {/* Success Modal for empty cart after payment */}
+        {showSuccessModal && (
+          <div
+            style={{
+              position: "fixed",
+              top: 0,
+              left: 0,
+              width: "100%",
+              height: "100%",
+              backgroundColor: "rgba(0,0,0,0.5)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              zIndex: 9999,
+              backdropFilter: "blur(4px)",
+            }}
+            onClick={() => {
+              setShowSuccessModal(false);
+              navigate("/");
+            }}
+          >
+            <div
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                backgroundColor: "#fff",
+                borderRadius: "20px",
+                padding: "40px 32px",
+                maxWidth: "420px",
+                width: "90%",
+                textAlign: "center",
+                boxShadow: "0 20px 60px rgba(0,0,0,0.2)",
+                animation: "modalSlideIn 0.3s ease",
+              }}
+            >
+              <div
+                style={{
+                  width: "80px",
+                  height: "80px",
+                  borderRadius: "50%",
+                  background: "linear-gradient(135deg, #22c55e 0%, #16a34a 100%)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  margin: "0 auto 20px",
+                  boxShadow: "0 4px 16px rgba(34,197,94,0.3)",
+                }}
+              >
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+              </div>
+              <h2
+                style={{
+                  fontFamily: "'Nunito Sans', sans-serif",
+                  fontSize: "26px",
+                  fontWeight: 800,
+                  color: "#1f2937",
+                  marginBottom: "8px",
+                }}
+              >
+                Payment Successful!
+              </h2>
+              <p
+                style={{
+                  fontFamily: "'Inter', sans-serif",
+                  fontSize: "14px",
+                  color: "#6b7280",
+                  marginBottom: "24px",
+                }}
+              >
+                Thank you for your order
+              </p>
+              <div
+                style={{
+                  background: "linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)",
+                  borderRadius: "12px",
+                  padding: "20px",
+                  marginBottom: "20px",
+                  border: "1px solid #fde68a",
+                }}
+              >
+                <p
+                  style={{
+                    fontFamily: "'Inter', sans-serif",
+                    fontSize: "13px",
+                    color: "#92400e",
+                    marginBottom: "8px",
+                    fontWeight: 500,
+                  }}
+                >
+                  🎉 You earned
+                </p>
+                <p
+                  style={{
+                    fontFamily: "'Nunito Sans', sans-serif",
+                    fontSize: "40px",
+                    fontWeight: 800,
+                    color: "#d97706",
+                    margin: "0 0 4px 0",
+                    lineHeight: 1,
+                  }}
+                >
+                  {successData.points}
+                </p>
+                <p
+                  style={{
+                    fontFamily: "'Inter', sans-serif",
+                    fontSize: "14px",
+                    color: "#92400e",
+                    fontWeight: 600,
+                    margin: 0,
+                  }}
+                >
+                  HyperBite Points
+                </p>
+              </div>
+              {successData.email && (
+                <div
+                  style={{
+                    background: "#f3f4f6",
+                    borderRadius: "8px",
+                    padding: "12px 16px",
+                    marginBottom: "24px",
+                  }}
+                >
+                  <p
+                    style={{
+                      fontFamily: "'Inter', sans-serif",
+                      fontSize: "12px",
+                      color: "#6b7280",
+                      margin: "0 0 4px 0",
+                    }}
+                  >
+                    Track your points with
+                  </p>
+                  <p
+                    style={{
+                      fontFamily: "'Inter', sans-serif",
+                      fontSize: "14px",
+                      color: "#1f2937",
+                      fontWeight: 600,
+                      margin: 0,
+                      wordBreak: "break-all",
+                    }}
+                  >
+                    {successData.email}
+                  </p>
+                </div>
+              )}
+              <button
+                onClick={() => {
+                  setShowSuccessModal(false);
+                  navigate("/");
+                }}
+                style={{
+                  width: "100%",
+                  padding: "14px",
+                  fontFamily: "'Inter', sans-serif",
+                  fontSize: "16px",
+                  fontWeight: 600,
+                  background: "linear-gradient(135deg, #1e3a8a 0%, #1d4ed8 100%)",
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: "10px",
+                  cursor: "pointer",
+                  transition: "all 0.3s ease",
+                  boxShadow: "0 4px 12px rgba(30,58,138,0.2)",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = "translateY(-2px)";
+                  e.currentTarget.style.boxShadow = "0 6px 16px rgba(30,58,138,0.3)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = "translateY(0)";
+                  e.currentTarget.style.boxShadow = "0 4px 12px rgba(30,58,138,0.2)";
+                }}
+              >
+                Continue Shopping
+              </button>
+            </div>
+          </div>
+        )}
         <div
           style={{
             maxWidth: "1200px",
@@ -639,18 +826,47 @@ const Cart = () => {
           padding: breakpoint === "mobile" ? "24px 16px" : "48px 32px",
         }}
       >
-        <h1
-          style={{
-            fontFamily: "'Nunito Sans', sans-serif",
-            fontSize: breakpoint === "mobile" ? "28px" : "36px",
-            marginBottom: "32px",
-            color: "#1f2937",
-            fontWeight: 800,
-            letterSpacing: "-0.025em",
-          }}
-        >
-          Your Premium Selection
-        </h1>
+        <div style={{ display: "flex", alignItems: "center", gap: "16px", marginBottom: "32px" }}>
+          <button
+            onClick={() => navigate("/products")}
+            style={{
+              width: "40px",
+              height: "40px",
+              borderRadius: "50%",
+              border: "1px solid #e5e7eb",
+              background: "#ffffff",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              cursor: "pointer",
+              transition: "all 0.2s ease",
+              flexShrink: 0,
+              boxShadow: "0 2px 6px rgba(0,0,0,0.06)",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = "#f3f4f6";
+              e.currentTarget.style.transform = "scale(1.05)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = "#ffffff";
+              e.currentTarget.style.transform = "scale(1)";
+            }}
+          >
+            <FaArrowLeft size={16} color="#1f2937" />
+          </button>
+          <h1
+            style={{
+              fontFamily: "'Nunito Sans', sans-serif",
+              fontSize: breakpoint === "mobile" ? "28px" : "36px",
+              color: "#1f2937",
+              fontWeight: 800,
+              letterSpacing: "-0.025em",
+              margin: 0,
+            }}
+          >
+            Your Premium Selection
+          </h1>
+        </div>
 
         <div style={{ marginBottom: "48px" }}>
           {cartItems.map((item, index) => (
@@ -710,11 +926,11 @@ const Cart = () => {
                 <div>
                   <h3
                     style={{
-                      fontFamily: "'Permanent Marker', cursive",
+                      fontFamily: "'Nunito Sans', sans-serif",
                       fontSize: breakpoint === "mobile" ? "20px" : "24px",
                       marginBottom: "4px",
                       color: "#1a1a1a",
-                      fontWeight: 400,
+                      fontWeight: 700,
                     }}
                   >
                     {item.name}
@@ -733,9 +949,10 @@ const Cart = () => {
                   )}
                   <p
                     style={{
-                      fontFamily: "'Permanent Marker', cursive",
+                      fontFamily: "'Nunito Sans', sans-serif",
                       fontSize: breakpoint === "mobile" ? "18px" : "20px",
                       color: "#1a1a1a",
+                      fontWeight: 700,
                       marginBottom: "8px",
                     }}
                   >
@@ -779,8 +996,9 @@ const Cart = () => {
                     </button>
                     <span
                       style={{
-                        fontFamily: "'Permanent Marker', cursive",
+                        fontFamily: "'Nunito Sans', sans-serif",
                         fontSize: "18px",
+                        fontWeight: 700,
                         minWidth: "40px",
                         textAlign: "center",
                         color: "#1a1a1a",

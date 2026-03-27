@@ -288,12 +288,15 @@ import { useCart } from "../context/CartContext";
 import { toast } from "react-toastify";
 import 'react-toastify/dist/ReactToastify.css';
 import PincodeModal from "../components/PincodeModal";
+import PackDetailsModal from "../components/PackDetailsModal";
 
 const Products = () => {
   const navigate = useNavigate();
   const { addToCart, addPackToCart, packItems, pincode, setPincode, inProgressPacks } = useCart();
   const [breakpoint, setBreakpoint] = useState('desktop');
   const [isPincodeModalOpen, setIsPincodeModalOpen] = useState(false);
+  const [selectedPack, setSelectedPack] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
     const updateBreakpoint = () => {
@@ -354,6 +357,11 @@ const Products = () => {
       return;
     }
     navigate(`/customize-pack/${pack.id}`);
+  };
+
+  const handleViewDetails = (pack) => {
+    setSelectedPack(pack);
+    setIsModalOpen(true);
   };
 
   return (
@@ -422,8 +430,16 @@ const Products = () => {
                 onClickCustomize={handleCustomizePack}
                 onClickAdd={handleAddDefaultPack}
                 isCustomized={inProgressPacks.some(p => p.packId === pack.id)}
+                onViewDetails={handleViewDetails}
               />
             ))}
+            {selectedPack && (
+  <PackDetailsModal
+    pack={selectedPack}
+    isOpen={isModalOpen}
+    onClose={() => setIsModalOpen(false)}
+  />
+)}
           </div>
         </div>
 

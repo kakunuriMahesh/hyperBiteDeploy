@@ -4,31 +4,31 @@ import { useNavigate } from 'react-router-dom';
 const products = [
   { 
     id: 1, 
-    name: "Raw Honey Blend", 
+    name: "Seed Boost", 
     img: "/assets/seed-boost.png",
     bgColor: "#fdf2f2" // Soft Red/Amber
   },
   { 
     id: 2, 
-    name: "Date Energy Bar", 
+    name: "Cashew Charge", 
     img: "/assets/cashew-charge.png",
     bgColor: "#f0fdf4" // Soft Emerald
   },
   { 
     id: 3, 
-    name: "HyperBite Classic", 
+    name: "Millet Matrix", 
     img: "/assets/Millet-matrix.png",
     bgColor: "#fff7ed" // Soft Orange
   },
   { 
     id: 4, 
-    name: "Dark Cacao Fuel", 
+    name: "Oats Octane", 
     img: "/assets/Oats-Octane.png",
     bgColor: "#f5f3ff" // Soft Purple
   },
   { 
     id: 5, 
-    name: "Nutty Infusion", 
+    name: "Power Chunk", 
     img: "/assets/closeCover.png",
     bgColor: "#ecfdf5" // Soft Teal
   },
@@ -69,14 +69,39 @@ const HeroSection = ({ onEnterPremiumMode }) => {
       onMouseLeave={() => setIsPaused(false)}
     >
       {/* --- HEADER CONTENT --- */}
-      <div className="max-w-4xl mx-auto z-20 relative pointer-events-none">
-        <h1 className="text-3xl md:text-5xl lg:text-6xl font-extrabold text-gray-900 mb-4 tracking-tight leading-tight">
-          Stop Sweet-Talking Your Health. Jaggery is Still Sugar.
-        </h1>
-        <h2 className="text-3xl md:text-5xl lg:text-6xl font-extrabold text-emerald-600 mb-6">
-          We're Still Different.
-        </h2>
-      </div>
+   <div className="max-w-4xl mx-auto z-20 relative pointer-events-none">
+  <h1 className="text-3xl md:text-4xl lg:text-5xl font-extrabold mb-4 tracking-tight leading-[1.15] pb-1
+    text-neutral-800
+    [text-shadow:0_1px_0_rgba(255,255,255,0.4)]">
+    Stop Sweet-Talking Your Health. Jaggery is Still Sugar.
+  </h1>
+
+  <h2
+  className="text-3xl md:text-5xl lg:text-6xl font-extrabold mb-6 leading-[1.1] pb-1"
+  style={{
+    color: "#10b981",
+    backgroundImage:
+      "linear-gradient(110deg, #10b981 0%, #10b981 45%, #d1fae5 50%, #10b981 55%, #10b981 100%)",
+    backgroundSize: "200% 100%",
+    WebkitBackgroundClip: "text",
+    WebkitTextFillColor: "transparent",
+    animation: "shineOnce 1.8s ease-out forwards",
+  }}
+>
+  We're Still Different.
+</h2>
+
+<style jsx>{`
+  @keyframes shineOnce {
+    0% {
+      background-position: 200% 0;
+    }
+    100% {
+      background-position: -200% 0;
+    }
+  }
+`}</style>
+</div>
       
       {/* --- BOTTOM CONTENT & CTA --- */}
       <div className=" z-20 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 mb-12 sm:mb-16 px-4">
@@ -124,7 +149,7 @@ const HeroSection = ({ onEnterPremiumMode }) => {
 
       {/* --- CAROUSEL STAGE --- */}
       <div 
-        className="relative top-[-100px] md:top-[-250px] w-full h-[450px] md:h-[550px] flex items-center justify-center -mt-10 md:-mt-20 z-10"
+        className="relative top-[-100px] md:top-[-150px] w-full h-[450px] md:h-[550px] flex items-center justify-center -mt-10 md:-mt-20 z-10"
         style={{ perspective: '2000px' }}
       >
         <div 
@@ -154,7 +179,7 @@ const HeroSection = ({ onEnterPremiumMode }) => {
                   transform: `translateX(${x}px) translateZ(${z}px) scale(${scale})`,
                   opacity: opacity,
                   zIndex: Math.round(100 + (z / 5)),
-                  filter: isActive ? 'none' : 'brightness(0.7) blur(1px)'
+                  filter: isActive ? 'none' : 'brightness(0.7) blur(3px)'
                 }}
               >
                 <img src={product.img} alt={product.name} className="w-full h-full object-cover" />
@@ -167,34 +192,60 @@ const HeroSection = ({ onEnterPremiumMode }) => {
         </div>
       </div>
 
-<div className="max-w-4xl mx-auto z-20 relative top-[-100px] md:top-[-150px] pointer-events-none">
+<div className="max-w-4xl mx-auto z-20 relative top-[-100px] md:top-[-100px] pointer-events-none">
   <p className="text-base md:text-lg text-gray-600 font-medium max-w-2xl mx-auto mb-10 leading-relaxed">
-      We stopped pretending Jaggery was the answer. It’s not. It’s just sugar with a better publicist. HyperBite is built on the uncompromising power of real ingredients like Raw Honey and Dates to fuel your life without the crash. No excuses. No compromises.
+      We stopped pretending Jaggery was the answer. It’s not. <br/>It’s just sugar with a better publicist. <br/> HyperBite is built on the uncompromising power of real ingredients like Raw Honey and Dates to fuel your life without the crash. <br/>No excuses. No compromises.
     </p>
 </div>
       
 
       {/* --- MARQUEE (Keep as per original design) --- */}
-      <div className="absolute bottom-0 left-0 w-full bg-black py-4 z-30">
-        <div className="flex whitespace-nowrap overflow-hidden">
-          <div className="flex gap-12 animate-marquee text-white font-bold text-sm md:text-base px-6">
-            <span>0% ADDED JAGGERY</span><span>0% REFINED SUGAR</span><span>SWEETENED WITH RAW HONEY & DATES</span>
-            <span>0% ADDED JAGGERY</span><span>0% REFINED SUGAR</span><span>SWEETENED WITH RAW HONEY & DATES</span>
-          </div>
-        </div>
-      </div>
+     <div className="absolute bottom-0 left-0 w-full bg-black h-24 md:h-32 flex items-center overflow-hidden z-30">
+  <div className="relative w-full flex overflow-hidden">
+
+    {/* LEFT FADE */}
+    <div className="pointer-events-none absolute left-0 top-0 h-full w-32 z-10 bg-gradient-to-r from-black to-transparent"></div>
+
+    {/* RIGHT FADE */}
+    <div className="pointer-events-none absolute right-0 top-0 h-full w-32 z-10 bg-gradient-to-l from-black to-transparent"></div>
+
+    {/* MARQUEE TRACK */}
+    <div className="flex animate-marquee whitespace-nowrap">
       
-      <style jsx>{`
-        @keyframes marquee {
-          0% { transform: translateX(0); }
-          100% { transform: translateX(-50%); }
-        }
-        .animate-marquee {
-          animation: marquee 20s linear infinite;
-          display: flex;
-          width: max-content;
-        }
-      `}</style>
+      {/* FIRST SET */}
+      <div className="flex gap-16 px-10 text-white font-semibold text-3xl md:text-5xl">
+        <span>0% ADDED JAGGERY</span>
+        <span>0% REFINED SUGAR</span>
+        <span>SWEETENED WITH RAW HONEY & DATES</span>
+      </div>
+
+      {/* DUPLICATE (IMPORTANT for seamless loop) */}
+      <div className="flex gap-16 px-10 text-white font-semibold text-3xl md:text-5xl">
+        <span>0% ADDED JAGGERY</span>
+        <span>0% REFINED SUGAR</span>
+        <span>SWEETENED WITH RAW HONEY & DATES</span>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<style jsx>{`
+  @keyframes marquee {
+    0% {
+      transform: translateX(0%);
+    }
+    100% {
+      transform: translateX(-50%);
+    }
+  }
+
+  .animate-marquee {
+    animation: marquee 20s linear infinite;
+    width: max-content;
+  }
+`}</style>
+      
     </section>
   );
 };

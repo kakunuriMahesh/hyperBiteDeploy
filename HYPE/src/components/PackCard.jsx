@@ -3,16 +3,15 @@ import { FaTag } from 'react-icons/fa';
 import { useCart } from '../context/CartContext';
 import { useLanguage } from '../context/LanguageContext';
 
-const PackCard = ({ pack, breakpoint, onClickCustomize, onClickAdd, isCustomized = false }) => {
+const PackCard = ({ pack, breakpoint, onClickCustomize, onClickAdd, isCustomized = false, onViewDetails }) => {
   const { 
     packItems, 
     addPackToCart, 
     updatePackQuantity, 
     pincode, 
     setPincode, 
-    validateAndSetPincode 
+    validateAndSetPincode
   } = useCart();
-
   const { t } = useLanguage();
 
   const existingPack = packItems.find((p) => p.packId === pack.id);
@@ -253,10 +252,27 @@ const PackCard = ({ pack, breakpoint, onClickCustomize, onClickAdd, isCustomized
         )}
       </div>
 
-      {/* Action Button */}
+      {/* Action Buttons */}
       <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
         <button
-          disabled={!pincode}
+          onClick={() => onViewDetails(pack)}
+          style={{
+            flex: 1,
+            height: '44px',
+            backgroundColor: 'transparent',
+            color: '#000',
+            border: '1px solid #ddd',
+            borderRadius: '8px',
+            cursor: 'pointer',
+            fontSize: '14px',
+            fontWeight: 600,
+            transition: 'all 0.3s',
+          }}
+        >
+          View Details
+        </button>
+        <button
+          disabled={!pincode || pack.availableStatus === "Out of Stock"}
           onClick={() => {
             if (pack.isCustomizable) {
               onClickCustomize(pack);
@@ -265,24 +281,25 @@ const PackCard = ({ pack, breakpoint, onClickCustomize, onClickAdd, isCustomized
             onClickAdd(pack);
           }}
           style={{
-            width: '100%',
+            flex: 1,
             height: '44px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            backgroundColor: pincode ? '#000' : '#ccc',
+            backgroundColor: pincode && pack.availableStatus !== "Out of Stock" ? '#000' : '#ccc',
             color: '#fff',
             borderRadius: '8px',
             border: 'none',
-            cursor: pincode ? 'pointer' : 'not-allowed',
-            fontSize: '16px',
+            cursor: pincode && pack.availableStatus !== "Out of Stock" ? 'pointer' : 'not-allowed',
+            fontSize: '14px',
             fontWeight: 600,
             transition: 'background-color 0.3s',
           }}
         >
-          {pack.isCustomizable ? 'Customize Pack' : 'Add Pack'}
+          {pack.isCustomizable && pack.availableStatus !== "Out of Stock" ? 'Customize' : pack.availableStatus === "Out of Stock" ? 'Out of Stock' : 'Add Pack'}
         </button>
       </div>
+      
     </div>
   );
 };

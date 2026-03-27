@@ -36,14 +36,14 @@ const navigate = useNavigate();
 <HeroCarousel  onEnterPremiumMode={onEnterPremiumMode}/>
 
       {/* Divider */}
-      <div className="w-full h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent"></div>
+      {/* <div className="w-full h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent"></div> */}
 
      {/* ================= PRODUCTS ================= */}
-<section className="max-w-7xl mx-auto px-5 md:px-10 py-16">
+<section className="max-w-7xl mt-10 mx-auto px-5 md:px-10 py-16">
 
   {/* Heading */}
   <div className="text-center mb-10">
-    <h2 className="text-2xl md:text-3xl font-semibold text-gray-900">
+    <h2 className="text-2xl md:text-3xl font-extrabold text-gray-900">
       Available Now
     </h2>
     <p className="text-gray-500 text-sm mt-2">

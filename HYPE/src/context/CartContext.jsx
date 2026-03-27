@@ -92,15 +92,34 @@ export const CartProvider = ({ children }) => {
 
   const addPackToCart = (packData) => {
     setPackItems((prevItems) => {
-      // Always add as a new item because each custom pack can be different
-      // Generate a unique instance ID
+      // Check if a pack with the same packId and same items already exists
+      const itemsKey = JSON.stringify(
+        (packData.items || []).map(i => ({ id: i.id, quantity: i.quantity })).sort((a, b) => a.id.localeCompare(b.id))
+      );
+
+      const existingIndex = prevItems.findIndex((p) => {
+        const pKey = JSON.stringify(
+          (p.items || []).map(i => ({ id: i.id, quantity: i.quantity })).sort((a, b) => a.id.localeCompare(b.id))
+        );
+        return p.packId === packData.packId && pKey === itemsKey;
+      });
+
+      if (existingIndex !== -1) {
+        // Same pack with same items exists — just increase quantity
+        return prevItems.map((item, idx) =>
+          idx === existingIndex
+            ? { ...item, quantity: item.quantity + 1 }
+            : item
+        );
+      }
+
+      // Otherwise add as new entry
       const instanceId = `pack-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-      
       return [
         ...prevItems,
         {
           ...packData,
-          instanceId, // Unique ID for this specific added pack
+          instanceId,
           quantity: 1,
         },
       ];
