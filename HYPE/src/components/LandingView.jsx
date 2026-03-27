@@ -6,6 +6,7 @@ import { FaPlus, FaMinus, FaTimes, FaBolt, FaLeaf, FaShieldAlt, FaHeart, FaCheck
 import OurStorySection from "../pages/OurStorySection";
 import LiveCommunityHub from "./LiveCommunityHub";
 import ProductsShowcase from "./ProductsShowcase";
+import HeroCarousel from "../pages/HeroCarousel";
 
 export default function LandingView({ onEnterPremiumMode, breakpoint }) {
   const products = Object.values(productDetails);
@@ -32,119 +33,7 @@ const navigate = useNavigate();
     <div style={{paddingTop:"100px"}} className="bg-gradient-to-b from-amber-50 to-white min-h-screen">
 
       {/* ================= HERO ================= */}
-<section className="min-h-screen flex flex-col justify-center items-center text-center px-5 md:px-10 relative overflow-hidden">
-
-  {/* Subtle Background Glow */}
-  <div className="absolute inset-0 bg-gradient-to-b from-amber-50 via-white to-white -z-10"></div>
-
-  <div className="max-w-4xl mx-auto">
-    <h1 className="text-3xl md:text-5xl lg:text-6xl font-extrabold text-gray-900 mb-6 tracking-tight leading-tight">
-      Stop Sweet-Talking Your Health.
-      
-      Jaggery is Still Sugar.
-    </h1>
-    <h2 className="text-3xl md:text-5xl lg:text-6xl font-extrabold text-emerald-600 mb-6 tracking-tight leading-tight">
-      We're Still Different.
-    </h2>
-
-    <p className="text-base md:text-lg text-gray-600 font-medium max-w-2xl mx-auto mb-10 leading-relaxed">
-      We stopped pretending Jaggery was the answer. It’s not. It’s just sugar with a better publicist. HyperBite is built on the uncompromising power of real ingredients like Raw Honey and Dates to fuel your life without the crash. No excuses. No compromises.
-    </p>
-
-    {/* CTA */}
-    <div className="flex flex-wrap justify-center gap-4 mb-12">
-      <button
-        onClick={() =>
-          document
-            .getElementById("products")
-            ?.scrollIntoView({ behavior: "smooth" })
-        }
-        className="bg-emerald-600 hover:bg-emerald-700 text-white px-7 py-3 rounded-full text-base font-semibold shadow-md transition transform hover:scale-105"
-      >
-        Shop Now
-      </button>
-
-      <button
-        onClick={onEnterPremiumMode}
-        className="bg-white border border-gray-300 text-gray-800 hover:bg-gray-100 px-7 py-3 rounded-full text-base font-semibold transition"
-      >
-        Future Collections →
-      </button>
-    </div>
-  </div>
-
-  {/* ===== PREMIUM MARQUEE RIBBON (SEAMLESS) ===== */}
-<div className="absolute bottom-0 left-0 w-full overflow-hidden bg-black py-3">
-
-  <div className="marquee-wrapper">
-    <div className="marquee-track">
-
-      {/* ORIGINAL */}
-      <div className="marquee-content">
-        <span>0% Added Jaggery</span>
-        <span>0% Refined Sugar</span>
-        <span>Sweetened with Raw Honey & Dates</span>
-      </div>
-
-      {/* DUPLICATE (IMPORTANT) */}
-      <div className="marquee-content">
-        <span>0% Added Jaggery</span>
-        <span>0% Refined Sugar</span>
-        <span>Sweetened with Raw Honey & Dates</span>
-      </div>
-
-      <div className="marquee-content">
-        <span>0% Added Jaggery</span>
-        <span>0% Refined Sugar</span>
-        <span>Sweetened with Raw Honey & Dates</span>
-      </div>
-
-    </div>
-  </div>
-
-  <style>{`
-    .marquee-wrapper {
-      overflow: hidden;
-      width: 100%;
-    }
-
-    .marquee-track {
-      display: flex;
-      width: max-content;
-      animation: marquee-scroll 18s linear infinite;
-    }
-
-    .marquee-content {
-      display: flex;
-      gap: 60px;
-      padding-right: 60px;
-      white-space: nowrap;
-    }
-
-    .marquee-content span {
-      color: white;
-      font-weight: 600;
-      font-size: 14px;
-      letter-spacing: 0.5px;
-    }
-
-    @media (min-width: 768px) {
-      .marquee-content span {
-        font-size: 16px;
-      }
-    }
-
-    @keyframes marquee-scroll {
-      from {
-        transform: translateX(0);
-      }
-      to {
-        transform: translateX(-50%);
-      }
-    }
-  `}</style>
-</div>
-</section>
+<HeroCarousel/>
 
       {/* Divider */}
       <div className="w-full h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent"></div>
