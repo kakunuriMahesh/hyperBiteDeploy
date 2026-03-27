@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 const products = [
   { 
@@ -37,7 +38,7 @@ const HeroSection = ({ onEnterPremiumMode }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const [dimensions, setDimensions] = useState({ rx: 480, rz: 320 });
-
+  const navigate = useNavigate();
   // 1. Responsive Radii Logic
   useEffect(() => {
     const handleResize = () => {
@@ -81,7 +82,7 @@ const HeroSection = ({ onEnterPremiumMode }) => {
       <div className=" z-20 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 mb-12 sm:mb-16 px-4">
   
   <button
-    onClick={() => document.getElementById("products")?.scrollIntoView({ behavior: "smooth" })}
+    onClick={() => navigate("/products")}
     className="
       w-full sm:w-auto
       cursor-pointer
