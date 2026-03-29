@@ -286,7 +286,8 @@ const Navbar = () => {
               <div
                 style={{
                   display: "flex",
-                  flexDirection: "column",
+                  flexDirection: breakpoint === "mobile" ? "column" : "row",
+                  justifyContent: "center",
                   gap: breakpoint === "mobile" ? "16px" : "20px",
                 }}
               >
@@ -302,17 +303,13 @@ const Navbar = () => {
                       color: isActive(item.path) ? "#000" : "#666",
                       cursor: "pointer",
                       fontWeight: isActive(item.path) ? 700 : 500,
+                      // textAlign: "left",
+                      // padding:
+                      //   breakpoint === "mobile"
+                      //     ? "8px 16px 8px 50px"
+                      //     : "8px 16px 8px 160px",
 
-                      /* ✅ Correct alignment */
-                      textAlign: "left",
-                      // padding: "8px 16px",   // normal padding
-                      padding:
-                        breakpoint === "mobile"
-                          ? "8px 16px 8px 50px"
-                          : "8px 16px 8px 160px",
-
-                      width: "100%", // ensures full clickable width
-
+                      // width: "100%",
                       opacity: isMenuOpen ? 1 : 0,
                       transform: isMenuOpen
                         ? "translateY(0)"
@@ -341,12 +338,11 @@ const Navbar = () => {
 
               {/* Right Side - Language Selection */}
 
-              <div
+              {/* <div
                 style={{
                   display: "flex",
                   flexDirection: "column",
                   width: "100%",
-                  alignSelf: "flex-end", // ✅ move to left
                   gap: breakpoint === "mobile" ? "12px" : "16px",
                   position: "relative",
                   zIndex: 1,
@@ -355,7 +351,6 @@ const Navbar = () => {
                 {Object.entries(availableLanguages).map(([code, lang]) => (
                   <button
                     key={code}
-                    // onClick={() => changeLanguage(code)}
                     onClick={() => handleLanguageChange(code)}
                     style={{
                       background: "transparent",
@@ -366,7 +361,6 @@ const Navbar = () => {
                       fontWeight: currentLang === code ? 700 : 500,
                       cursor: "pointer",
 
-                      /* ✅ Left alignment */
                       textAlign: "right",
                       width: "100%",
                       padding:
@@ -399,7 +393,7 @@ const Navbar = () => {
                     {lang.label}
                   </button>
                 ))}
-              </div>
+              </div> */}
             </div>
 
             {/* Instagram Icon */}

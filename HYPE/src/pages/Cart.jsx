@@ -37,28 +37,22 @@ const PackItemCard = ({
     <div
       style={{
         display: "flex",
-        flexDirection: breakpoint === "mobile" ? "column" : "row",
-        gap: "16px",
-        padding: "16px",
-        marginBottom: "16px",
+        flexDirection: "row",
+        gap: breakpoint === "mobile" ? "12px" : "16px",
+        padding: breakpoint === "mobile" ? "12px" : "16px",
+        marginBottom: breakpoint === "mobile" ? "8px" : "12px",
         backgroundColor: "#ffffff",
-        borderRadius: "16px",
-        boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
-        border: "1px solid #f0f0f0",
-        transition: "all 0.3s ease",
-      }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.boxShadow = "0 8px 24px rgba(0,0,0,0.1)";
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.boxShadow = "0 4px 12px rgba(0,0,0,0.05)";
+        borderRadius: "12px",
+        boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
+        border: "1px solid #e5e7eb",
+        transition: "all 0.2s ease",
       }}
     >
       <div
         style={{
-          width: breakpoint === "mobile" ? "150px" : "120px",
-          height: "120px",
-          borderRadius: "12px",
+          width: breakpoint === "mobile" ? "80px" : "100px",
+          height: breakpoint === "mobile" ? "80px" : "100px",
+          borderRadius: "8px",
           overflow: "hidden",
           backgroundColor: "#f8f9fa",
           display: "flex",
@@ -71,29 +65,26 @@ const PackItemCard = ({
           src="/assets/CustomizePack.jpeg"
           alt="Customize Pack"
           style={{
-            width: "50%",
-            height: "50%",
+            width: "100%",
+            height: "100%",
             objectFit: "cover",
-            transition: "transform 0.3s ease",
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.transform = "scale(1.05)";
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.transform = "scale(1)";
           }}
         />
       </div>
 
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "space-between", minWidth: 0 }}>
         <div>
           <h3
             style={{
               fontFamily: "'Nunito Sans', sans-serif",
-              fontSize: breakpoint === "mobile" ? "20px" : "24px",
-              marginBottom: "4px",
+              fontSize: breakpoint === "mobile" ? "14px" : "16px",
+              marginBottom: "2px",
               color: "#1a1a1a",
               fontWeight: 700,
+              lineHeight: 1.3,
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
             }}
           >
             {pack.packName}
@@ -101,104 +92,120 @@ const PackItemCard = ({
           <p
             style={{
               fontFamily: "'Inter', sans-serif",
-              fontSize: "13px",
-              color: "#6b7280",
-              marginBottom: "8px",
+              fontSize: "11px",
+              color: "#9ca3af",
+              marginBottom: "4px",
             }}
           >
-            {pack.items?.reduce((total, item) => total + (item.quantity || 0), 0) || 0} items
+            {pack.items?.reduce((total, item) => total + (item.quantity || 0), 0) || 0} items in pack
           </p>
-          <p
-            style={{
-              fontFamily: "'Nunito Sans', sans-serif",
-              fontSize: breakpoint === "mobile" ? "18px" : "20px",
-              color: "#1a1a1a",
-              fontWeight: 700,
-              marginBottom: "8px",
-            }}
-          >
-            ₹{pack.packPrice.toFixed(2)}
-            {pack.packOffPrice && (
-              <span
-                style={{
-                  fontFamily: "'Inter', sans-serif",
-                  fontSize: "13px",
-                  color: "#9ca3af",
-                  textDecoration: "line-through",
-                  marginLeft: "8px",
-                }}
-              >
-                ₹{pack.packOffPrice.toFixed(2)}
-              </span>
+          <div style={{ display: "flex", alignItems: "baseline", gap: "6px", marginBottom: "6px" }}>
+            <span
+              style={{
+                fontFamily: "'Nunito Sans', sans-serif",
+                fontSize: breakpoint === "mobile" ? "16px" : "18px",
+                color: "#1a1a1a",
+                fontWeight: 700,
+              }}
+            >
+              ₹{pack.packPrice.toFixed(0)}
+            </span>
+            {pack.packOffPrice > 0 && pack.packOffPrice !== pack.packPrice && (
+              <>
+                <span
+                  style={{
+                    fontFamily: "'Inter', sans-serif",
+                    fontSize: "12px",
+                    color: "#9ca3af",
+                    textDecoration: "line-through",
+                  }}
+                >
+                  ₹{pack.packOffPrice.toFixed(0)}
+                </span>
+                <span
+                  style={{
+                    fontFamily: "'Inter', sans-serif",
+                    fontSize: "11px",
+                    color: "#16a34a",
+                    fontWeight: 600,
+                  }}
+                >
+                  {Math.round(((pack.packOffPrice - pack.packPrice) / pack.packOffPrice) * 100)}% off
+                </span>
+              </>
             )}
-          </p>
+          </div>
         </div>
 
-        {pack.packPrice !== 250 && (
-          <div style={{ display: "flex", gap: "12px", marginBottom: "12px" }}>
-            <button
-              onClick={() => setShowDetails(!showDetails)}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "4px",
-                background: "transparent",
-                border: "none",
-                color: "#3b82f6",
-                cursor: "pointer",
-                fontSize: "13px",
-                fontFamily: "'Inter', sans-serif",
-                textDecoration: "underline",
-                transition: "color 0.2s ease",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.color = "#2563eb";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.color = "#3b82f6";
-              }}
-            >
-              {showDetails ? "Hide" : "View"} Items {showDetails ? <FaChevronUp size={12} /> : <FaChevronDown size={12} />}
-            </button>
-            <button
-              onClick={handleEdit}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "4px",
-                background: "#3b82f6",
-                color: "#fff",
-                border: "none",
-                borderRadius: "6px",
-                padding: "4px 12px",
-                cursor: "pointer",
-                fontSize: "13px",
-                fontFamily: "'Inter', sans-serif",
-                transition: "all 0.2s ease",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = "#2563eb";
-                e.currentTarget.style.transform = "scale(1.05)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = "#3b82f6";
-                e.currentTarget.style.transform = "scale(1)";
-              }}
-            >
-              <FaEdit size={12} /> Edit
-            </button>
-          </div>
-        )}
+        <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+          {pack.packPrice !== 250 && (
+            <>
+              <button
+                onClick={() => setShowDetails(!showDetails)}
+                style={{
+                  background: "none",
+                  border: "none",
+                  color: "#3b82f6",
+                  cursor: "pointer",
+                  fontSize: "11px",
+                  fontFamily: "'Inter', sans-serif",
+                  padding: 0,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "3px",
+                }}
+              >
+                {showDetails ? "Hide" : "View"} {showDetails ? <FaChevronUp size={9} /> : <FaChevronDown size={9} />}
+              </button>
+              <span style={{ color: "#d1d5db", fontSize: "10px" }}>|</span>
+              <button
+                onClick={handleEdit}
+                style={{
+                  background: "none",
+                  border: "none",
+                  color: "#3b82f6",
+                  cursor: "pointer",
+                  fontSize: "11px",
+                  fontFamily: "'Inter', sans-serif",
+                  padding: 0,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "3px",
+                }}
+              >
+                <FaEdit size={10} /> Edit
+              </button>
+              <span style={{ color: "#d1d5db", fontSize: "10px" }}>|</span>
+            </>
+          )}
+          <button
+            onClick={() => removePackFromCart(pack.instanceId || pack.packId)}
+            style={{
+              background: "none",
+              border: "none",
+              color: "#ef4444",
+              cursor: "pointer",
+              fontSize: "11px",
+              fontFamily: "'Inter', sans-serif",
+              padding: 0,
+              display: "flex",
+              alignItems: "center",
+              gap: "3px",
+            }}
+          >
+            <FaTrash size={10} /> Delete
+          </button>
+        </div>
 
         {showDetails && (
           <div
             style={{
-              marginBottom: "12px",
+              marginTop: "8px",
               padding: "8px",
               background: "#f9fafb",
-              borderRadius: "8px",
+              borderRadius: "6px",
               border: "1px solid #f0f0f0",
-              maxHeight: "150px",
+              maxHeight: "120px",
               overflowY: "auto",
             }}
           >
@@ -208,118 +215,88 @@ const PackItemCard = ({
                 <div
                   key={i}
                   style={{
-                    fontSize: "13px",
-                    marginBottom: "4px",
+                    fontSize: "11px",
+                    marginBottom: "3px",
                     color: "#4b5563",
                     display: "flex",
                     justifyContent: "space-between",
                   }}
                 >
-                  <strong>{pDetails?.name || item.id}</strong>
-                  <span>{item.quantity} units</span>
+                  <span>{pDetails?.name || item.id}</span>
+                  <span style={{ color: "#9ca3af" }}>×{item.quantity}</span>
                 </div>
               );
             })}
           </div>
         )}
+      </div>
 
-        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-          <div
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          flexShrink: 0,
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            border: "1px solid #e5e7eb",
+            borderRadius: "6px",
+            overflow: "hidden",
+          }}
+        >
+          <button
+            onClick={() => updatePackQuantity(pack.instanceId || pack.packId, pack.quantity - 1)}
+            disabled={pack.quantity <= 1}
             style={{
+              width: breakpoint === "mobile" ? "28px" : "32px",
+              height: breakpoint === "mobile" ? "28px" : "32px",
               display: "flex",
               alignItems: "center",
-              background: "#f3f4f6",
-              borderRadius: "6px",
-              overflow: "hidden",
+              justifyContent: "center",
+              background: "#f9fafb",
+              border: "none",
+              borderRight: "1px solid #e5e7eb",
+              cursor: pack.quantity > 1 ? "pointer" : "not-allowed",
+              color: pack.quantity > 1 ? "#1a1a1a" : "#d1d5db",
             }}
           >
-            <button
-              onClick={() => updatePackQuantity(pack.instanceId || pack.packId, pack.quantity - 1)}
-              disabled={pack.quantity <= 1}
-              style={{
-                width: "32px",
-                height: "32px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                background: "transparent",
-                border: "none",
-                cursor: pack.quantity > 1 ? "pointer" : "not-allowed",
-                color: pack.quantity > 1 ? "#1a1a1a" : "#d1d5db",
-                transition: "background 0.2s ease",
-              }}
-              onMouseEnter={(e) => {
-                if (pack.quantity > 1) e.currentTarget.style.background = "#e5e7eb";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = "transparent";
-              }}
-            >
-              <FaMinus size={12} />
-            </button>
-            <span
-              style={{
-                fontFamily: "'Nunito Sans', sans-serif",
-                fontSize: "18px",
-                fontWeight: 700,
-                minWidth: "40px",
-                textAlign: "center",
-                color: "#1a1a1a",
-              }}
-            >
-              {pack.quantity}
-            </span>
-            <button
-              onClick={() => updatePackQuantity(pack.instanceId || pack.packId, pack.quantity + 1)}
-              style={{
-                width: "32px",
-                height: "32px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                background: "transparent",
-                border: "none",
-                cursor: "pointer",
-                color: "#1a1a1a",
-                transition: "background 0.2s ease",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = "#e5e7eb";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = "transparent";
-              }}
-            >
-              <FaPlus size={12} />
-            </button>
-          </div>
-          <button
-            onClick={() => removePackFromCart(pack.instanceId || pack.packId)}
+            <FaMinus size={10} />
+          </button>
+          <span
             style={{
-              marginLeft: "auto",
-              padding: "6px 12px",
-              background: "#ef4444",
-              color: "#fff",
-              border: "none",
-              borderRadius: "6px",
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              gap: "4px",
               fontFamily: "'Inter', sans-serif",
               fontSize: "13px",
-              transition: "all 0.2s ease",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = "#dc2626";
-              e.currentTarget.style.transform = "scale(1.05)";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = "#ef4444";
-              e.currentTarget.style.transform = "scale(1)";
+              fontWeight: 600,
+              minWidth: breakpoint === "mobile" ? "28px" : "36px",
+              textAlign: "center",
+              color: "#1a1a1a",
+              background: "#fff",
+              lineHeight: breakpoint === "mobile" ? "28px" : "32px",
             }}
           >
-            <FaTrash size={12} /> Remove
+            {pack.quantity}
+          </span>
+          <button
+            onClick={() => updatePackQuantity(pack.instanceId || pack.packId, pack.quantity + 1)}
+            style={{
+              width: breakpoint === "mobile" ? "28px" : "32px",
+              height: breakpoint === "mobile" ? "28px" : "32px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              background: "#f9fafb",
+              border: "none",
+              borderLeft: "1px solid #e5e7eb",
+              cursor: "pointer",
+              color: "#1a1a1a",
+            }}
+          >
+            <FaPlus size={10} />
           </button>
         </div>
       </div>
@@ -425,14 +402,38 @@ const Cart = () => {
 
       const items = [];
       cartItems.forEach((it) => {
-        items.push({ id: it.id, name: it.name, price: Number(it.price) || 0, quantity: it.quantity || 1 });
+        const price = typeof it.price === 'string' ? parseFloat(it.price.replace(/[^0-9.]/g, '')) : Number(it.price);
+        items.push({
+          id: it.id,
+          name: it.name + (it.variation && it.variation !== "default" ? ` (${it.variation})` : ""),
+          price: price || 0,
+          quantity: it.quantity || 1,
+          type: "product",
+        });
       });
       packItems.forEach((p) => {
-        items.push({ id: p.packId || p.instanceId, name: p.packName, price: Number(p.packPrice) || 0, quantity: p.quantity || 1 });
+        // Build sub-items array with product names from productDetails
+        const subItems = (p.items || []).map((sub) => {
+          const detail = productDetails[sub.id];
+          return {
+            id: sub.id,
+            name: detail?.name || sub.id,
+            quantity: sub.quantity || 1,
+          };
+        });
+
+        items.push({
+          id: p.packId || p.instanceId,
+          name: p.packName,
+          price: Number(p.packPrice) || 0,
+          quantity: p.quantity || 1,
+          type: "pack",
+          subItems,
+        });
       });
 
-      const resp = await fetch("https://hyperbitedeploy.onrender.com/api/payment/create-order", {
-      // const resp = await fetch("http://localhost:5000/api/payment/create-order", {
+      // const resp = await fetch("https://hyperbitedeploy.onrender.com/api/payment/create-order", {
+      const resp = await fetch("http://localhost:5000/api/payment/create-order", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -470,8 +471,8 @@ const Cart = () => {
         order_id: data.razorpayOrder.id,
         handler: async function (response) {
           try {
-            const verifyRes = await fetch("https://hyperbitedeploy.onrender.com/api/payment/verify", {
-            // const verifyRes = await fetch("http://localhost:5000/api/payment/verify", {
+            // const verifyRes = await fetch("https://hyperbitedeploy.onrender.com/api/payment/verify", {
+            const verifyRes = await fetch("http://localhost:5000/api/payment/verify", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify(response),
@@ -826,12 +827,12 @@ const Cart = () => {
           padding: breakpoint === "mobile" ? "24px 16px" : "48px 32px",
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: "16px", marginBottom: "32px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: breakpoint === "mobile" ? "10px" : "16px", marginBottom: breakpoint === "mobile" ? "16px" : "24px" }}>
           <button
             onClick={() => navigate("/products")}
             style={{
-              width: "40px",
-              height: "40px",
+              width: breakpoint === "mobile" ? "32px" : "40px",
+              height: breakpoint === "mobile" ? "32px" : "40px",
               borderRadius: "50%",
               border: "1px solid #e5e7eb",
               background: "#ffffff",
@@ -841,61 +842,64 @@ const Cart = () => {
               cursor: "pointer",
               transition: "all 0.2s ease",
               flexShrink: 0,
-              boxShadow: "0 2px 6px rgba(0,0,0,0.06)",
+              boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.background = "#f3f4f6";
-              e.currentTarget.style.transform = "scale(1.05)";
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.background = "#ffffff";
-              e.currentTarget.style.transform = "scale(1)";
             }}
           >
-            <FaArrowLeft size={16} color="#1f2937" />
+            <FaArrowLeft size={breakpoint === "mobile" ? 13 : 16} color="#1f2937" />
           </button>
-          <h1
-            style={{
-              fontFamily: "'Nunito Sans', sans-serif",
-              fontSize: breakpoint === "mobile" ? "28px" : "36px",
-              color: "#1f2937",
-              fontWeight: 800,
-              letterSpacing: "-0.025em",
-              margin: 0,
-            }}
-          >
-            Your Premium Selection
-          </h1>
+          <div>
+            <h1
+              style={{
+                fontFamily: "'Nunito Sans', sans-serif",
+                fontSize: breakpoint === "mobile" ? "20px" : "28px",
+                color: "#1f2937",
+                fontWeight: 800,
+                letterSpacing: "-0.025em",
+                margin: 0,
+                lineHeight: 1.2,
+              }}
+            >
+              Shopping Cart
+            </h1>
+            <p style={{
+              fontFamily: "'Inter', sans-serif",
+              fontSize: breakpoint === "mobile" ? "12px" : "13px",
+              color: "#9ca3af",
+              margin: "2px 0 0 0",
+            }}>
+              {cartItems.reduce((sum, i) => sum + i.quantity, 0) + packItems.reduce((sum, p) => sum + p.quantity, 0)} items in your cart
+            </p>
+          </div>
         </div>
 
-        <div style={{ marginBottom: "48px" }}>
+        <div style={{ marginBottom: "24px" }}>
           {cartItems.map((item, index) => (
             <div
               key={`${item.id}-${item.variation || "default"}-${index}`}
               style={{
                 display: "flex",
-                flexDirection: breakpoint === "mobile" ? "column" : "row",
-                gap: "16px",
-                padding: "16px",
-                marginBottom: "16px",
+                flexDirection: "row",
+                gap: breakpoint === "mobile" ? "12px" : "16px",
+                padding: breakpoint === "mobile" ? "12px" : "16px",
+                marginBottom: breakpoint === "mobile" ? "8px" : "12px",
                 backgroundColor: "#ffffff",
-                borderRadius: "16px",
-                boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
-                border: "1px solid #f0f0f0",
-                transition: "all 0.3s ease",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.boxShadow = "0 8px 24px rgba(0,0,0,0.1)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.boxShadow = "0 4px 12px rgba(0,0,0,0.05)";
+                borderRadius: "12px",
+                boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
+                border: "1px solid #e5e7eb",
+                transition: "all 0.2s ease",
               }}
             >
               <div
                 style={{
-                  width: breakpoint === "mobile" ? "100%" : "120px",
-                  height: "120px",
-                  borderRadius: "12px",
+                  width: breakpoint === "mobile" ? "80px" : "100px",
+                  height: breakpoint === "mobile" ? "80px" : "100px",
+                  borderRadius: "8px",
                   overflow: "hidden",
                   backgroundColor: "#f8f9fa",
                   display: "flex",
@@ -906,31 +910,25 @@ const Cart = () => {
               >
                 <img
                   src={item.image || item.images?.[0]}
-                  // alt={item.name}
-                  // style={{
-                  //   width: "50%",
-                  //   height: "50%",
-                  //   objectFit: "cover",
-                  //   transition: "transform 0.3s ease",
-                  // }}
-                  // onMouseEnter={(e) => {
-                  //   e.currentTarget.style.transform = "scale(1.05)";
-                  // }}
-                  // onMouseLeave={(e) => {
-                  //   e.currentTarget.style.transform = "scale(1)";
-                  // }}
+                  alt={item.name}
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    objectFit: "cover",
+                  }}
                 />
               </div>
 
-              <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+              <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "space-between", minWidth: 0 }}>
                 <div>
                   <h3
                     style={{
                       fontFamily: "'Nunito Sans', sans-serif",
-                      fontSize: breakpoint === "mobile" ? "20px" : "24px",
-                      marginBottom: "4px",
+                      fontSize: breakpoint === "mobile" ? "14px" : "16px",
+                      marginBottom: "2px",
                       color: "#1a1a1a",
                       fontWeight: 700,
+                      lineHeight: 1.3,
                     }}
                   >
                     {item.name}
@@ -939,9 +937,9 @@ const Cart = () => {
                     <p
                       style={{
                         fontFamily: "'Inter', sans-serif",
-                        fontSize: "13px",
-                        color: "#6b7280",
-                        marginBottom: "8px",
+                        fontSize: "11px",
+                        color: "#9ca3af",
+                        marginBottom: "2px",
                       }}
                     >
                       Variant: {item.variation}
@@ -950,113 +948,103 @@ const Cart = () => {
                   <p
                     style={{
                       fontFamily: "'Nunito Sans', sans-serif",
-                      fontSize: breakpoint === "mobile" ? "18px" : "20px",
+                      fontSize: breakpoint === "mobile" ? "16px" : "18px",
                       color: "#1a1a1a",
                       fontWeight: 700,
-                      marginBottom: "8px",
+                      marginBottom: "6px",
                     }}
                   >
-                    ₹{item.price.toFixed(2)}
+                    ₹{(typeof item.price === 'string' ? parseFloat(item.price.replace(/[^0-9.]/g, '')) : item.price).toFixed(0)}
                   </p>
                 </div>
 
                 <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      background: "#f3f4f6",
-                      borderRadius: "6px",
-                      overflow: "hidden",
-                    }}
-                  >
-                    <button
-                      onClick={() => updateQuantity(item.id, item.variation || "default", item.quantity - 1)}
-                      disabled={item.quantity <= 1}
-                      style={{
-                        width: "32px",
-                        height: "32px",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        background: "transparent",
-                        border: "none",
-                        cursor: item.quantity > 1 ? "pointer" : "not-allowed",
-                        color: item.quantity > 1 ? "#1a1a1a" : "#d1d5db",
-                        transition: "background 0.2s ease",
-                      }}
-                      onMouseEnter={(e) => {
-                        if (item.quantity > 1) e.currentTarget.style.background = "#e5e7eb";
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.background = "transparent";
-                      }}
-                    >
-                      <FaMinus size={12} />
-                    </button>
-                    <span
-                      style={{
-                        fontFamily: "'Nunito Sans', sans-serif",
-                        fontSize: "18px",
-                        fontWeight: 700,
-                        minWidth: "40px",
-                        textAlign: "center",
-                        color: "#1a1a1a",
-                      }}
-                    >
-                      {item.quantity}
-                    </span>
-                    <button
-                      onClick={() => updateQuantity(item.id, item.variation || "default", item.quantity + 1)}
-                      style={{
-                        width: "32px",
-                        height: "32px",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        background: "transparent",
-                        border: "none",
-                        cursor: "pointer",
-                        color: "#1a1a1a",
-                        transition: "background 0.2s ease",
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.background = "#e5e7eb";
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.background = "transparent";
-                      }}
-                    >
-                      <FaPlus size={12} />
-                    </button>
-                  </div>
                   <button
                     onClick={() => removeFromCart(item.id, item.variation || "default")}
                     style={{
-                      marginLeft: "auto",
-                      padding: "6px 12px",
-                      background: "#ef4444",
-                      color: "#fff",
+                      background: "none",
                       border: "none",
-                      borderRadius: "6px",
+                      color: "#ef4444",
                       cursor: "pointer",
+                      fontSize: "11px",
+                      fontFamily: "'Inter', sans-serif",
+                      padding: 0,
                       display: "flex",
                       alignItems: "center",
-                      gap: "4px",
-                      fontFamily: "'Inter', sans-serif",
-                      fontSize: "13px",
-                      transition: "all 0.2s ease",
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.background = "#dc2626";
-                      e.currentTarget.style.transform = "scale(1.05)";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.background = "#ef4444";
-                      e.currentTarget.style.transform = "scale(1)";
+                      gap: "3px",
                     }}
                   >
-                    <FaTrash size={12} /> Remove
+                    <FaTrash size={10} /> Delete
+                  </button>
+                </div>
+              </div>
+
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  flexShrink: 0,
+                }}
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    border: "1px solid #e5e7eb",
+                    borderRadius: "6px",
+                    overflow: "hidden",
+                  }}
+                >
+                  <button
+                    onClick={() => updateQuantity(item.id, item.variation || "default", item.quantity - 1)}
+                    disabled={item.quantity <= 1}
+                    style={{
+                      width: breakpoint === "mobile" ? "28px" : "32px",
+                      height: breakpoint === "mobile" ? "28px" : "32px",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      background: "#f9fafb",
+                      border: "none",
+                      borderRight: "1px solid #e5e7eb",
+                      cursor: item.quantity > 1 ? "pointer" : "not-allowed",
+                      color: item.quantity > 1 ? "#1a1a1a" : "#d1d5db",
+                    }}
+                  >
+                    <FaMinus size={10} />
+                  </button>
+                  <span
+                    style={{
+                      fontFamily: "'Inter', sans-serif",
+                      fontSize: "13px",
+                      fontWeight: 600,
+                      minWidth: breakpoint === "mobile" ? "28px" : "36px",
+                      textAlign: "center",
+                      color: "#1a1a1a",
+                      background: "#fff",
+                      lineHeight: breakpoint === "mobile" ? "28px" : "32px",
+                    }}
+                  >
+                    {item.quantity}
+                  </span>
+                  <button
+                    onClick={() => updateQuantity(item.id, item.variation || "default", item.quantity + 1)}
+                    style={{
+                      width: breakpoint === "mobile" ? "28px" : "32px",
+                      height: breakpoint === "mobile" ? "28px" : "32px",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      background: "#f9fafb",
+                      border: "none",
+                      borderLeft: "1px solid #e5e7eb",
+                      cursor: "pointer",
+                      color: "#1a1a1a",
+                    }}
+                  >
+                    <FaPlus size={10} />
                   </button>
                 </div>
               </div>
@@ -1072,28 +1060,22 @@ const Cart = () => {
                 key={`inprogress-${pack.packId}-${idx}`}
                 style={{
                   display: "flex",
-                  flexDirection: breakpoint === "mobile" ? "column" : "row",
-                  gap: "16px",
-                  padding: "16px",
-                  marginBottom: "16px",
+                  flexDirection: "row",
+                  gap: breakpoint === "mobile" ? "12px" : "16px",
+                  padding: breakpoint === "mobile" ? "12px" : "16px",
+                  marginBottom: breakpoint === "mobile" ? "8px" : "12px",
                   backgroundColor: "#ffffff",
-                  borderRadius: "16px",
-                  boxShadow: "0 4px 12px rgba(245,158,11,0.1)",
+                  borderRadius: "12px",
+                  boxShadow: "0 1px 4px rgba(245,158,11,0.1)",
                   border: "1px solid #fef3c7",
-                  transition: "all 0.3s ease",
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.boxShadow = "0 8px 24px rgba(245,158,11,0.2)";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.boxShadow = "0 4px 12px rgba(245,158,11,0.1)";
+                  transition: "all 0.2s ease",
                 }}
               >
                 <div
                   style={{
-                    width: breakpoint === "mobile" ? "150px" : "120px",
-                    height: "120px",
-                    borderRadius: "12px",
+                    width: breakpoint === "mobile" ? "80px" : "100px",
+                    height: breakpoint === "mobile" ? "80px" : "100px",
+                    borderRadius: "8px",
                     overflow: "hidden",
                     backgroundColor: "#fffbeb",
                     display: "flex",
@@ -1106,29 +1088,23 @@ const Cart = () => {
                     src="/assets/CustomizePack.jpeg"
                     alt="Customize Pack"
                     style={{
-                      width: "50%",
-                      height: "50%",
+                      width: "100%",
+                      height: "100%",
                       objectFit: "cover",
-                      transition: "transform 0.3s ease",
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.transform = "scale(1.05)";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.transform = "scale(1)";
                     }}
                   />
                 </div>
 
-                <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+                <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "space-between", minWidth: 0 }}>
                   <div>
                     <h3
                       style={{
-                        fontFamily: "'Permanent Marker', cursive",
-                        fontSize: breakpoint === "mobile" ? "20px" : "24px",
-                        marginBottom: "4px",
+                        fontFamily: "'Nunito Sans', sans-serif",
+                        fontSize: breakpoint === "mobile" ? "14px" : "16px",
+                        marginBottom: "2px",
                         color: "#1a1a1a",
-                        fontWeight: 400,
+                        fontWeight: 700,
+                        lineHeight: 1.3,
                       }}
                     >
                       {pack.packName}
@@ -1136,21 +1112,21 @@ const Cart = () => {
                     <p
                       style={{
                         fontFamily: "'Inter', sans-serif",
-                        fontSize: "13px",
-                        color: "#6b7280",
-                        marginBottom: "8px",
+                        fontSize: "11px",
+                        color: "#9ca3af",
+                        marginBottom: "4px",
                       }}
                     >
                       {pack.items?.reduce((total, item) => total + (item.quantity || 0), 0) || 0} items
                     </p>
                   </div>
 
-                  <div style={{ margin: "8px 0" }}>
+                  <div style={{ margin: "4px 0" }}>
                     <div
                       style={{
-                        height: "6px",
+                        height: "4px",
                         backgroundColor: "#f3f4f6",
-                        borderRadius: "3px",
+                        borderRadius: "2px",
                         overflow: "hidden",
                       }}
                     >
@@ -1165,41 +1141,34 @@ const Cart = () => {
                     </div>
                     <div
                       style={{
-                        marginTop: "6px",
+                        marginTop: "4px",
                         fontFamily: "'Inter', sans-serif",
-                        fontSize: "13px",
+                        fontSize: "12px",
                         color: "#1a1a1a",
                         fontWeight: 600,
                       }}
                     >
-                      ₹{currentTotal.toFixed(2)} / ₹{min.toFixed(2)}
+                      ₹{currentTotal.toFixed(0)} / ₹{min.toFixed(0)}
                     </div>
                   </div>
 
-                  <div style={{ display: "flex", gap: "12px" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
                     {currentTotal < min ? (
                       <p
                         style={{
                           fontFamily: "'Inter', sans-serif",
-                          fontSize: "13px",
+                          fontSize: "11px",
                           color: "#ef4444",
                           fontWeight: 600,
                           margin: 0,
                         }}
                       >
-                        Add ₹{(min - currentTotal).toFixed(2)} more to{" "}
+                        Add ₹{(min - currentTotal).toFixed(0)} more to{" "}
                         <Link
                           to={`/customize-pack/${pack.packId}`}
                           style={{
                             color: "#3b82f6",
                             textDecoration: "underline",
-                            transition: "color 0.2s ease",
-                          }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.color = "#2563eb";
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.color = "#3b82f6";
                           }}
                         >
                           complete
@@ -1209,21 +1178,15 @@ const Cart = () => {
                       <button
                         onClick={() => finalizeInProgressPack(pack.packId)}
                         style={{
-                          padding: "6px 12px",
+                          padding: "4px 10px",
                           background: "linear-gradient(135deg, #22c55e 0%, #16a34a 100%)",
                           color: "#fff",
                           border: "none",
-                          borderRadius: "6px",
+                          borderRadius: "4px",
                           cursor: "pointer",
                           fontFamily: "'Inter', sans-serif",
-                          fontSize: "13px",
-                          transition: "all 0.2s ease",
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.transform = "scale(1.05)";
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.transform = "scale(1)";
+                          fontSize: "11px",
+                          fontWeight: 600,
                         }}
                       >
                         Add to Cart
@@ -1232,26 +1195,19 @@ const Cart = () => {
                     <button
                       onClick={() => removeInProgressPack(pack.packId)}
                       style={{
-                        padding: "6px 12px",
-                        background: "#ef4444",
-                        color: "#fff",
+                        background: "none",
                         border: "none",
-                        borderRadius: "6px",
+                        color: "#ef4444",
                         cursor: "pointer",
+                        fontSize: "11px",
                         fontFamily: "'Inter', sans-serif",
-                        fontSize: "13px",
-                        transition: "all 0.2s ease",
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.background = "#dc2626";
-                        e.currentTarget.style.transform = "scale(1.05)";
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.background = "#ef4444";
-                        e.currentTarget.style.transform = "scale(1)";
+                        padding: 0,
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "3px",
                       }}
                     >
-                      Discard
+                      <FaTrash size={10} /> Discard
                     </button>
                   </div>
                 </div>
@@ -1272,90 +1228,180 @@ const Cart = () => {
           ))}
         </div>
 
-        <div
-          style={{
-            backgroundColor: "#ffffff",
-            padding: "24px",
-            borderRadius: "16px",
-            marginBottom: "32px",
-            boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
-            border: "1px solid #f0f0f0",
-          }}
-        >
-          <h2
-            style={{
-              fontFamily: "'Nunito Sans', sans-serif",
-              fontSize: breakpoint === "mobile" ? "20px" : "22px",
-              marginBottom: "16px",
-              color: "#1f2937",
-              fontWeight: 700,
-            }}
-          >
-            Order Summary
-          </h2>
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              padding: "12px 0",
-              borderTop: "1px solid #f0f0f0",
-              borderBottom: "1px solid #f0f0f0",
-              marginTop: "16px",
-            }}
-          >
-            <span
+        {(() => {
+          const totalItems = cartItems.reduce((sum, item) => sum + item.quantity, 0)
+            + packItems.reduce((sum, pack) => sum + pack.quantity, 0);
+
+          // Calculate MRP: for packs use offPrice if available, otherwise packPrice; for items use price
+          const totalMRP = cartItems.reduce((sum, item) => {
+            const price = typeof item.price === 'string' ? parseFloat(item.price.replace(/[^0-9.]/g, '')) : item.price;
+            return sum + (price * item.quantity);
+          }, 0) + packItems.reduce((sum, pack) => {
+            const mrp = (pack.packOffPrice && pack.packOffPrice > 0 && pack.packOffPrice !== pack.packPrice)
+              ? pack.packOffPrice : pack.packPrice;
+            return sum + (mrp * pack.quantity);
+          }, 0);
+
+          const sellingTotal = getCartTotal();
+          const totalDiscount = totalMRP - sellingTotal;
+          const deliveryCharge = 0; // Free delivery
+
+          const summaryRowStyle = {
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            padding: "8px 0",
+            fontFamily: "'Inter', sans-serif",
+            fontSize: "14px",
+          };
+
+          return (
+            <div
               style={{
-                fontFamily: "'Inter', sans-serif",
-                fontSize: "16px",
-                color: "#6b7280",
-                fontWeight: 500,
+                backgroundColor: "#ffffff",
+                padding: breakpoint === "mobile" ? "16px" : "24px",
+                borderRadius: "12px",
+                marginBottom: "16px",
+                boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
+                border: "1px solid #e5e7eb",
               }}
             >
-              Grand Total
-            </span>
-            <span
-              style={{
-                fontFamily: "'Nunito Sans', sans-serif",
-                fontSize: "22px",
-                color: "#1f2937",
-                fontWeight: 800,
-              }}
-            >
-              ₹{getCartTotal().toFixed(2)}
-            </span>
-          </div>
-        </div>
+              <h2
+                style={{
+                  fontFamily: "'Nunito Sans', sans-serif",
+                  fontSize: breakpoint === "mobile" ? "16px" : "18px",
+                  marginBottom: "12px",
+                  color: "#1f2937",
+                  fontWeight: 700,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.03em",
+                }}
+              >
+                Price Details ({totalItems} {totalItems === 1 ? "Item" : "Items"})
+              </h2>
+
+              <div style={{ borderTop: "1px solid #f0f0f0" }}>
+                {/* Total MRP */}
+                <div style={summaryRowStyle}>
+                  <span style={{ color: "#4b5563" }}>Total MRP</span>
+                  <span style={{ color: "#4b5563" }}>₹{totalMRP.toFixed(2)}</span>
+                </div>
+
+                {/* Discount on MRP */}
+                {totalDiscount > 0 && (
+                  <div style={summaryRowStyle}>
+                    <span style={{ color: "#16a34a" }}>Discount on MRP</span>
+                    <span style={{ color: "#16a34a", fontWeight: 600 }}>
+                      − ₹{totalDiscount.toFixed(2)}
+                    </span>
+                  </div>
+                )}
+
+                {/* Subtotal */}
+                <div style={summaryRowStyle}>
+                  <span style={{ color: "#4b5563" }}>Subtotal</span>
+                  <span style={{ color: "#4b5563", fontWeight: 600 }}>₹{sellingTotal.toFixed(2)}</span>
+                </div>
+
+                {/* Delivery Charges */}
+                <div style={{ ...summaryRowStyle, borderBottom: "1px dashed #e5e7eb", paddingBottom: "12px" }}>
+                  <span style={{ color: "#4b5563" }}>Delivery Charges</span>
+                  <span style={{ color: "#16a34a", fontWeight: 600 }}>FREE</span>
+                </div>
+
+                {/* Grand Total */}
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    padding: "14px 0 4px 0",
+                    fontFamily: "'Nunito Sans', sans-serif",
+                  }}
+                >
+                  <span
+                    style={{
+                      fontSize: breakpoint === "mobile" ? "16px" : "17px",
+                      color: "#1f2937",
+                      fontWeight: 700,
+                    }}
+                  >
+                    Total Amount
+                  </span>
+                  <span
+                    style={{
+                      fontSize: breakpoint === "mobile" ? "18px" : "20px",
+                      color: "#1f2937",
+                      fontWeight: 800,
+                    }}
+                  >
+                    ₹{sellingTotal.toFixed(2)}
+                  </span>
+                </div>
+              </div>
+
+              {/* Savings Banner */}
+              {totalDiscount > 0 && (
+                <div
+                  style={{
+                    marginTop: "12px",
+                    padding: "10px 14px",
+                    background: "linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%)",
+                    borderRadius: "8px",
+                    border: "1px solid #a7f3d0",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px",
+                  }}
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z" />
+                    <line x1="7" y1="7" x2="7.01" y2="7" />
+                  </svg>
+                  <span
+                    style={{
+                      fontFamily: "'Inter', sans-serif",
+                      fontSize: "13px",
+                      color: "#15803d",
+                      fontWeight: 600,
+                    }}
+                  >
+                    You will save ₹{totalDiscount.toFixed(2)} on this order
+                  </span>
+                </div>
+              )}
+            </div>
+          );
+        })()}
 
         {!showForm && (
           <button
             onClick={() => setShowForm(true)}
             style={{
               width: "100%",
-              padding: breakpoint === "mobile" ? "14px" : "16px",
+              padding: breakpoint === "mobile" ? "13px" : "15px",
               fontFamily: "'Inter', sans-serif",
-              fontSize: "16px",
-              background: "linear-gradient(135deg, #1e3a8a 0%, #1d4ed8 100%)",
-              color: "#fff",
-              fontWeight: 600,
-              textTransform: "uppercase",
-              letterSpacing: "0.5px",
+              fontSize: breakpoint === "mobile" ? "14px" : "16px",
+              background: "linear-gradient(135deg, #f59e0b 0%, #f97316 100%)",
+              color: "#1f2937",
+              fontWeight: 700,
               border: "none",
               borderRadius: "8px",
               cursor: "pointer",
-              transition: "all 0.3s ease",
-              boxShadow: "0 4px 12px rgba(30,58,138,0.2)",
+              transition: "all 0.2s ease",
+              boxShadow: "0 2px 8px rgba(245,158,11,0.25)",
+              letterSpacing: "0.02em",
             }}
             onMouseEnter={(e) => {
-              e.target.style.transform = "translateY(-2px)";
-              e.target.style.boxShadow = "0 6px 16px rgba(30,58,138,0.3)";
+              e.target.style.transform = "translateY(-1px)";
+              e.target.style.boxShadow = "0 4px 12px rgba(245,158,11,0.35)";
             }}
             onMouseLeave={(e) => {
               e.target.style.transform = "translateY(0)";
-              e.target.style.boxShadow = "0 4px 12px rgba(30,58,138,0.2)";
+              e.target.style.boxShadow = "0 2px 8px rgba(245,158,11,0.25)";
             }}
           >
-            Proceed to Checkout
+            Proceed to Checkout ({cartItems.reduce((s, i) => s + i.quantity, 0) + packItems.reduce((s, p) => s + p.quantity, 0)} items)
           </button>
         )}
 
@@ -1364,11 +1410,11 @@ const Cart = () => {
             onSubmit={handlePlaceOrder}
             style={{
               backgroundColor: "#ffffff",
-              padding: "24px",
-              borderRadius: "16px",
-              marginTop: "32px",
-              boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
-              border: "1px solid #f0f0f0",
+              padding: breakpoint === "mobile" ? "16px" : "24px",
+              borderRadius: "12px",
+              marginTop: "16px",
+              boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
+              border: "1px solid #e5e7eb",
             }}
           >
             <h2

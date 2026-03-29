@@ -29,15 +29,32 @@ exports.createShiprocketOrder = async (order) => {
       pincode: order.customer.pincode
     });
 
-    // Build order_items array from order.items (if available)
+    // Build detailed order_items: expand packs into individual sub-items
     let orderItems = [];
     if (order.items && Array.isArray(order.items) && order.items.length > 0) {
-      orderItems = order.items.map((item) => ({
-        name: item.name || "Product",
-        sku: item.productId || item.id || `SKU-${item.name}`,
-        units: item.quantity || 1,
-        selling_price: item.price || 0
-      }));
+      order.items.forEach((item) => {
+        if (item.type === "pack" && item.subItems && item.subItems.length > 0) {
+          // Group pack as a single line item with ingredients listed in the name
+          const ingredientsList = item.subItems
+            .map((sub) => `${sub.name} ×${(sub.quantity || 1) * (item.quantity || 1)}`)
+            .join(", ");
+
+          orderItems.push({
+            name: `${item.name} [${ingredientsList}]`,
+            sku: item.id || `PACK-${item.name}`,
+            units: item.quantity || 1,
+            selling_price: item.price || 0,
+          });
+        } else {
+          // Regular product item
+          orderItems.push({
+            name: item.name || "Product",
+            sku: item.productId || item.id || `SKU-${item.name}`,
+            units: item.quantity || 1,
+            selling_price: item.price || 0,
+          });
+        }
+      });
     } else {
       // Fallback if items not available
       orderItems = [
@@ -49,6 +66,10 @@ exports.createShiprocketOrder = async (order) => {
         }
       ];
     }
+
+    // Calculate weight based on total units (approx 50g per unit)
+    const totalUnits = orderItems.reduce((sum, oi) => sum + (oi.units || 1), 0);
+    const estimatedWeight = Math.max(0.5, Math.round(totalUnits * 0.05 * 10) / 10); // min 0.5 KG
 
     const payload = {
       order_id: order._id.toString(),
@@ -67,10 +88,10 @@ exports.createShiprocketOrder = async (order) => {
       order_items: orderItems,
       // some payloads come with totalAmount, others with amount
       sub_total: order.totalAmount || order.amount || 0,
-      weight: 0.5,     // in KG (MANDATORY)
-      length: 10,      // in CM
-      breadth: 10,     // in CM
-      height: 5        // in CM
+      weight: estimatedWeight,  // in KG (dynamic based on items)
+      length: 20,               // in CM
+      breadth: 15,              // in CM
+      height: 10                // in CM
     };
 
     console.log("[Shiprocket] Creating order with payload:", JSON.stringify(payload, null, 2));

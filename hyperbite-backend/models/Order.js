@@ -20,6 +20,14 @@ const orderSchema = new mongoose.Schema({
       name: String,
       price: Number,
       quantity: Number,
+      type: { type: String, enum: ["product", "pack"], default: "product" },
+      subItems: [
+        {
+          id: String,
+          name: String,
+          quantity: Number,
+        }
+      ],
     }
   ],
 

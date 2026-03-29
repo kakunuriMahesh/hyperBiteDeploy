@@ -138,7 +138,9 @@ const Contact = () => {
                     color: '#666',
                   }}
                 >
-                  info@hyperbite.com
+                  <a href="mailto:info@hyperbite.in">
+                  info@hyperbite.in
+                  </a>
                 </div>
               </div>
               <div style={{ marginBottom: '20px' }}>
@@ -160,7 +162,9 @@ const Contact = () => {
                     color: '#666',
                   }}
                 >
-                  +971 50 123 4567
+                  <a href="tel:+919052655265">
+                  +91 9052655265
+                  </a>
                 </div>
               </div>
               <div>

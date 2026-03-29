@@ -2,18 +2,20 @@
 export const packConfigs = {
   pack250: {
     id: 'pack250',
-    name: 'The Discovery Pack',
+    name: 'The Discovery Pack (10 Pcs)',
     availableStatus:"",
-    price: 300,
+    price: 299,
     offPrice: 350,
     discount: '8%',
     isCustomizable: false,
     minAmount: 0,
     description: 'Pre-selected mix of premium products prepared by us',
     defaultProducts: [
-      { id: 'nuts', quantity: 0.5 },
-      { id: 'dates', quantity: 0.3 },
-      { id: 'seeds', quantity: 0.2 }
+      { id: 'nuts', quantity: 2 },
+      { id: 'dates', quantity: 2 },
+      { id: 'seeds', quantity: 2 },
+      { id: 'milletMatrix', quantity: 2 },
+      { id: 'oatsOctane', quantity: 2 },
     ],
     image: '/assets/CustomizePack.jpeg',
     badge: 'Default Pack',
@@ -29,14 +31,19 @@ export const packConfigs = {
     whyYoullLoveIt: [
       'Perfect for first-time users to find their favorites.',
       'Covers a balanced range of taste, nutrition, and energy.',
-      'Price: ₹300 (Inclusive of all taxes).'
+      'Price: ₹299 (Inclusive of all taxes).'
     ],
-    footer: 'Free Home Delivery. No extra cost. No hidden charges.'
+    footer: 'Free Home Delivery. No hidden charges.'
   }
   },
   pack500: {
     id: 'pack500',
-    name: 'Build Your Snack Box',
+    name: 'Build Your Snack Box (18 Pcs)',
+    freepack:{
+      name:"Green Vital Mix",
+      image:"/assets/sapthaPoshakaFree.jpeg",
+      quantity:1
+    },
     availableStatus:"",
     price: 499,
     allowPacksCount: 18,

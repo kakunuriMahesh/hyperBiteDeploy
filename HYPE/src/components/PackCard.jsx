@@ -1,5 +1,5 @@
 import React from 'react';
-import { FaTag } from 'react-icons/fa';
+import { FaPlus, FaTag } from 'react-icons/fa';
 import { useCart } from '../context/CartContext';
 import { useLanguage } from '../context/LanguageContext';
 
@@ -56,6 +56,23 @@ const PackCard = ({ pack, breakpoint, onClickCustomize, onClickAdd, isCustomized
         e.currentTarget.style.borderColor = '#eee';
       }}
     >
+      {pack.isCustomizable && isCustomized && (
+        <div
+          style={{
+            position: 'absolute',
+            top: '12px',
+            left: '12px',
+            padding: '8px 12px',
+            backgroundColor: '#e8f5e9',
+            borderRadius: '4px',
+            fontSize: '12px',
+            color: '#2e7d32',
+            fontWeight: 500,
+          }}
+        >
+          ✓ Pack started
+        </div>
+      )}
       {/* Badge */}
       <div
         style={{
@@ -83,7 +100,7 @@ const PackCard = ({ pack, breakpoint, onClickCustomize, onClickAdd, isCustomized
           marginBottom: '16px',
           display: 'flex',
           justifyContent: 'center',
-          height: '120px',
+          height: '190px',
           // backgroundColor: '#fff',
           borderRadius: '8px',
           alignItems: 'center',
@@ -91,15 +108,34 @@ const PackCard = ({ pack, breakpoint, onClickCustomize, onClickAdd, isCustomized
         }}
       >
         {pack.image ? (
-          <img
-            src='/assets/CustomizePack.jpeg'
-            alt={pack.name}
-            style={{
-              maxWidth: '100%',
-              maxHeight: '100%',
-              objectFit: 'contain',
-            }}
-          />
+          <div className='flex justify-center items-center'>
+            <img
+            className={`h-[150px] ${pack?.freepack?.image ? 'w-[100px]' : 'w-[150px]'}`}
+              src='/assets/CustomizePack.jpeg'
+              alt={pack.name}
+              style={{
+                // maxWidth: '100%',
+                // maxHeight: '100%',
+                // objectFit: 'contain',
+              }}
+            />
+            {pack?.freepack?.image && <FaPlus className='text-black' size={20} style={{marginLeft:10,marginRight:10}}/>}
+            {pack?.freepack?.image && (
+              <div
+              className={`h-[150px] ${pack?.freepack?.image ? 'w-[100px]' : 'w-[150px]'}`}
+              >
+                <img
+              src={pack.freepack.image}
+              alt={pack.freepack.name}
+              style={{
+                // maxWidth: '100%',
+                // maxHeight: '100%',
+                // objectFit: 'contain',
+              }}
+            />
+              </div>
+            )}
+          </div>
         ) : (
           <div style={{ fontSize: '48px', color: '#ddd' }}>📦</div>
         )}
@@ -152,7 +188,7 @@ const PackCard = ({ pack, breakpoint, onClickCustomize, onClickAdd, isCustomized
         <span
           style={{
             fontFamily: "'Inter', sans-serif",
-            fontSize: '14px',
+            fontSize: '10px',
             color: '#999',
             textDecoration: 'line-through',
           }}
@@ -162,36 +198,23 @@ const PackCard = ({ pack, breakpoint, onClickCustomize, onClickAdd, isCustomized
         <span
           style={{
             fontFamily: "'Inter', sans-serif",
-            fontSize: '12px',
+            fontSize: '10px',
             backgroundColor: '#ff4444',
             color: '#fff',
-            padding: '4px 8px',
+            padding: '2px 4px',
             borderRadius: '4px',
             fontWeight: 600,
           }}
         >
           {pack.discount}
         </span>
+        <p className='text-[10px] '>
+          {pack?.detailsContent?.footer}
+        </p>
       </div>
 
-      {pack.isCustomizable && isCustomized && (
-        <div
-          style={{
-            marginBottom: '12px',
-            padding: '8px 12px',
-            backgroundColor: '#e8f5e9',
-            borderRadius: '4px',
-            fontSize: '12px',
-            color: '#2e7d32',
-            fontWeight: 500,
-          }}
-        >
-          ✓ Pack started
-        </div>
-      )}
-
       {/* Pincode Section –– now using hooks properly */}
-      <div style={{ marginBottom: '16px' }}>
+      {/* <div style={{ marginBottom: '16px' }}>
         {pincode ? (
           <div
             style={{
@@ -250,7 +273,7 @@ const PackCard = ({ pack, breakpoint, onClickCustomize, onClickAdd, isCustomized
             </button>
           </div>
         )}
-      </div>
+      </div> */}
 
       {/* Action Buttons */}
       <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
@@ -272,9 +295,11 @@ const PackCard = ({ pack, breakpoint, onClickCustomize, onClickAdd, isCustomized
           View Details
         </button>
         <button
-          disabled={!pincode || pack.availableStatus === "Out of Stock"}
+          disabled={pack.availableStatus === "Out of Stock"}
           onClick={() => {
             if (pack.isCustomizable) {
+              // Current we are allowing the pack to be customized without pincode check  
+              // But in future we will add the pincode check
               onClickCustomize(pack);
               return;
             }
@@ -286,17 +311,17 @@ const PackCard = ({ pack, breakpoint, onClickCustomize, onClickAdd, isCustomized
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            backgroundColor: pincode && pack.availableStatus !== "Out of Stock" ? '#000' : '#ccc',
+            backgroundColor: pack.availableStatus !== "Out of Stock" ? '#000' : '#ccc',
             color: '#fff',
             borderRadius: '8px',
             border: 'none',
-            cursor: pincode && pack.availableStatus !== "Out of Stock" ? 'pointer' : 'not-allowed',
+            cursor: pack.availableStatus !== "Out of Stock" ? 'pointer' : 'not-allowed',
             fontSize: '14px',
             fontWeight: 600,
             transition: 'background-color 0.3s',
           }}
         >
-          {pack.isCustomizable && pack.availableStatus !== "Out of Stock" ? 'Customize' : pack.availableStatus === "Out of Stock" ? 'Out of Stock' : 'Add Pack'}
+          {pack.availableStatus === "Out of Stock" ? 'Out of Stock' : pack.isCustomizable ? 'Customize' : 'Add Pack'}
         </button>
       </div>
       
