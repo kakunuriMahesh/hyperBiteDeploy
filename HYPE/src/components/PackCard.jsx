@@ -111,7 +111,7 @@ const PackCard = ({ pack, breakpoint, onClickCustomize, onClickAdd, isCustomized
           <div className='flex justify-center items-center'>
             <img
             className={`h-[150px] ${pack?.freepack?.image ? 'w-[100px]' : 'w-[150px]'}`}
-              src='/assets/CustomizePack.jpeg'
+              src={pack.image}
               alt={pack.name}
               style={{
                 // maxWidth: '100%',

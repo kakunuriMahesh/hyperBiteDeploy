@@ -6,11 +6,13 @@ import { scrollTo } from "../utils/SmoothScroll";
 import { BsBag } from "react-icons/bs";
 import { CartProvider, useCart } from "../context/CartContext";
 import { useLanguage } from "../context/LanguageContext";
+import { FaChevronDown, FaChevronRight } from "react-icons/fa";
 
 const Navbar = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [breakpoint, setBreakpoint] = useState("desktop");
+  const [openDropdown, setOpenDropdown] = useState(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isNavbarVisible, setIsNavbarVisible] = useState(true);
   const lastScrollY = useRef(0);
@@ -77,6 +79,18 @@ const Navbar = () => {
     };
   }, [isMenuOpen]);
 
+useEffect(() => {
+  const handleClickOutside = () => {
+    setOpenDropdown(null);
+  };
+
+  window.addEventListener("click", handleClickOutside);
+
+  return () => {
+    window.removeEventListener("click", handleClickOutside);
+  };
+}, []);
+
   const navItems = [
     { path: "/", label: "Home" },
     { path: "/products", label: "Products" },
@@ -84,6 +98,18 @@ const Navbar = () => {
     { path: "/blog", label: "Blog" },
     { path: "/about", label: "About" },
     { path: "/contact", label: "Contact" },
+    {
+      path: "",
+      label: "Live Community Hub",
+      dropdown: true,
+      dropdownItems: [
+        { path: "/impact", label: "Donation" },
+        { path: "/challenges", label: "Challenges" },
+        { path: "/chess", label: "Chess" },
+        { path: "/challenges", label: "Lucky Draw" },
+        { path: "/challenges", label: "Ride Challenge" },
+      ],
+    },
   ];
 
   const languages = [
@@ -131,8 +157,8 @@ const Navbar = () => {
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          transform: isNavbarVisible ? "translateY(0)" : "translateY(-120%)",
-          transition: "transform 0.4s ease",
+          // transform: isNavbarVisible ? "translateY(0)" : "translateY(-120%)",
+          // transition: "transform 0.4s ease",
 
           // ✨ glassy extras (optional but recommended)
           backdropFilter: "blur(12px)",
@@ -146,7 +172,7 @@ const Navbar = () => {
           style={{
             cursor: "pointer",
             fontFamily: "Nunito Sans",
-            fontSize: breakpoint === "mobile" ? "18px" : "20px",
+            fontSize: breakpoint === "mobile" ? "18px" : "30px",
             color: "#000",
             fontWeight: 700,
           }}
@@ -225,7 +251,7 @@ const Navbar = () => {
       <div
         style={{
           position: "fixed",
-          top: breakpoint === "mobile" ? "0px" : "40px",
+          top: breakpoint === "mobile" ? "0px" : "0px",
           left: 0,
           width: "100%",
           zIndex: 999,
@@ -291,49 +317,74 @@ const Navbar = () => {
                   gap: breakpoint === "mobile" ? "16px" : "20px",
                 }}
               >
-                {navItems.map((item, index) => (
+              {navItems.map((item) => (
+                <div key={item.label} style={{ position: "relative" }}>
+                  
+                  {/* Main Button */}
                   <button
-                    key={item.path}
-                    onClick={() => handleNavClick(item.path)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+
+                      if (item.dropdown) {
+                        setOpenDropdown(
+                          openDropdown === item.label ? null : item.label
+                        );
+                      } else {
+                        handleNavClick(item.path);
+                      }
+                    }}
                     style={{
                       background: "transparent",
                       border: "none",
-                      fontFamily: "'Inter', sans-serif",
-                      fontSize: breakpoint === "mobile" ? "14px" : "16px",
-                      color: isActive(item.path) ? "#000" : "#666",
                       cursor: "pointer",
-                      fontWeight: isActive(item.path) ? 700 : 500,
-                      // textAlign: "left",
-                      // padding:
-                      //   breakpoint === "mobile"
-                      //     ? "8px 16px 8px 50px"
-                      //     : "8px 16px 8px 160px",
-
-                      // width: "100%",
-                      opacity: isMenuOpen ? 1 : 0,
-                      transform: isMenuOpen
-                        ? "translateY(0)"
-                        : "translateY(30px)",
-
-                      transition: `color 0.2s ease,
-          opacity 0.4s ease ${isMenuOpen ? 0.15 + index * 0.05 : 0}s,
-          transform 0.4s cubic-bezier(0.4, 0, 0.2, 1)
-          ${isMenuOpen ? 0.15 + index * 0.05 : 0}s`,
-                    }}
-                    onMouseEnter={(e) => {
-                      if (!isActive(item.path)) {
-                        e.currentTarget.style.color = "#333";
-                      }
-                    }}
-                    onMouseLeave={(e) => {
-                      if (!isActive(item.path)) {
-                        e.currentTarget.style.color = "#999";
-                      }
+                      fontSize: "16px",
+                      color: "#000",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "6px",
                     }}
                   >
                     {item.label}
+                    {item.dropdown && <FaChevronDown />}
                   </button>
-                ))}
+
+                  {/* ✅ Dropdown */}
+                  {item.dropdown && openDropdown === item.label && (
+                    <div
+                      onClick={(e) => e.stopPropagation()}
+                      style={{
+                        position: "absolute",
+                        top: "100%",
+                        left: 0,
+                        background: "#fff",
+                        border: "1px solid #ddd",
+                        borderRadius: "6px",
+                        padding: "8px 0",
+                        minWidth: "180px",
+                        zIndex: 1000,
+                      }}
+                    >
+                      {item.dropdownItems.map((subItem) => (
+                        <button
+                          key={subItem.path}
+                          onClick={() => handleNavClick(subItem.path)}
+                          style={{
+                            display: "block",
+                            width: "100%",
+                            padding: "10px 16px",
+                            border: "none",
+                            background: "transparent",
+                            textAlign: "left",
+                            cursor: "pointer",
+                          }}
+                        >
+                          {subItem.label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
               </div>
 
               {/* Right Side - Language Selection */}

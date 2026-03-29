@@ -347,17 +347,17 @@ const ProductDetails = () => {
             >
               <button
                 onClick={() => {
-                  if (!pincodeVerified) {
-                    toast.error("Please verify your pincode first");
-                    return;
-                  }
+                  // if (!pincodeVerified) {
+                  //   toast.error("Please verify your pincode first");
+                  //   return;
+                  // }
                   const message = formatProductMessage({
                     ...product,
                     quantity: 1,
                   });
                   sendWhatsAppMessage(message);
                 }}
-                disabled={!pincodeVerified}
+                // disabled={!pincodeVerified}
                 style={{
                   flex: 1,
                   padding: breakpoint === "mobile" ? "14px 28px" : "16px 32px",
@@ -366,29 +366,29 @@ const ProductDetails = () => {
                   textTransform: "uppercase",
                   fontWeight: 600,
                   letterSpacing: "0.04em",
-                  backgroundColor: pincodeVerified ? "#25D366" : "#ccc",
+                  backgroundColor: "#25D366",
                   color: "#fff",
                   border: "none",
                   borderRadius: "8px",
-                  cursor: pincodeVerified ? "pointer" : "not-allowed",
+                  cursor: "pointer",
                   transition: "all 0.3s ease",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
                   gap: "12px",
-                  opacity: pincodeVerified ? 1 : 0.6,
+                  // opacity: pincodeVerified ? 1 : 0.6,
                 }}
                 onMouseEnter={(e) => {
-                  if (pincodeVerified) {
-                    e.target.style.backgroundColor = "#20BA5A";
-                    e.target.style.transform = "scale(1.05)";
-                  }
+                  // if (pincodeVerified) {
+                  //   e.target.style.backgroundColor = "#20BA5A";
+                  //   e.target.style.transform = "scale(1.05)";
+                  // }
                 }}
                 onMouseLeave={(e) => {
-                  if (pincodeVerified) {
-                    e.target.style.backgroundColor = "#25D366";
-                    e.target.style.transform = "scale(1)";
-                  }
+                  // if (pincodeVerified) {
+                  //   e.target.style.backgroundColor = "#25D366";
+                  //   e.target.style.transform = "scale(1)";
+                  // }
                 }}
               >
                 <FaWhatsapp size={24} />
@@ -396,17 +396,17 @@ const ProductDetails = () => {
               </button>
               <button
                 onClick={() => {
-                  if (!pincodeVerified) {
-                    toast.error("Please verify your pincode first");
-                    return;
-                  }
+                  // if (!pincodeVerified) {
+                  //   toast.error("Please verify your pincode first");
+                  //   return;
+                  // }
                   addToCart({
                     ...product,
                     variation: "default",
                   });
                   toast.success("Product added to cart!");
                 }}
-                disabled={!pincodeVerified}
+                // disabled={!pincodeVerified}
                 style={{
                   flex: 1,
                   padding: breakpoint === "mobile" ? "14px 28px" : "16px 32px",
@@ -415,29 +415,29 @@ const ProductDetails = () => {
                   textTransform: "uppercase",
                   fontWeight: 600,
                   letterSpacing: "0.04em",
-                  backgroundColor: pincodeVerified ? "#000" : "#ccc",
+                  backgroundColor: "#000",
                   color: "#fff",
                   border: "none",
                   borderRadius: "8px",
-                  cursor: pincodeVerified ? "pointer" : "not-allowed",
+                  cursor: "pointer",
                   transition: "all 0.3s ease",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
                   gap: "12px",
-                  opacity: pincodeVerified ? 1 : 0.6,
+                  // opacity: pincodeVerified ? 1 : 0.6,
                 }}
                 onMouseEnter={(e) => {
-                  if (pincodeVerified) {
+                  // if (pincodeVerified) {
                     e.target.style.backgroundColor = "#333";
                     e.target.style.transform = "scale(1.05)";
-                  }
+                  // }
                 }}
                 onMouseLeave={(e) => {
-                  if (pincodeVerified) {
+                  // if (pincodeVerified) {
                     e.target.style.backgroundColor = "#000";
                     e.target.style.transform = "scale(1)";
-                  }
+                  // }
                 }}
               >
                 <FaShoppingCart size={20} />
@@ -446,7 +446,7 @@ const ProductDetails = () => {
             </div>
 
             {/* Pincode Verification Section */}
-            <div
+            {/* <div
               style={{
                 marginTop: "32px",
                 padding: "20px",
@@ -475,7 +475,6 @@ const ProductDetails = () => {
                   Delivery Pincode *
                 </label>
 
-                {/* Only show badge when pincode is actually verified */}
                 {pincodeVerified && pincodeError === "" && (
                   <span
                     style={{
@@ -553,7 +552,7 @@ const ProductDetails = () => {
                   {pincodeError}
                 </p>
               )}
-            </div>
+            </div> */}
           </div>
         </div>
 

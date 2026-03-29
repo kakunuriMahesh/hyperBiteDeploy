@@ -17,7 +17,7 @@ export const packConfigs = {
       { id: 'milletMatrix', quantity: 2 },
       { id: 'oatsOctane', quantity: 2 },
     ],
-    image: '/assets/CustomizePack.jpeg',
+    image: '/assets/discoverPack.jpeg',
     badge: 'Default Pack',
     // details content
     detailsContent: {
@@ -56,7 +56,7 @@ export const packConfigs = {
     minAmount: 499,
     description: 'Create your custom pack by selecting products',
     defaultProducts: [],
-    image: '/assets/CustomizePack.jpeg',
+    image: '/assets/specialPack.jpeg',
     badge: 'Customized Pack',
     // details content
     detailsContent: {
@@ -94,7 +94,7 @@ export const packConfigs = {
     minAmount: 1440,
     description: 'Premium selection with maximum customization',
     defaultProducts: [],
-    image: '/assets/CustomizePack.jpeg',
+    image: '/assets/PackOf50.jpeg',
     badge: 'Customized Pack',
     // details content
     detailsContent: {

@@ -3,7 +3,7 @@ export const productDetails = {
     milletMatrix:{
   id: 'milletMatrix',
   name: 'Millet Matrix',
-  description: 'A nutrient-dense blend of millets and seeds for sustained energy.',
+  description: 'Ancient Grains for Modern Endurance An authentic experience of ancient wisdom, combining Raagi, Sajja, Korra, and Jonnalu. Sweetened only with Raw Honey and Dates.',
   ingredients: [
     'Foxtail Millet',
     'Kodo Millet',
@@ -27,13 +27,13 @@ export const productDetails = {
     fiber: '4g'
   },
   price: '30 RS',
-  image: '/assets/Millet-matrix.png',
-  packImg: '/assets/Millet-matrix.png',
+  image: '/assets/millet-matrix-pack.png',
+  packImg: '/assets/millet-matrix-pack.png',
   images: [
-    '/assets/Millet-matrix.png',
-    '/assets/Millet-matrix.png',
-    '/assets/Millet-matrix.png',
-    '/assets/Millet-matrix.png'
+    '/assets/millet-matrix-pack.png',
+    '/assets/milletMatrix-mock.jpeg', 
+    '/assets/MilletMixHoney.jpeg',
+    '/assets/millet-matrix-pack.png'
   ],
   reviews: [
     {
@@ -60,7 +60,7 @@ export const productDetails = {
 oatsOctane:{
   id: 'oatsOctane',
   name: 'Oats Octane',
-  description: 'A nutrient-dense blend of millets and seeds for sustained energy.',
+  description: 'The Sustained Energy Engine A high-performance mix of Rolled Oats, Sunflower & Pumpkin seeds, Roasted Peanuts and Raw Honey.',
   ingredients: [
     'Foxtail Millet',
     'Kodo Millet',
@@ -84,13 +84,13 @@ oatsOctane:{
     fiber: '4g'
   },
   price: '30 RS',
-  image: '/assets/Oats-Octane.png',
-  packImg: '/assets/Oats-Octane.png',
+  image: '/assets/oats-octane-pack.png',
+  packImg: '/assets/oats-octane-pack.png',
   images: [
-    '/assets/Oats-Octane.png',
-    '/assets/Oats-Octane.png',
-    '/assets/Oats-Octane.png',
-    '/assets/Oats-Octane.png'
+    '/assets/oats-octane-pack.png',
+    '/assets/oatsOctane-mock.jpeg',
+    '/assets/OatsOctaneHoney.jpeg',
+    '/assets/oatsOctane-mock2.jpeg', 
   ],
   reviews: [
     {
@@ -117,7 +117,7 @@ oatsOctane:{
 cashewCharge:{
   id: 'cashewCharge',
   name: 'Cashew Charge',
-  description: 'A nutrient-dense blend of millets and seeds for sustained energy.',
+  description: 'The Gourmet Junk-Food Killer Fresh, high-quality cashews roasted in allowable ghee and seasoned with a bold Cinnamon profile.',
   ingredients: [
     'Foxtail Millet',
     'Kodo Millet',
@@ -141,13 +141,13 @@ cashewCharge:{
     fiber: '4g'
   },
   price: '30 RS',
-  image: '/assets/cashew-charge.png',
-  packImg: '/assets/cashew-charge.png',
+  image: '/assets/cashew-charge-pack.png',
+  packImg: '/assets/cashew-charge-pack.png',
   images: [
-    '/assets/cashew-charge.png',
-    '/assets/cashew-charge.png',
-    '/assets/cashew-charge.png',
-    '/assets/cashew-charge.png'
+    '/assets/cashew-charge-pack.png',
+    '/assets/cashew_charge-mock.jpeg',
+    '/assets/cashew_charge-mock2.jpeg',
+    '/assets/cashew-charge-pack.png'
   ],
   reviews: [
     {
@@ -174,7 +174,7 @@ cashewCharge:{
 seedBoost:{
   id: 'seedBoost',
   name: 'Seed Boost',
-  description: 'A nutrient-dense blend of millets and seeds for sustained energy.',
+  description: 'The Micronutrient Powerhouse A savory, crunchy blend of Sunflower, Pumpkin, and Watermelon seeds, lightly roasted in premium ghee with a hint of cinnamon and secret spices.',
   ingredients: [
     'Foxtail Millet',
     'Kodo Millet',
@@ -198,13 +198,13 @@ seedBoost:{
     fiber: '4g'
   },
   price: '30 RS',
-  image: '/assets/seed-boost.png',
-  packImg: '/assets/seed-boost.png',
+  image: '/assets/speed-boost-pack.png',
+  packImg: '/assets/speed-boost-pack.png',
   images: [
-    '/assets/seed-boost.png',
-    '/assets/seed-boost.png',
-    '/assets/seed-boost.png',
-    '/assets/seed-boost.png'
+    '/assets/speed-boost-pack.png',
+    '/assets/seedboost-mock.jpeg',
+    '/assets/seedboost-mocke.jpeg',
+    '/assets/speed-boost-pack.png'
   ],
   reviews: [
     {
@@ -231,7 +231,7 @@ seedBoost:{
 powerChunk:{
   id: 'powerChunk',
   name: 'Power Chunk',
-  description: 'A nutrient-dense blend of millets and seeds for sustained energy.',
+  description: 'The High-Protein Recovery Bite A potent blend of Dates, Nuts, Hemp Protein powder and Dark Chocolate, finished with a refreshing Orange zest.',
   ingredients: [
     'Foxtail Millet',
     'Kodo Millet',
@@ -255,14 +255,14 @@ powerChunk:{
     fiber: '4g'
   },
   price: '30 RS',
-  image: '/assets/closeCover.png',
-  packImg: '/assets/closeCover.png',
+  image: '/assets/power-Chunk-pack.png',
+  packImg: '/assets/power-Chunk-pack.png',
   images: [
-    '/assets/closeCover.png',
-    '/assets/closeCover.png',
-    '/assets/closeCover.png',
-    '/assets/closeCover.png'
-  ],
+    '/assets/power-Chunk-pack.png',
+    '/assets/powerChunk-mock.jpeg',
+    '/assets/powerChunk-mock2.jpeg',
+    '/assets/power-Chunk-pack.png'
+  ], 
   reviews: [
     {
       id: 1,

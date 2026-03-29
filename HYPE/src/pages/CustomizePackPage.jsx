@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect ,useLayoutEffect, useRef} from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { FaArrowLeft, FaPlus, FaMinus, FaCheckCircle, FaGift, FaStar, FaShippingFast, FaBoxOpen, FaTag, FaTrash } from 'react-icons/fa';
 import { GrPowerReset } from "react-icons/gr";
@@ -6,6 +6,14 @@ import { productDetails } from '../config/productDetails';
 import { packConfigs } from '../config/packConfig';
 import { useCart } from '../context/CartContext';
 import { toast } from 'react-toastify';
+// 
+import { gsap } from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+// import { FaCheckCircle } from 'react-icons/fa';
+// import { GrPowerReset } from 'react-icons/gr';
+
+// --- CRITICAL: Register the plugin ---
+gsap.registerPlugin(ScrollTrigger);
 
 const CustomizePackPage = () => {
   const navigate = useNavigate();
@@ -45,6 +53,41 @@ const CustomizePackPage = () => {
     updateBreakpoint();
     window.addEventListener('resize', updateBreakpoint);
     return () => window.removeEventListener('resize', updateBreakpoint);
+  }, []);
+
+  const stickyBarRef = useRef(null);
+  const containerRef = useRef(null);
+
+  useLayoutEffect(() => {
+    const element = stickyBarRef.current;
+    
+    // This creates the "Sticky" effect using GSAP pinning
+    const ctx = gsap.context(() => {
+      ScrollTrigger.create({
+        trigger: element,
+        start: "top 100px",      // Pins when the top of the bar hits the top of the viewport
+        endTrigger: "body",    // Keeps pinning until the end of the page
+        end: "bottom bottom",
+        pin: true,
+        pinSpacing: false,     // Keeps the layout from jumping
+        zIndex: 1000,
+        onEnter: () => {
+          gsap.to(element, { 
+            boxShadow: "0 8px 20px rgba(0,0,0,0.1)", 
+            backgroundColor: "#ffffff",
+            duration: 0.3 
+          });
+        },
+        onLeaveBack: () => {
+          gsap.to(element, { 
+            boxShadow: "none", 
+            duration: 0.3 
+          });
+        }
+      });
+    }, containerRef);
+
+    return () => ctx.revert(); // Clean up on unmount
   }, []);
 
   const calculateTotals = () => {
@@ -520,377 +563,322 @@ const CustomizePackPage = () => {
         {/* ═══════════════════════════════════════
             PROGRESS TRACKER — Sticky on scroll
            ═══════════════════════════════════════ */}
-        <div
-          style={{
-            backgroundColor: '#fff',
-            borderRadius: '12px',
-            border: '1px solid #e3e6e8',
-            padding: breakpoint === 'mobile' ? '16px' : '20px 24px',
-            marginBottom: '24px',
-            position: 'sticky',
-            top: '70px',
-            zIndex: 100,
-            boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
-          }}
-        >
-          {/* Progress Bar */}
-          <div
-            style={{
-              marginBottom: '14px',
-              backgroundColor: '#f0f0f0',
-              borderRadius: '20px',
-              overflow: 'hidden',
-              height: '10px',
-            }}
-          >
+        <div ref={containerRef} style={{ width: '100%', position: 'relative' }}>
+            {/* ═══════════════════════════════════════
+                GSAP STICKY PROGRESS TRACKER
+                ═══════════════════════════════════════ */}
             <div
+              ref={stickyBarRef}
               style={{
-                height: '100%',
-                background: progressPercent >= 100
-                  ? 'linear-gradient(90deg, #34a853, #1e8e3e)'
-                  : 'linear-gradient(90deg, #ff9800, #f57c00)',
-                width: `${progressPercent}%`,
-                transition: 'width 0.4s ease',
-                borderRadius: '20px',
+                backgroundColor: '#fff',
+                borderRadius: '12px',
+                border: '1px solid #e3e6e8',
+                padding: breakpoint === 'mobile' ? '16px' : '20px 24px',
+                marginBottom: '24px',
+                width: '100%',
+                boxSizing: 'border-box',
               }}
-            />
-          </div>
-
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              flexWrap: 'wrap',
-              gap: '12px',
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', flexWrap: 'wrap' }}>
-              <span
-                style={{
-                  fontFamily: "'Nunito Sans', sans-serif",
-                  fontSize: breakpoint === 'mobile' ? '22px' : '26px',
-                  fontWeight: 700,
-                  color: progressPercent >= 100 ? '#1e8e3e' : '#0f1111',
-                }}
-              >
-                ₹{total.toFixed(0)}
-              </span>
-              <span
-                style={{
-                  fontFamily: "'Inter', sans-serif",
-                  fontSize: '13px',
-                  color: '#565959',
-                }}
-              >
-                / ₹{pack.minPrice} min
-              </span>
-            </div>
-              <span
-                style={{
-                  fontFamily: "'Inter', sans-serif",
-                  fontSize: '12px',
-                  fontWeight: 600,
-                  color: '#000',
-                  backgroundColor: '#f5f5f5',
-                  padding: '2px 8px',
-                  borderRadius: '10px',
-                }}
-              >
-                {totalItems}/{pack.maxItems} items
-              </span>
-
-            {progressPercent < 100 ? (
-              <span
-                style={{
-                  fontFamily: "'Inter', sans-serif",
-                  fontSize: '13px',
-                  color: '#e47911',
-                  fontWeight: 500,
-                }}
-              >
-                Add ₹{(pack.minPrice - total).toFixed(0)} more
-              </span>
-            ) : (
-              <span
-                style={{
-                  fontFamily: "'Inter', sans-serif",
-                  fontSize: '13px',
-                  color: '#1e8e3e',
-                  fontWeight: 600,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '4px',
-                }}
-              >
-                <FaCheckCircle size={12} /> Ready to order!
-              </span>
-            )}
-          </div>
-          <div className='flex items-center gap-2'>
-            <button onClick={() => resetPack()} className='text-red-500 bg-red-100 px-2 py-1 rounded-lg text-sm'>
-              <span className='flex items-center gap-1'>
-                <GrPowerReset size={12} />
-                Reset Pack
-              </span>
-            </button>
-          </div>
-        </div>
-
-        {/* ═══════════════════════════════════════
-            PRODUCTS GRID
-           ═══════════════════════════════════════ */}
-        <div
-          // style={{
-          //   display: 'grid',
-          //   gridTemplateColumns:
-          //     breakpoint === 'mobile' ? '1fr 1fr' : breakpoint === 'tablet' ? 'repeat(3, 1fr)' : 'repeat(5, 1fr)',
-          //   gap: breakpoint === 'mobile' ? '12px' : '16px',
-          //   marginBottom: '24px',
-          // }}
-          className='flex gap-6 overflow-x-auto scroll-smooth snap-x snap-mandatory no-scrollbar pb-2'
-        >
-          {products.map((product) => {
-            const quantity = quantities[product.id] || 0;
-            const price = parseFloat(product.price.replace(/[^0-9.]/g, '')) || 0;
-            const itemTotal = price * quantity;
-            const isActive = quantity > 0;
-
-            return (
+            >
+              {/* Progress Bar Visual */}
               <div
-                key={product.id}
                 style={{
-                  backgroundColor: '#fff',
-                  border: isActive ? '2px solid #067D62' : '1px solid #e3e6e8',
-                  borderRadius: '12px',
-                  padding: breakpoint === 'mobile' ? '12px' : '16px',
-                  transition: 'all 0.3s ease',
-                  position: 'relative',
+                  marginBottom: '14px',
+                  backgroundColor: '#f0f0f0',
+                  borderRadius: '20px',
                   overflow: 'hidden',
-                  width: '200px',
-                  marginTop: '10px',
-                  flexShrink: 0,
-                }}
-                className="min-w-[55%] sm:min-w-[40%] md:min-w-[30%] lg:min-w-[20%] cursor-pointer snap-start group relative rounded-2xl overflow-hidden border border-gray-200 shadow-sm hover:shadow-xl transition-all duration-300"
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = 'translateY(-3px)';
-                  e.currentTarget.style.boxShadow = '0 8px 20px rgba(0,0,0,0.08)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.boxShadow = 'none';
+                  height: '10px',
                 }}
               >
-                {/* Active Badge */}
-                {isActive && (
-                  <div
-                    style={{
-                      position: 'absolute',
-                      top: '8px',
-                      right: '8px',
-                      backgroundColor: '#067D62',
-                      color: '#fff',
-                      fontSize: '10px',
-                      fontWeight: 700,
-                      fontFamily: "'Inter', sans-serif",
-                      padding: '2px 8px',
-                      borderRadius: '10px',
-                    }}
-                  >
-                    ×{quantity}
-                  </div>
-                )}
-
-                {/* Product Image */}
                 <div
                   style={{
-                    marginBottom: '10px',
-                    display: 'flex',
-                    justifyContent: 'center',
-                    height: breakpoint === 'mobile' ? '80px' : '100px',
+                    height: '100%',
+                    background: progressPercent >= 100
+                      ? 'linear-gradient(90deg, #34a853, #1e8e3e)'
+                      : 'linear-gradient(90deg, #ff9800, #f57c00)',
+                    width: `${progressPercent}%`,
+                    transition: 'width 0.4s ease',
+                    borderRadius: '20px',
                   }}
-                >
-                  <img
-                    src={product.packImg}
-                    alt={product.name}
-                    style={{
-                      maxWidth: '100%',
-                      maxHeight: '100%',
-                      objectFit: 'contain',
-                      transition: 'transform 0.3s ease',
-                    }}
-                    onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.1)'; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
-                  />
-                </div>
-
-                {/* Product Name */}
-                <h4
-                  style={{
-                    fontFamily: "'Nunito Sans', sans-serif",
-                    fontSize: breakpoint === 'mobile' ? '13px' : '15px',
-                    margin: '0 0 4px 0',
-                    color: '#0f1111',
-                    fontWeight: 700,
-                    lineHeight: 1.3,
-                  }}
-                >
-                  {product.name}
-                </h4>
-                <p
-                  style={{
-                    fontFamily: "'Inter', sans-serif",
-                    fontSize: breakpoint === 'mobile' ? '13px' : '14px',
-                    color: '#0f1111',
-                    fontWeight: 400,
-                    margin: '0 0 10px 0',
-                  }}
-                >
-                  {product.description}
-                </p>
-
-<div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
-                {/* Price */}
-                <p
-                  style={{
-                    fontFamily: "'Inter', sans-serif",
-                    fontSize: breakpoint === 'mobile' ? '13px' : '14px',
-                    color: '#0f1111',
-                    fontWeight: 600,
-                    margin: '0 0 10px 0',
-                  }}
-                >
-                  ₹{price}
-                </p>
-
-                 {/* Item Total */}
-                {isActive && (
-                  <p
-                    style={{
-                      fontFamily: "'Inter', sans-serif",
-                      fontSize: '12px',
-                      color: '#067D62',
-                      fontWeight: 600,
-                      margin: '0 0 10px 0',
-                      // textAlign: 'center',
-                    }}
-                  >
-                    ₹{itemTotal.toFixed(0)} total
-                  </p>
-                )}
-
-</div>
-
-                {/* Quantity Controls */}
-                <div
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '4px',
-                    marginBottom: isActive ? '8px' : '0',
-                  }}
-                >
-                  <button
-                    onClick={() => handleQuantityChange(product.id, -1)}
-                    style={{
-                      width: breakpoint === 'mobile' ? '28px' : '30px',
-                      height: breakpoint === 'mobile' ? '28px' : '30px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      backgroundColor: '#f0f0f0',
-                      border: '1px solid #d5d9d9',
-                      borderRadius: '6px',
-                      cursor: 'pointer',
-                      color: '#0f1111',
-                      transition: 'background 0.2s',
-                    }}
-                    onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#e3e6e6'; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#f0f0f0'; }}
-                  >
-                    <FaMinus size={10} />
-                  </button>
-                  <input
-                    type="number"
-                    value={quantity}
-                    onChange={(e) => handleManualInput(product.id, e.target.value)}
-                    style={{
-                      width: breakpoint === 'mobile' ? '20px' : '40px',
-                      height: breakpoint === 'mobile' ? '20px' : '40px',
-                      textAlign: 'center',
-                      border: '1px solid #d5d9d9',
-                      borderRadius: '6px',
-                      fontFamily: "'Inter', sans-serif",
-                      fontSize: '14px',
-                      fontWeight: 600,
-                      color: '#0f1111',
-                      outline: 'none',
-                    }}
-                    min="0"
-                  />
-                  <button
-                    onClick={() => handleQuantityChange(product.id, 1)}
-                    style={{
-                      width: breakpoint === 'mobile' ? '28px' : '30px',
-                      height: breakpoint === 'mobile' ? '28px' : '30px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      backgroundColor: '#f0f0f0',
-                      border: '1px solid #d5d9d9',
-                      borderRadius: '6px',
-                      cursor: 'pointer',
-                      color: '#0f1111',
-                      transition: 'background 0.2s',
-                    }}
-                    onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#e3e6e6'; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#f0f0f0'; }}
-                  >
-                    <FaPlus size={10} />
-                  </button>
-               
-                <button
-            onClick={() => navigate(`/product/${product.id}`)}
-            style={{
-              padding: '2px 8px',
-              fontFamily: "'Inter', sans-serif",
-              fontSize: '12px',
-              fontWeight: 600,
-              backgroundColor: '#fff',
-              color: '#0f1111',
-              border: '1px solid #d5d9d9',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              transition: 'all 0.2s ease',
-            }}
-            onMouseEnter={(e) => {
-              e.target.style.backgroundColor = '#f7fafa';
-              e.target.style.borderColor = '#a6a6a6';
-            }}
-            onMouseLeave={(e) => {
-              e.target.style.backgroundColor = '#fff';
-              e.target.style.borderColor = '#d5d9d9';
-            }}
-          >
-            Details
-          </button>
-                </div>
-
+                />
               </div>
-            );
-          })}
-        </div>
-        {/* Hide Scrollbar */}
-      <style>{`
-        .no-scrollbar::-webkit-scrollbar {
-          display: none;
-        }
-        .no-scrollbar {
-          -ms-overflow-style: none;
-          scrollbar-width: none;
-        }
-      `}</style>
+
+              {/* Pricing & Item Count */}
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  flexWrap: 'wrap',
+                  gap: '12px',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+                  <span style={{ fontSize: '24px', fontWeight: 700 }}>
+                    MRP ₹{total.toFixed(0)}
+                  </span>
+                  <span style={{ fontSize: '13px', color: '#565959' }}>
+                    / Offer Price ₹{pack.minPrice}
+                  </span>
+                </div>
+
+                <span style={{ fontSize: '12px', fontWeight: 600, backgroundColor: '#f5f5f5', padding: '2px 8px', borderRadius: '10px' }}>
+                  {totalItems}/{pack.maxItems} items
+                </span>
+
+                {progressPercent < 100 ? (
+                  <span style={{ fontSize: '13px', color: '#e47911', fontWeight: 500 }}>
+                    Add ₹{(pack.minPrice - total).toFixed(0)} more
+                  </span>
+                ) : (
+                  <span style={{ fontSize: '13px', color: '#1e8e3e', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <FaCheckCircle size={14} /> Ready!
+                  </span>
+                )}
+              </div>
+
+              {/* Reset Button */}
+              <div className='flex items-center gap-2 mt-2'>
+                <button onClick={() => resetPack()} className='text-red-500 bg-red-100 px-2 py-1 rounded-lg text-xs flex items-center gap-1'>
+                  <GrPowerReset size={12} />
+                  Reset Pack
+                </button>
+              </div>
+            </div>
+            
+              {/* ═══════════════════════════════════════
+                  PRODUCTS GRID
+                ═══════════════════════════════════════ */}
+          </div>
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns:
+                    breakpoint === 'mobile' ? '1fr' : breakpoint === 'tablet' ? 'repeat(3, 1fr)' : 'repeat(4, 1fr)',
+                  gap: breakpoint === 'mobile' ? '12px' : '16px',
+                  marginBottom: '24px',
+                }}
+              >
+                {products.map((product) => {
+                  const quantity = quantities[product.id] || 0;
+                  const price = parseFloat(product.price.replace(/[^0-9.]/g, '')) || 0;
+                  const itemTotal = price * quantity;
+                  const isActive = quantity > 0;
+
+                  return (
+                    <div
+                      key={product.id}
+                      style={{
+                        backgroundColor: '#fff',
+                        border: isActive ? '2px solid #067D62' : '1px solid #e3e6e8',
+                        borderRadius: '12px',
+                        padding: breakpoint === 'mobile' ? '12px' : '16px',
+                        transition: 'all 0.3s ease',
+                      }}
+                      className="min-w-[55%] sm:min-w-[40%] md:min-w-[30%] lg:min-w-[20%] cursor-pointer rounded-2xl overflow-hidden border border-gray-200 shadow-sm hover:shadow-xl transition-all duration-300"
+                    >
+                      {/* Active Badge */}
+                      {isActive && (
+                        <div
+                          style={{
+                            position: 'absolute',
+                            top: '8px',
+                            right: '8px',
+                            backgroundColor: '#067D62',
+                            color: '#fff',
+                            fontSize: '10px',
+                            fontWeight: 700,
+                            fontFamily: "'Inter', sans-serif",
+                            padding: '2px 8px',
+                            borderRadius: '10px',
+                          }}
+                        >
+                          ×{quantity}
+                        </div>
+                      )}
+
+                      {/* Product Image */}
+                      <div
+                        style={{
+                          marginBottom: '10px',
+                          display: 'flex',
+                          justifyContent: 'center',
+                          height: breakpoint === 'mobile' ? '80px' : '100px',
+                        }}
+                      >
+                        <img
+                          src={product.packImg}
+                          alt={product.name}
+                          style={{
+                            maxWidth: '100%',
+                            maxHeight: '100%',
+                            objectFit: 'contain',
+                            transition: 'transform 0.3s ease',
+                          }}
+                          onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.1)'; }}
+                          onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
+                        />
+                      </div>
+
+                      {/* Product Name */}
+                      <h4
+                        style={{
+                          fontFamily: "'Nunito Sans', sans-serif",
+                          fontSize: breakpoint === 'mobile' ? '13px' : '15px',
+                          margin: '0 0 4px 0',
+                          color: '#0f1111',
+                          fontWeight: 700,
+                          lineHeight: 1.3,
+                        }}
+                      >
+                        {product.name}
+                      </h4>
+                      <p
+                        style={{
+                          fontFamily: "'Inter', sans-serif",
+                          fontSize: breakpoint === 'mobile' ? '13px' : '14px',
+                          color: '#0f1111',
+                          fontWeight: 400,
+                          margin: '0 0 10px 0',
+                        }}
+                      >
+                        {product.description}
+                      </p>
+
+      <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+                      {/* Price */}
+                      <p
+                        style={{
+                          fontFamily: "'Inter', sans-serif",
+                          fontSize: breakpoint === 'mobile' ? '13px' : '14px',
+                          color: '#0f1111',
+                          fontWeight: 600,
+                          margin: '0 0 10px 0',
+                        }}
+                      >
+                        ₹{price}
+                      </p>
+
+                      {/* Item Total */}
+                      {isActive && (
+                        <p
+                          style={{
+                            fontFamily: "'Inter', sans-serif",
+                            fontSize: '12px',
+                            color: '#067D62',
+                            fontWeight: 600,
+                            margin: '0 0 10px 0',
+                            // textAlign: 'center',
+                          }}
+                        >
+                          ₹{itemTotal.toFixed(0)} total
+                        </p>
+                      )}
+
+      </div>
+                      <div className='flex justify-between'>
+                        <button
+                          onClick={() => navigate(`/product/${product.id}`)}
+                          style={{
+                            padding: '2px 8px',
+                            fontFamily: "'Inter', sans-serif",
+                            fontSize: '12px',
+                            fontWeight: 600,
+                            backgroundColor: '#fff',
+                            color: '#0f1111',
+                            border: '1px solid #d5d9d9',
+                            borderRadius: '8px',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s ease',
+                          }}
+                          onMouseEnter={(e) => {
+                            e.target.style.backgroundColor = '#f7fafa';
+                            e.target.style.borderColor = '#a6a6a6';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.target.style.backgroundColor = '#fff';
+                            e.target.style.borderColor = '#d5d9d9';
+                          }}
+                        >
+                          Details
+                        </button>
+                        {/* Quantity Controls */}
+                        <div
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '4px',
+                            marginBottom: isActive ? '8px' : '0',
+                          }}
+                        >
+                          <button
+                            onClick={() => handleQuantityChange(product.id, -1)}
+                            style={{
+                              width: breakpoint === 'mobile' ? '28px' : '30px',
+                              height: breakpoint === 'mobile' ? '28px' : '30px',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              backgroundColor: '#f0f0f0',
+                              border: '1px solid #d5d9d9',
+                              borderRadius: '6px',
+                              cursor: 'pointer',
+                              color: '#0f1111',
+                              transition: 'background 0.2s',
+                            }}
+                            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#e3e6e6'; }}
+                            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#f0f0f0'; }}
+                          >
+                            <FaMinus size={10} />
+                          </button>
+                          <input
+                            type="number"
+                            value={quantity}
+                            onChange={(e) => handleManualInput(product.id, e.target.value)}
+                            style={{
+                              width: breakpoint === 'mobile' ? '20px' : '40px',
+                              height: breakpoint === 'mobile' ? '20px' : '30px',
+                              textAlign: 'center',
+                              border: '1px solid #d5d9d9',
+                              borderRadius: '6px',
+                              fontFamily: "'Inter', sans-serif",
+                              fontSize: '14px',
+                              fontWeight: 600,
+                              color: '#0f1111',
+                              outline: 'none',
+                            }}
+                            min="0"
+                          />
+                          <button
+                            onClick={() => handleQuantityChange(product.id, 1)}
+                            style={{
+                              width: breakpoint === 'mobile' ? '28px' : '30px',
+                              height: breakpoint === 'mobile' ? '28px' : '30px',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              backgroundColor: '#f0f0f0',
+                              border: '1px solid #d5d9d9',
+                              borderRadius: '6px',
+                              cursor: 'pointer',
+                              color: '#0f1111',
+                              transition: 'background 0.2s',
+                            }}
+                            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#e3e6e6'; }}
+                            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#f0f0f0'; }}
+                          >
+                            <FaPlus size={10} />
+                          </button>
+                      
+                        
+                        </div>
+                      </div>
+
+                    </div>
+                  );
+                })}
+              </div>
+
 
         {/* ═══════════════════════════════════════
             ACTION BUTTONS

@@ -7,7 +7,7 @@ const products = [
     desc: "A savory, crunchy blend of Sunflower, Pumpkin, and Watermelon seeds, lightly roasted in premium ghee with a hint of cinnamon and secret spices.",
     benefit: "5g Clean Plant Protein",
     why: "Rich in Magnesium and Zinc for heart health and immunity. Cinnamon supports metabolism naturally.",
-    img: "/assets/seed-boost.png"
+    img: "/assets/speed-boost-pack.png"
   },
   {
     packname:"Cashew Charge",
@@ -15,7 +15,7 @@ const products = [
     desc: " high-quality cashews roasted in allowable ghee and seasoned with a bold Cinnamon profile.",
     benefit: "A direct, healthy replacement for high-cholesterol, oil-soaked chips.",
     why: "Provides healthy monounsaturated fats that keep you satiated longer, killing hot cravings instantly while supporting brain health",
-    img: "/assets/cashew-charge.png"
+    img: "/assets/cashew-charge-pack.png"
   },
   {
     packname:"Millet Matrix",
@@ -23,7 +23,7 @@ const products = [
     desc: " combining Raagi, Sajja, Korra, and Jonnalu. Sweetened only with Raw Honey and Dates.",
     benefit: "An exceptional source of complex dietary fiber.",
     why: "The slow-release carbohydrates from these four millets ensure you stay full and focused for hours, maintaining gut health and steady glucose levels.",
-    img: "/assets/Millet-matrix.png"
+    img: "/assets/millet-matrix-pack.png"
   },
   {
     packname:"Oats Octane",
@@ -31,7 +31,7 @@ const products = [
     desc: " A high-performance mix of Rolled Oats, Sunflower & Pumpkin seeds, Roasted Peanuts and Raw Honey.",
     benefit: "Delivers Clean Energy with a zero-sugar-spike guarantee.",
     why: "The combination of Beta-Glucan (from oats) and healthy fats (from peanuts/seeds) creates a time-release energy effect, making it the perfect partner for long journeys or sports.",
-    img: "/assets/Oats-Octane.png"
+    img: "/assets/oats-octane-pack.png"
   },
   {
     packname:"Power Chunk",
@@ -39,7 +39,7 @@ const products = [
     desc: " A potent blend of Dates, Nuts, Hemp Protein powder and Dark Chocolate, finished with a refreshing Orange zest.",
     benefit: "A complete protein source that stops junk-food hunting in its tracks.",
     why: "Hemp protein contains all nine essential amino acids. Combined with the antioxidants in dark chocolate and the natural energy of dates, it’s the ultimate post-workout or high-intensity recovery snack.",
-    img: "/assets/closeCover.png"
+    img: "/assets/power-Chunk-pack.png"
   },
   // add 4 more
 ];
@@ -49,7 +49,7 @@ export default function ProductsStorySection() {
     <div className="bg-[#f8f9fb] py-20 px-6 md:px-16 max-w-7xl mx-auto">
 
       {/* HEADER */}
-      <div className="max-w-3xl mb-20">
+      <div className="max-w-7xl text-center mb-20">
         <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
           Designed for Everyday Power
         </h2>
@@ -77,7 +77,7 @@ export default function ProductsStorySection() {
                 <div
                   className="w-full md:w-1/2 flex justify-center"
                 >
-                  <div className="w-[260px] md:w-[320px] aspect-[3/4] hover:scale-105 transition duration-500 overflow-hidden shadow-xl">
+                  <div className="w-[260px] md:w-[320px] aspect-[3/4] overflow-hidden">
                     <img
                       src={item.img}
                       alt=""

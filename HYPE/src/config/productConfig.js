@@ -21,7 +21,7 @@ export const productConfigs = {
       date: '/assets/date.webp',
       wallnutCenter: '/assets/almond.png',
       openCover: '/assets/openCover.png',
-      closeCover: '/assets/closeCover.png',
+      closeCover: '/assets/power-Chunk-pack.png',
     },
     vector: '/assets/Vector 2.png',
     // Animation configuration - original nuts animation (scattered to left cluster)

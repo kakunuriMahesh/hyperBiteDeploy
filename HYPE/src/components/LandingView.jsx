@@ -3,10 +3,10 @@ import { useNavigate } from "react-router-dom";
 import { productDetails } from "../config/productDetails";
 import { formatProductMessage, sendWhatsAppMessage } from "../utils/whatsapp";
 import { FaPlus, FaMinus, FaTimes, FaBolt, FaLeaf, FaShieldAlt, FaHeart, FaCheck } from "react-icons/fa";
-import OurStorySection from "../pages/OurStorySection";
 import LiveCommunityHub from "./LiveCommunityHub";
 import ProductsShowcase from "./ProductsShowcase";
 import HeroCarousel from "../pages/HeroCarousel";
+import HyperBiteManifesto from "./OurSection";
 
 export default function LandingView({ onEnterPremiumMode, breakpoint }) {
   const products = Object.values(productDetails);
@@ -55,8 +55,9 @@ const navigate = useNavigate();
   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
     {products.slice(0, 3).map((product) => (
       <div
+        onClick={() => navigate(`/product/${product.id}`)}
         key={product.id}
-        className="bg-white border border-gray-100 rounded-xl p-4 flex gap-4 items-center hover:shadow-sm transition"
+        className="bg-white border border-gray-100 rounded-xl p-4 flex gap-4 items-center hover:shadow-sm transition cursor-pointer"
       >
         {/* Image */}
         <div className="w-24 h-24 flex-shrink-0 flex items-center justify-center bg-gray-50 rounded-lg">
@@ -82,7 +83,7 @@ const navigate = useNavigate();
           </div>
 
           {/* Controls */}
-          <div className="flex items-center justify-between">
+          {/* <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <button
                 onClick={() => handleDecreaseQuantity(product.id)}
@@ -121,7 +122,7 @@ const navigate = useNavigate();
             >
               Add
             </button>
-          </div>
+          </div> */}
         </div>
       </div>
     ))}
@@ -269,9 +270,9 @@ const navigate = useNavigate();
   </div>
 </section>
 
+<HyperBiteManifesto />
 <ProductsShowcase />
 <LiveCommunityHub />
-<OurStorySection />
     </div>
   );
 }

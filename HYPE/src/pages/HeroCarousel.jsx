@@ -5,31 +5,31 @@ const products = [
   { 
     id: 1, 
     name: "Seed Boost", 
-    img: "/assets/seed-boost.png",
+    img: "/assets/speed-boost-pack.png",
     bgColor: "#fdf2f2" // Soft Red/Amber
   },
   { 
     id: 2, 
     name: "Cashew Charge", 
-    img: "/assets/cashew-charge.png",
+    img: "/assets/cashew-charge-pack.png",
     bgColor: "#f0fdf4" // Soft Emerald
   },
   { 
     id: 3, 
     name: "Millet Matrix", 
-    img: "/assets/Millet-matrix.png",
+    img: "/assets/millet-matrix-pack.png",
     bgColor: "#fff7ed" // Soft Orange
   },
   { 
     id: 4, 
     name: "Oats Octane", 
-    img: "/assets/Oats-Octane.png",
+    img: "/assets/oats-octane-pack.png",
     bgColor: "#f5f3ff" // Soft Purple
   },
   { 
     id: 5, 
     name: "Power Chunk", 
-    img: "/assets/closeCover.png",
+    img: "/assets/power-Chunk-pack.png",
     bgColor: "#ecfdf5" // Soft Teal
   },
 ];
