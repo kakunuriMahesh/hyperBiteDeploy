@@ -7,6 +7,7 @@ import LiveCommunityHub from "./LiveCommunityHub";
 import ProductsShowcase from "./ProductsShowcase";
 import HeroCarousel from "../pages/HeroCarousel";
 import HyperBiteManifesto from "./OurSection";
+import CinematicSceneTailwind from "./CinematicSceneTailwind";
 
 export default function LandingView({ onEnterPremiumMode, breakpoint }) {
   const products = Object.values(productDetails);
@@ -272,6 +273,7 @@ const navigate = useNavigate();
 
 <HyperBiteManifesto />
 <ProductsShowcase />
+<CinematicSceneTailwind />
 <LiveCommunityHub />
     </div>
   );
