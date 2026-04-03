@@ -31,7 +31,7 @@ const navigate = useNavigate();
   };
 
   return (
-    <div style={{paddingTop:"100px"}} className="bg-gradient-to-b from-amber-50 to-white min-h-screen">
+    <div className="bg-gradient-to-b from-amber-50 to-white min-h-screen">
 
       {/* ================= HERO ================= */}
 <HeroCarousel  onEnterPremiumMode={onEnterPremiumMode}/>
