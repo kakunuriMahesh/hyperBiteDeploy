@@ -17,7 +17,9 @@ const HeroSection = () => {
   useEffect(() => {
     const tl = gsap.timeline({ repeat: -1 });
 
-    gsap.set([oceanRef.current, finaleBgRef.current, swimmerRef.current], { opacity: 0 });
+    gsap.set([oceanRef.current, finaleBgRef.current], { opacity: 0 });
+    gsap.set(swimmerRef.current, { opacity: 0, scale: 0.1 });
+    gsap.set(diverRef.current, { marginTop: "-100vh" });
     gsap.set(bushRef.current, { yPercent: 100 });
     gsap.set(hillManRef.current, { yPercent: 100, xPercent: -50, scale: 1 });
 
@@ -34,7 +36,7 @@ const HeroSection = () => {
     // Main Animation Sequence
     tl.to(stageRef.current, { scale: 1.05, duration: 4, ease: "power1.inOut" })
       .to(fuelRef.current, { opacity: 1, y: 0, duration: 1 }, 0)
-      .to(diverRef.current, { y: "0vh", opacity: 1, duration: 2, ease: "power2.out" }, 0)
+      .to(diverRef.current, { marginTop: "0vh", opacity: 1, duration: 2, ease: "power2.out" }, 0)
       .to([fuelRef.current, diverRef.current], { opacity: 0, duration: 0.5 }, 4)
 
       .to(stageRef.current, { scale: 1, duration: 4 }, 4)
@@ -46,7 +48,7 @@ const HeroSection = () => {
       .to(skyRef.current, { opacity: 0, duration: 1 }, 8)
       .to(oceanRef.current, { opacity: 1, duration: 1 }, 8)
       .to(stageRef.current, { scale: 1.2, duration: 4 }, 8)
-      .to(swimmerRef.current, { opacity: 1, scale: 1, duration: 2 }, 9)
+      .to(swimmerRef.current, { opacity: 1, scale: 1.4, duration: 2.5, ease: "power2.out" }, 9)
       .to(ofYouRef.current, { opacity: 1, y: 0, duration: 1 }, 9.5)
 
       .to(bushRef.current, { yPercent: 0, duration: 1.2, ease: "power2.inOut" }, 12)
