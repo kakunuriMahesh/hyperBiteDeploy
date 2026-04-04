@@ -1,9 +1,10 @@
+
+// Auto animatoin 🍏🍏🍏🍏🍏
+
 import React, { useRef, useEffect } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { FiRotateCcw, FiChevronDown } from "react-icons/fi";
-
-gsap.registerPlugin(ScrollTrigger);
+import { FiRotateCcw } from "react-icons/fi";
 
 const scenes = [
   {
@@ -64,163 +65,372 @@ const scenes = [
     light: "linear-gradient(to bottom, rgba(180,50,255,0.15) 0%, rgba(0,0,0,0) 100%)"
   }
 ];
+gsap.registerPlugin(ScrollTrigger);
 
-export default function HyperBiteProEngine() {
+// ... (scenes array remains the same as your original)
+
+export default function HyperBiteAutoEngine() {
   const container = useRef();
   const bgRef = useRef();
   const charRef = useRef();
   const lightingRef = useRef();
   const titleRef = useRef();
   const dialogueRefs = useRef([]);
-  const currentIdxRef = useRef(-1);
-  const stRef = useRef(null);
+  const masterTl = useRef();
 
-  const addDialogueRef = (el) => { if (el && !dialogueRefs.current.includes(el)) dialogueRefs.current.push(el); };
-
-  const handleReset = () => {
-    if (stRef.current) {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-      currentIdxRef.current = -1;
-    }
+  const addDialogueRef = (el) => { 
+    if (el && !dialogueRefs.current.includes(el)) dialogueRefs.current.push(el); 
   };
 
   useEffect(() => {
     const ctx = gsap.context(() => {
-      stRef.current = ScrollTrigger.create({
-        trigger: container.current,
-        start: "top top",
-        end: "+=32000",
-        pin: true,
-        scrub: 1.2,
-        onUpdate: (self) => {
-          const progress = self.progress;
-          const total = scenes.length;
-          const idx = Math.min(Math.floor(progress * total), total - 1);
-          const segment = (progress * total) % 1;
-          const s = scenes[idx];
+      // 1. Create the Master Timeline (Infinite Loop)
+      masterTl.current = gsap.timeline({ paused: true, repeat: -1 });
 
-          if (segment > 0.1 && segment < 0.3 && currentIdxRef.current !== idx) {
-            bgRef.current.setAttribute("href", s.bg);
-            charRef.current.setAttribute("href", s.chars[0].src);
-            lightingRef.current.style.background = s.light;
-            titleRef.current.textContent = s.name;
-            currentIdxRef.current = idx;
-          }
+      scenes.forEach((scene) => {
+        const sceneTl = gsap.timeline();
 
-          // ANIMATION PHASES
-          if (segment < 0.25) {
-            const p = segment / 0.25;
-            const rot = gsap.utils.interpolate(0, 90, p);
-            bgRef.current.style.transform = `rotateX(${rot}deg)`;
-            charRef.current.style.transform = `rotateX(${rot}deg)`;
-            charRef.current.style.opacity = 1 - p;
-            bgRef.current.style.filter = "blur(0px)";
-            titleRef.current.style.opacity = p > 0.6 ? 1 : 0;
-            dialogueRefs.current.forEach(d => { d.style.opacity = 0; d.textContent = ""; });
+        // STEP 1: Set Assets for the current scene (Invisible)
+        sceneTl.set({}, {
+          onComplete: () => {
+            bgRef.current.setAttribute("href", scene.bg);
+            charRef.current.setAttribute("href", scene.chars[0].src);
+            lightingRef.current.style.background = scene.light;
+            titleRef.current.textContent = scene.name;
+            // Reset states
+            gsap.set([bgRef.current, charRef.current], { rotateX: 90, opacity: 0, filter: "blur(0px)" });
+            dialogueRefs.current.forEach(d => gsap.set(d, { opacity: 0 }));
           }
-          else if (segment >= 0.25 && segment < 0.55) {
-            const p = (segment - 0.25) / 0.3;
-            const bgP = Math.min(1, p * 1.3);
-            const charP = Math.max(0, (p - 0.2) * 1.25);
-            const swing = (prog) => Math.sin(prog * Math.PI * 3) * (1 - prog) * 8;
-            bgRef.current.style.transform = `rotateX(${gsap.utils.interpolate(90, 0, bgP) + swing(bgP)}deg)`;
-            charRef.current.style.transform = `rotateX(${gsap.utils.interpolate(90, 0, charP) + swing(charP)}deg)`;
-            charRef.current.style.opacity = charP > 0 ? 1 : 0;
-            titleRef.current.style.opacity = 1 - (p * 2);
-            lightingRef.current.style.opacity = 0.8; 
-            dialogueRefs.current.forEach(d => d.style.opacity = 0);
-          }
-          else {
-            const p = (segment - 0.55) / 0.45;
-            bgRef.current.style.transform = "rotateX(0deg)";
-            charRef.current.style.transform = "rotateX(0deg)";
-            bgRef.current.style.filter = `blur(${Math.min(p * 40, 25)}px)`;
-            dialogueRefs.current.forEach((d, i) => {
-              const diag = s.dialogue[i];
-              if (diag) {
-                d.textContent = diag.text;
-                d.style.top = diag.top;
-                d.style.left = diag.left;
-                d.style.opacity = gsap.utils.clamp(0, 1, (p - 0.1) * 4);
+        });
+
+        // STEP 2: Show Initial Name First
+        sceneTl.fromTo(titleRef.current, 
+          { opacity: 0, y: 30 }, 
+          { opacity: 1, y: 0, duration: 0.8, ease: "power2.out" }
+        );
+
+        // STEP 3: Bring in Background and Character
+        sceneTl.to([bgRef.current, charRef.current], {
+          rotateX: 0,
+          opacity: 1,
+          duration: 1,
+          ease: "back.out(1.2)",
+        }, "+=0.2"); // Slight delay after title
+
+        // STEP 4: Fade out title and blur background for Dialogues
+        sceneTl.to(titleRef.current, { opacity: 0, duration: 0.4 }, "+=0.5");
+        sceneTl.to(bgRef.current, { filter: "blur(20px)", duration: 0.6 });
+
+        // STEP 5: Show Dialogues
+        scene.dialogue.forEach((diag, i) => {
+          sceneTl.fromTo(dialogueRefs.current[i], 
+            { opacity: 0, y: 10 },
+            { 
+              opacity: 1, 
+              y: 0, 
+              duration: 0.5, 
+              onStart: () => {
+                dialogueRefs.current[i].textContent = diag.text;
+                dialogueRefs.current[i].style.top = diag.top;
+                dialogueRefs.current[i].style.left = diag.left;
               }
-            });
-          }
-        }
+            }, "-=0.3"
+          );
+        });
+
+        // STEP 6: Hold for reading
+        sceneTl.to({}, { duration: 2.5 });
+
+        // STEP 7: Exit Animation (Swing Down)
+        sceneTl.to([bgRef.current, charRef.current], {
+          rotateX: -90,
+          opacity: 0,
+          duration: 0.8,
+          ease: "power2.in"
+        });
+
+        masterTl.current.add(sceneTl);
       });
+
+      // 2. Use ScrollTrigger to play the timeline only when visible
+      ScrollTrigger.create({
+        trigger: container.current,
+        start: "top center", // Starts when the top of the container hits the center of screen
+        onEnter: () => masterTl.current.play(),
+        onLeaveBack: () => masterTl.current.pause(), // Pause if user scrolls away
+      });
+
     }, container);
+
     return () => ctx.revert();
   }, []);
 
   return (
     <div ref={container} className="bg-white w-full h-screen relative overflow-hidden font-sans">
       
-      <div ref={lightingRef} className="fixed inset-0 pointer-events-none z-0 opacity-0 transition-all duration-700" />
+      <div ref={lightingRef} className="fixed inset-0 pointer-events-none z-0 opacity-20 transition-all duration-700" />
 
-      {/* Title stayed at 2/3 */}
-      <h1 ref={titleRef} className="absolute top-[60%] left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 text-black md:text-black/10 text-5xl md:text-9xl font-black uppercase tracking-tighter opacity-0 pointer-events-none text-center">
+      {/* The Name (Step 2) */}
+      <h1 ref={titleRef} className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 text-black text-5xl md:text-8xl font-black uppercase tracking-tighter opacity-0 pointer-events-none text-center">
         Happy HyperBite
       </h1>
 
-      {/* UI Container moved to items-end to push screen down */}
-      <div className="absolute inset-0 flex items-end justify-center w-full h-screen z-10 pb-14" style={{ perspective: "3000px", perspectiveOrigin: "50% 80%" }}>
+      <div className="absolute inset-0 flex items-end justify-center w-full h-screen z-10 pb-14" style={{ perspective: "3000px" }}>
         
         {/* Dialogue Boxes */}
         {[0, 1].map(i => (
-          <div 
-            key={i} 
-            ref={addDialogueRef} 
-            className="absolute text-white text-[10px] md:text-sm font-bold px-2 md:px-7 py-2 md:py-5 rounded-2xl pointer-events-none z-[100] -translate-x-1/2 select-none"
-            style={{ 
-              background: "rgba(0, 0, 0, 0.85)", 
-              backdropFilter: "blur(20px)", 
-              border: "1px solid rgba(255, 255, 255, 0.15)", 
-              maxWidth: "360px",
-              boxShadow: "0 20px 50px rgba(0,0,0,0.3)"
-            }}
+          <div key={i} ref={addDialogueRef} 
+            className="absolute text-white text-[10px] md:text-sm font-bold px-5 py-3 rounded-2xl pointer-events-none z-[100] -translate-x-1/2"
+            style={{ background: "rgba(0, 0, 0, 0.85)", backdropFilter: "blur(20px)", border: "1px solid rgba(255, 255, 255, 0.15)" }}
           />
         ))}
 
-        {/* Larger SVG scale */}
         <svg viewBox="0 0 1200 700" className="w-[96vw] h-[80vh] overflow-visible">
           <defs>
-            <clipPath id="pageClip">
-              <rect x="100" y="50" width="1000" height="580" rx="32" />
-            </clipPath>
+            <clipPath id="pageClip"><rect x="100" y="50" width="1000" height="580" rx="32" /></clipPath>
           </defs>
 
-          <image 
-            ref={bgRef} 
-            x="100" y="50" width="1000" height="580" 
-            preserveAspectRatio="xMidYMid slice" 
-            clipPath="url(#pageClip)"
-            style={{ transformOrigin: "50% 630px" }}
-          />
+          <image ref={bgRef} x="100" y="50" width="1000" height="580" preserveAspectRatio="xMidYMid slice" clipPath="url(#pageClip)" style={{ transformOrigin: "50% 630px" }} />
+          <image ref={charRef} x="100" y="50" width="1000" height="580" preserveAspectRatio="xMidYMid slice" style={{ transformOrigin: "50% 630px" }} />
           
-          <image 
-            ref={charRef} 
-            x="100" y="50" width="1000" height="580" 
-            preserveAspectRatio="xMidYMid slice" 
-            style={{ transformOrigin: "50% 630px" }}
-          />
-          
-          {/* Hinge physically matches the lower position */}
           <rect x="40" y="630" width="1120" height="36" fill="#222" rx="18" />
-          <rect x="40" y="630" width="1120" height="3" fill="rgba(255, 255, 255, 0.2)" />
         </svg>
 
-        {/* Control Buttons */}
-        <div className="absolute bottom-10 left-10 flex flex-col gap-4 z-[100]">
-          <button onClick={handleReset} className="p-5 rounded-full bg-black/5 border border-black/10 text-black/30 hover:text-black hover:bg-black/10 transition-all active:scale-95">
+        <div className="absolute bottom-10 left-10 z-[100]">
+          <button onClick={() => masterTl.current.restart()} className="p-5 rounded-full bg-black/5 border border-black/10 text-black/30 hover:text-black hover:bg-black/10 transition-all">
             <FiRotateCcw size={24} />
-          </button>
-          <button onClick={() => window.scrollBy({top: 6000, behavior: 'smooth'})} className="p-5 rounded-full bg-black/5 border border-black/10 text-black/30 hover:text-black hover:bg-black/10 transition-all active:scale-95">
-            <FiChevronDown size={24} />
           </button>
         </div>
       </div>
     </div>
   );
 }
+
+// On scroll animation: 🍏🍏🍏🍏🍏
+
+// import React, { useRef, useEffect } from "react";
+// import gsap from "gsap";
+// import { ScrollTrigger } from "gsap/ScrollTrigger";
+// import { FiRotateCcw, FiChevronDown } from "react-icons/fi";
+
+// gsap.registerPlugin(ScrollTrigger);
+
+// const scenes = [
+//   {
+//     name: "The Daily Hustle",
+//     bg: "/assets/ADV_Screens_HyperBite/bg-1.png",
+//     chars: [{ src: "/assets/ADV_Screens_HyperBite/fg-1.png" }],
+//     dialogue: [{ text: "Uff... another long day ahead.", top: "30%", left: "50%" }],
+//     light: "linear-gradient(to bottom, rgba(255,255,255,0.1) 0%, rgba(0,0,0,0) 100%)"
+//   },
+//   {
+//     name: "The Heavy Burden",
+//     bg: "/assets/ADV_Screens_HyperBite/bg-2.png",
+//     chars: [{ src: "/assets/ADV_Screens_HyperBite/fg-2.png" }],
+//     dialogue: [
+//       { text: "Why so nervous?", top: "35%", left: "35%" },
+//       { text: "Too much work, no time for myself.", top: "30%", left: "75%" }
+//     ],
+//     light: "linear-gradient(to bottom, rgba(0,120,255,0.15) 0%, rgba(0,0,0,0) 100%)"
+//   },
+//   {
+//     name: "A Natural Solution",
+//     bg: "/assets/ADV_Screens_HyperBite/bg-3.png",
+//     chars: [{ src: "/assets/ADV_Screens_HyperBite/fg-3.png" }],
+//     dialogue: [
+//       { text: "No papa its HyperBite. it has Raw honey & zero added sugar.", top: "22%", left: "30%" },
+//       { text: "No! snacks are not good for kids", top: "28%", left: "70%" }
+//     ],
+//     light: "linear-gradient(to bottom, rgba(255,100,0,0.15) 0%, rgba(0,0,0,0) 100%)"
+//   },
+//   {
+//     name: "The Energy Burst",
+//     bg: "/assets/ADV_Screens_HyperBite/bg-4.png",
+//     chars: [{ src: "/assets/ADV_Screens_HyperBite/fg-4.png" }],
+//     dialogue: [
+//       { text: "Amazing its delicious!", top: "25%", left: "45%" },
+//       { text: "Yes! very nice texture.", top: "22%", left: "75%" }
+//     ],
+//     light: "linear-gradient(to bottom, rgba(50,255,50,0.1) 0%, rgba(0,0,0,0) 100%)"
+//   },
+//   {
+//     name: "Ready for Anything",
+//     bg: "/assets/ADV_Screens_HyperBite/bg-5.png",
+//     chars: [{ src: "/assets/ADV_Screens_HyperBite/fg-5.png" }],
+//     dialogue: [
+//       { text: "It's like a nutrient bomb.", top: "35%", left: "70%" },
+//       { text: "Easy to carry for travel.", top: "30%", left: "40%" }
+//     ],
+//     light: "linear-gradient(to bottom, rgba(0,200,255,0.12) 0%, rgba(0,0,0,0) 100%)"
+//   },
+//   {
+//     name: "HyperBite Lifestyle",
+//     bg: "/assets/ADV_Screens_HyperBite/bg-6.png",
+//     chars: [{ src: "/assets/ADV_Screens_HyperBite/fg-6.png" }],
+//     dialogue: [
+//       { text: "Wow feel the taste!", top: "30%", left: "70%" },
+//       { text: "Exactly we all are enjoying.", top: "30%", left: "50%" }
+//     ],
+//     light: "linear-gradient(to bottom, rgba(180,50,255,0.15) 0%, rgba(0,0,0,0) 100%)"
+//   }
+// ];
+
+// export default function HyperBiteProEngine() {
+//   const container = useRef();
+//   const bgRef = useRef();
+//   const charRef = useRef();
+//   const lightingRef = useRef();
+//   const titleRef = useRef();
+//   const dialogueRefs = useRef([]);
+//   const currentIdxRef = useRef(-1);
+//   const stRef = useRef(null);
+
+//   const addDialogueRef = (el) => { if (el && !dialogueRefs.current.includes(el)) dialogueRefs.current.push(el); };
+
+//   const handleReset = () => {
+//     if (stRef.current) {
+//       window.scrollTo({ top: 0, behavior: 'smooth' });
+//       currentIdxRef.current = -1;
+//     }
+//   };
+
+//   useEffect(() => {
+//     const ctx = gsap.context(() => {
+//       stRef.current = ScrollTrigger.create({
+//         trigger: container.current,
+//         start: "top top",
+//         end: "+=32000",
+//         pin: true,
+//         scrub: 1.2,
+//         onUpdate: (self) => {
+//           const progress = self.progress;
+//           const total = scenes.length;
+//           const idx = Math.min(Math.floor(progress * total), total - 1);
+//           const segment = (progress * total) % 1;
+//           const s = scenes[idx];
+
+//           if (segment > 0.1 && segment < 0.3 && currentIdxRef.current !== idx) {
+//             bgRef.current.setAttribute("href", s.bg);
+//             charRef.current.setAttribute("href", s.chars[0].src);
+//             lightingRef.current.style.background = s.light;
+//             titleRef.current.textContent = s.name;
+//             currentIdxRef.current = idx;
+//           }
+
+//           // ANIMATION PHASES
+//           if (segment < 0.25) {
+//             const p = segment / 0.25;
+//             const rot = gsap.utils.interpolate(0, 90, p);
+//             bgRef.current.style.transform = `rotateX(${rot}deg)`;
+//             charRef.current.style.transform = `rotateX(${rot}deg)`;
+//             charRef.current.style.opacity = 1 - p;
+//             bgRef.current.style.filter = "blur(0px)";
+//             titleRef.current.style.opacity = p > 0.6 ? 1 : 0;
+//             dialogueRefs.current.forEach(d => { d.style.opacity = 0; d.textContent = ""; });
+//           }
+//           else if (segment >= 0.25 && segment < 0.55) {
+//             const p = (segment - 0.25) / 0.3;
+//             const bgP = Math.min(1, p * 1.3);
+//             const charP = Math.max(0, (p - 0.2) * 1.25);
+//             const swing = (prog) => Math.sin(prog * Math.PI * 3) * (1 - prog) * 8;
+//             bgRef.current.style.transform = `rotateX(${gsap.utils.interpolate(90, 0, bgP) + swing(bgP)}deg)`;
+//             charRef.current.style.transform = `rotateX(${gsap.utils.interpolate(90, 0, charP) + swing(charP)}deg)`;
+//             charRef.current.style.opacity = charP > 0 ? 1 : 0;
+//             titleRef.current.style.opacity = 1 - (p * 2);
+//             lightingRef.current.style.opacity = 0.8; 
+//             dialogueRefs.current.forEach(d => d.style.opacity = 0);
+//           }
+//           else {
+//             const p = (segment - 0.55) / 0.45;
+//             bgRef.current.style.transform = "rotateX(0deg)";
+//             charRef.current.style.transform = "rotateX(0deg)";
+//             bgRef.current.style.filter = `blur(${Math.min(p * 40, 25)}px)`;
+//             dialogueRefs.current.forEach((d, i) => {
+//               const diag = s.dialogue[i];
+//               if (diag) {
+//                 d.textContent = diag.text;
+//                 d.style.top = diag.top;
+//                 d.style.left = diag.left;
+//                 d.style.opacity = gsap.utils.clamp(0, 1, (p - 0.1) * 4);
+//               }
+//             });
+//           }
+//         }
+//       });
+//     }, container);
+//     return () => ctx.revert();
+//   }, []);
+
+//   return (
+//     <div ref={container} className="bg-white w-full h-screen relative overflow-hidden font-sans">
+      
+//       <div ref={lightingRef} className="fixed inset-0 pointer-events-none z-0 opacity-0 transition-all duration-700" />
+
+//       {/* Title stayed at 2/3 */}
+//       <h1 ref={titleRef} className="absolute top-[60%] left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 text-black md:text-black/10 text-5xl md:text-9xl font-black uppercase tracking-tighter opacity-0 pointer-events-none text-center">
+//         Happy HyperBite
+//       </h1>
+
+//       {/* UI Container moved to items-end to push screen down */}
+//       <div className="absolute inset-0 flex items-end justify-center w-full h-screen z-10 pb-14" style={{ perspective: "3000px", perspectiveOrigin: "50% 80%" }}>
+        
+//         {/* Dialogue Boxes */}
+//         {[0, 1].map(i => (
+//           <div 
+//             key={i} 
+//             ref={addDialogueRef} 
+//             className="absolute text-white text-[10px] md:text-sm font-bold px-2 md:px-7 py-2 md:py-5 rounded-2xl pointer-events-none z-[100] -translate-x-1/2 select-none"
+//             style={{ 
+//               background: "rgba(0, 0, 0, 0.85)", 
+//               backdropFilter: "blur(20px)", 
+//               border: "1px solid rgba(255, 255, 255, 0.15)", 
+//               maxWidth: "360px",
+//               boxShadow: "0 20px 50px rgba(0,0,0,0.3)"
+//             }}
+//           />
+//         ))}
+
+//         {/* Larger SVG scale */}
+//         <svg viewBox="0 0 1200 700" className="w-[96vw] h-[80vh] overflow-visible">
+//           <defs>
+//             <clipPath id="pageClip">
+//               <rect x="100" y="50" width="1000" height="580" rx="32" />
+//             </clipPath>
+//           </defs>
+
+//           <image 
+//             ref={bgRef} 
+//             x="100" y="50" width="1000" height="580" 
+//             preserveAspectRatio="xMidYMid slice" 
+//             clipPath="url(#pageClip)"
+//             style={{ transformOrigin: "50% 630px" }}
+//           />
+          
+//           <image 
+//             ref={charRef} 
+//             x="100" y="50" width="1000" height="580" 
+//             preserveAspectRatio="xMidYMid slice" 
+//             style={{ transformOrigin: "50% 630px" }}
+//           />
+          
+//           {/* Hinge physically matches the lower position */}
+//           <rect x="40" y="630" width="1120" height="36" fill="#222" rx="18" />
+//           <rect x="40" y="630" width="1120" height="3" fill="rgba(255, 255, 255, 0.2)" />
+//         </svg>
+
+//         {/* Control Buttons */}
+//         <div className="absolute bottom-10 left-10 flex flex-col gap-4 z-[100]">
+//           <button onClick={handleReset} className="p-5 rounded-full bg-black/5 border border-black/10 text-black/30 hover:text-black hover:bg-black/10 transition-all active:scale-95">
+//             <FiRotateCcw size={24} />
+//           </button>
+//           <button onClick={() => window.scrollBy({top: 6000, behavior: 'smooth'})} className="p-5 rounded-full bg-black/5 border border-black/10 text-black/30 hover:text-black hover:bg-black/10 transition-all active:scale-95">
+//             <FiChevronDown size={24} />
+//           </button>
+//         </div>
+//       </div>
+//     </div>
+//   );
+// }
 
 // import React, { useRef, useEffect } from "react";
 // import gsap from "gsap";
