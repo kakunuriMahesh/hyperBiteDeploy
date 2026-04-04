@@ -106,7 +106,7 @@ const HeroSection = () => {
   }, []);
 
   return (
-    <section className="relative w-full h-screen overflow-hidden bg-black">
+    <section className="relative w-full h-screen overflow-hidden bg-[#9ad1e5]">
       <div ref={finaleBgRef} className="absolute inset-0 bg-cover bg-center opacity-0" 
            style={{ backgroundImage: "url('https://res.cloudinary.com/dbkvlr1fd/image/upload/q_auto/f_auto/v1775185316/screen1bg_sky_lwam8s.png')" }} />
 

@@ -119,6 +119,12 @@ export default function App() {
       "/assets/sunflowershell.webp",
       "/assets/dot.svg",
       "/assets/Vector 2.png",
+      "https://res.cloudinary.com/dbkvlr1fd/image/upload/q_auto/f_auto/v1775185316/screen1bg_sky_lwam8s.png",
+      "https://res.cloudinary.com/dbkvlr1fd/image/upload/q_auto/f_auto/v1775185315/underwaterSea_v9v0su.png",
+      "https://res.cloudinary.com/dbkvlr1fd/image/upload/q_auto/f_auto/v1775185457/skyDiver_fv4ry3.png",
+      "https://res.cloudinary.com/dbkvlr1fd/image/upload/q_auto/f_auto/v1775185316/manonHills_vmmg2n.png",
+      "https://res.cloudinary.com/dbkvlr1fd/image/upload/q_auto/f_auto/v1775185315/diver_mb3o5v.png",
+      "https://res.cloudinary.com/dbkvlr1fd/image/upload/q_auto/f_auto/v1775185315/seaBushes_ym0fzq.png"
     ];
 
     let loadedCount = 0;
