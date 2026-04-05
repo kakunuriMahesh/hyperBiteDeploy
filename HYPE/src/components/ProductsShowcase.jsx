@@ -12,7 +12,7 @@ const products = [
     desc: "A savory, crunchy blend of Sunflower, Pumpkin, and Watermelon seeds, lightly roasted in premium ghee with a hint of cinnamon and secret spices.",
     benefit: "5g Clean Plant Protein",
     why: "Rich in Magnesium and Zinc for heart health and immunity. Cinnamon supports metabolism naturally.",
-    img: "/assets/speed-boost-pack.png",
+    img: "/assets/SKU/skuSeedBoost.webp",
     bg: "#FFFFFF"
   },
   {
@@ -21,7 +21,7 @@ const products = [
     desc: "High-quality cashews roasted in allowable ghee and seasoned with a bold Cinnamon profile.",
     benefit: "Healthy replacement for oil-soaked chips.",
     why: "Provides healthy monounsaturated fats that keep you satiated longer, killing hot cravings instantly while supporting brain health",
-    img: "/assets/cashew-charge-pack.png",
+    img: "/assets/SKU/skuCashewCharge.webp",
     bg: "#FFFBF2"
   },
   {
@@ -30,7 +30,7 @@ const products = [
     desc: "An authentic experience of ancient wisdom, combining Raagi, Sajja, Korra, and Jonnalu. Sweetened only with Raw Honey and Dates.",
     benefit: "Exceptional source of dietary fiber.",
     why: "The slow-release carbohydrates from these four millets ensure you stay full and focused for hours, maintaining gut health.",
-    img: "/assets/millet-matrix-pack.png",
+    img: "/assets/SKU/skuMilletMatrix.webp",
     bg: "#FAF5FF"
   },
   {
@@ -39,16 +39,16 @@ const products = [
     desc: "A high-performance mix of Rolled Oats, Sunflower & Pumpkin seeds, Roasted Peanuts and Raw Honey.",
     benefit: "Clean Energy with zero-sugar-spike.",
     why: "The combination of Beta-Glucan and healthy fats creates a time-release energy effect, perfect for long journeys.",
-    img: "/assets/oats-octane-pack.png",
+    img: "/assets/SKU/skuOatsOctane.webp",
     bg: "#F0F9FF"
   },
   {
-    packname: "Power Chunk",
+    packname: "Power Pulse",
     selectedpoint: "The High-Protein Recovery Bite",
     desc: "A potent blend of Dates, Nuts, Hemp Protein powder and Dark Chocolate, finished with a refreshing Orange zest.",
     benefit: "Stops junk-food hunting in its tracks.",
     why: "Hemp protein contains all nine essential amino acids. Combined with dark chocolate and dates, it’s the ultimate recovery snack.",
-    img: "/assets/power-Chunk-pack.png",
+    img: "/assets/SKU/skuPowerChunk.webp",
     bg: "#FFF5F5"
   }
 ];
@@ -64,7 +64,7 @@ export default function HyperBiteStackEngine() {
       cards.forEach((card, i) => {
         ScrollTrigger.create({
           trigger: card,
-          start: "top top",
+          start: "top 50px",
           endTrigger: mainRef.current,
           end: "bottom bottom",
           pin: true,
@@ -116,7 +116,7 @@ export default function HyperBiteStackEngine() {
             style={{ zIndex: index + 1 }}
           >
             <div 
-              className="inner-card relative w-full max-w-6xl h-[85vh] md:h-[80vh] rounded-[1.5rem] md:rounded-[2.5rem] shadow-[0_20px_60px_rgba(0,0,0,0.1)] border border-white flex flex-col md:flex-row items-center overflow-hidden p-5 md:p-16 gap-4 md:gap-10"
+              className="inner-card relative w-full max-w-6xl h-[69vh] md:h-[80vh] rounded-[1.5rem] md:rounded-[2.5rem] shadow-[0_20px_60px_rgba(0,0,0,0.1)] border border-white flex flex-col md:flex-row items-center overflow-hidden p-5 md:p-16 gap-4 md:gap-10"
               style={{ backgroundColor: item.bg }}
             >
               {/* Left: Product Image - Smaller on Mobile */}
@@ -124,7 +124,7 @@ export default function HyperBiteStackEngine() {
                 <img 
                   src={item.img} 
                   alt={item.packname} 
-                  className="w-auto h-full max-h-[180px] md:max-h-[450px] object-contain drop-shadow-xl" 
+                  className="w-auto h-full max-h-[180px] md:max-h-[450px] object-contain rotate-12 rounded-full drop-shadow-xl" 
                 />
               </div>
 

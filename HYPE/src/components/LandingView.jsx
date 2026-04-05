@@ -8,6 +8,7 @@ import ProductsShowcase from "./ProductsShowcase";
 import HeroCarousel from "../pages/HeroCarousel";
 import HyperBiteManifesto from "./OurSection";
 import CinematicSceneTailwind from "./CinematicSceneTailwind";
+import ActiveHyper from "./ActiveHyper";
 
 export default function LandingView({ onEnterPremiumMode, breakpoint }) {
   const products = Object.values(productDetails);
@@ -270,6 +271,8 @@ const navigate = useNavigate();
 
   </div>
 </section>
+
+<ActiveHyper />
 
 <HyperBiteManifesto />
 <ProductsShowcase />
