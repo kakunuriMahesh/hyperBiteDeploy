@@ -15,19 +15,126 @@ const HeroSection = () => {
   const bushRef = useRef(null);
   const rightBubbleContainerRef = useRef(null);
 
-  useEffect(() => {
+  // useEffect(() => {
+  //   const tl = gsap.timeline({ repeat: -1 });
+
+  //   // --- INITIAL STATE ---
+  //   gsap.set([oceanRef.current, finaleBgRef.current, rightBubbleContainerRef.current], { opacity: 0 });
+  //   gsap.set(swimmerRef.current, { opacity: 0, scale: 0.1, x: "0vw" }); // Ensure x starts at 0
+  //   gsap.set(diverRef.current, { marginTop: "-100vh" });
+  //   gsap.set(bushRef.current, { yPercent: 100 });
+  //   gsap.set(hillManRef.current, { yPercent: 100, xPercent: -50, scale: 1 });
+
+  //   // 1. Skydiver Floating (Air)
+  //   gsap.to(diverRef.current, {
+  //     y: "+=15",
+  //     rotation: 3,
+  //     duration: 2.5,
+  //     ease: "sine.inOut",
+  //     repeat: -1,
+  //     yoyo: true
+  //   });
+
+  //   // 2. Ocean Diver Floating (Water)
+  //   gsap.to(swimmerRef.current, {
+  //     y: "+=20",
+  //     rotation: -2,
+  //     duration: 3,
+  //     ease: "sine.inOut",
+  //     repeat: -1,
+  //     yoyo: true
+  //   });
+
+  //   // 3. Bubble Animation (Targeting bubbles inside the right container)
+  //   const bubbles = rightBubbleContainerRef.current.querySelectorAll(".bubble");
+  //   bubbles.forEach((bubble) => {
+  //     gsap.set(bubble, { 
+  //       x: `random(0, 45, 1)vw`, // Restricted to the 50% width of the right panel
+  //       y: "110vh", 
+  //       opacity: `random(0.3, 0.6)` 
+  //     });
+  //     gsap.to(bubble, {
+  //       y: "-10vh",
+  //       duration: `random(4, 8)`,
+  //       repeat: -1,
+  //       delay: `random(0, 5)`,
+  //       ease: "none"
+  //     });
+  //   });
+
+  //   // --- MAIN TIMELINE ---
+  //   tl.to(stageRef.current, { scale: 1.05, duration: 4, ease: "power1.inOut" })
+  //     .to(fuelRef.current, { opacity: 1, y: 0, duration: 1 }, 0)
+  //     .to(diverRef.current, { marginTop: "0vh", opacity: 1, duration: 2, ease: "power2.out" }, 0)
+  //     .to([fuelRef.current, diverRef.current], { opacity: 0, duration: 0.5 }, 4)
+
+  //     .to(stageRef.current, { scale: 1, duration: 4 }, 4)
+  //     .to(skyRef.current, { opacity: 1 }, 4)
+  //     .to(hillManRef.current, { yPercent: 0, duration: 1.5, ease: "power2.out" }, 4.5)
+  //     .to(horizonRef.current, { opacity: 1, y: 0, duration: 1 }, 5)
+  //     .to([horizonRef.current, hillManRef.current], { opacity: 0, yPercent: 100, duration: 1 }, 8)
+
+  //     // Ocean Scene Starts
+  //     .to(skyRef.current, { opacity: 0, duration: 1 }, 8)
+  //     .to(oceanRef.current, { opacity: 1, duration: 1 }, 8)
+  //     .to(rightBubbleContainerRef.current, { opacity: 1, duration: 1 }, 8) 
+  //     .to(stageRef.current, { scale: 1.2, duration: 4 }, 8)
+  //     .to(swimmerRef.current, { opacity: 1, scale: 1.4, duration: 2.5, ease: "power2.out" }, 9)
+  //     .to(ofYouRef.current, { opacity: 1, y: 0, duration: 1 }, 9.5)
+
+  //     .to(bushRef.current, { yPercent: 0, duration: 1.2, ease: "power2.inOut" }, 12)
+  //     .to({}, { duration: 0.8 }) 
+      
+  //     // Finale Split
+  //     .to(finaleBgRef.current, { opacity: 1, duration: 0.8 }, 13.2)
+  //     .to(oceanRef.current, { opacity: 0, duration: 0.5 }, 13.2)
+  //     .to(bushRef.current, { yPercent: 100, duration: 1.5, ease: "power2.inOut" }, 13.5)
+  //     .to(stageRef.current, { scale: 1, duration: 2 }, 13.5)
+
+  //     /* --- FINAL MERGE --- */
+  //     // Move Skydiver Left
+  //     .to(fuelRef.current, { opacity: 1, x: "-32vw", y: "10vh", scale: 0.35, color: "#FFFFFF", duration: 1 }, 14)
+  //     .to(diverRef.current, { opacity: 1, x: "-32vw", y: "-25vh", scale: 0.45, duration: 1 }, 14)
+
+  //     // Center Elements
+  //     .to(horizonRef.current, { 
+  //       opacity: 1, x: "0vw", y: "-20vh", scale: 0.35, 
+  //       color: "#fbbf24", webkitTextFillColor: "#fbbf24", zIndex: 150, duration: 1 
+  //     }, 14)
+  //     .to(hillManRef.current, { opacity: 1, yPercent: 10, scale: 1, xPercent: -50, duration: 1 }, 14)
+
+  //     // Move Swimmer Right (Fixed the x: 32vw here)
+  //     .to(ofYouRef.current, { opacity: 1, x: "32vw", y: "10vh", scale: 0.35, color: "#22d3ee", webkitTextFillColor: "#22d3ee", duration: 1 }, 14)
+  //     .to(swimmerRef.current, { opacity: 1, x: "32vw", y: "-12vh", scale: 0.45, duration: 1 }, 14)
+
+  //     .to({}, { duration: 5 });
+
+  //   return () => tl.kill();
+  // }, []);
+
+useEffect(() => {
     const tl = gsap.timeline({ repeat: -1 });
 
     // --- INITIAL STATE ---
     gsap.set([oceanRef.current, finaleBgRef.current, rightBubbleContainerRef.current], { opacity: 0 });
-    gsap.set(swimmerRef.current, { opacity: 0, scale: 0.1, x: "0vw" }); // Ensure x starts at 0
-    gsap.set(diverRef.current, { marginTop: "-100vh" });
+    gsap.set(swimmerRef.current, { opacity: 0, scale: 0.1, x: "0vw" });
+    
+    // Ensure Skydiver is centered horizontally and starts just off-screen at the top
+    gsap.set(diverRef.current, { 
+      left: "50%",
+      xPercent: -50,
+      top: "50%", // Anchor to vertical center
+      y: -600,    // Move 600px up from center (off-screen)
+      scale: 1,
+      opacity: 0,
+      marginTop: 0 // Resetting your previous marginTop to prevent conflicts
+    });
+
     gsap.set(bushRef.current, { yPercent: 100 });
     gsap.set(hillManRef.current, { yPercent: 100, xPercent: -50, scale: 1 });
 
-    // 1. Skydiver Floating (Air)
+    // 1. Skydiver Floating (Idle Rotation)
     gsap.to(diverRef.current, {
-      y: "+=15",
       rotation: 3,
       duration: 2.5,
       ease: "sine.inOut",
@@ -35,7 +142,7 @@ const HeroSection = () => {
       yoyo: true
     });
 
-    // 2. Ocean Diver Floating (Water)
+    // 2. Ocean Diver Floating (Idle)
     gsap.to(swimmerRef.current, {
       y: "+=20",
       rotation: -2,
@@ -45,11 +152,11 @@ const HeroSection = () => {
       yoyo: true
     });
 
-    // 3. Bubble Animation (Targeting bubbles inside the right container)
+    // 3. Bubble Animation
     const bubbles = rightBubbleContainerRef.current.querySelectorAll(".bubble");
     bubbles.forEach((bubble) => {
       gsap.set(bubble, { 
-        x: `random(0, 45, 1)vw`, // Restricted to the 50% width of the right panel
+        x: `random(0, 45, 1)vw`, 
         y: "110vh", 
         opacity: `random(0.3, 0.6)` 
       });
@@ -63,54 +170,64 @@ const HeroSection = () => {
     });
 
     // --- MAIN TIMELINE ---
+    
+    // SCENE 1: SKY
     tl.to(stageRef.current, { scale: 1.05, duration: 4, ease: "power1.inOut" })
       .to(fuelRef.current, { opacity: 1, y: 0, duration: 1 }, 0)
-      .to(diverRef.current, { marginTop: "0vh", opacity: 1, duration: 2, ease: "power2.out" }, 0)
-      .to([fuelRef.current, diverRef.current], { opacity: 0, duration: 0.5 }, 4)
-
-      .to(stageRef.current, { scale: 1, duration: 4 }, 4)
-      .to(skyRef.current, { opacity: 1 }, 4)
+      
+      // Diver drops to center (y: 0)
+      .to(diverRef.current, { y: 0, opacity: 1, duration: 2, ease: "power2.out" }, 0)
+      
+      // TRANSITION: Move diver UP and shrink when Hill Man enters
+      .to(fuelRef.current, { opacity: 0, duration: 0.8 }, 3.5)
+      .to(diverRef.current, { 
+        scale: 0.3, 
+        y: -250, // Moves him to the upper part of the screen, still visible
+        duration: 2, 
+        ease: "power2.inOut" 
+      }, 4)
+      
       .to(hillManRef.current, { yPercent: 0, duration: 1.5, ease: "power2.out" }, 4.5)
       .to(horizonRef.current, { opacity: 1, y: 0, duration: 1 }, 5)
-      .to([horizonRef.current, hillManRef.current], { opacity: 0, yPercent: 100, duration: 1 }, 8)
+      
+      // Scene Exit
+      .to([horizonRef.current, hillManRef.current, diverRef.current], { opacity: 0, duration: 1 }, 8)
 
-      // Ocean Scene Starts
-      .to(skyRef.current, { opacity: 0, duration: 1 }, 8)
+    // SCENE 2: OCEAN
+    tl.to(skyRef.current, { opacity: 0, duration: 1 }, 8)
       .to(oceanRef.current, { opacity: 1, duration: 1 }, 8)
       .to(rightBubbleContainerRef.current, { opacity: 1, duration: 1 }, 8) 
-      .to(stageRef.current, { scale: 1.2, duration: 4 }, 8)
+      .to(stageRef.current, { scale: 1.3, duration: 4 }, 8)
       .to(swimmerRef.current, { opacity: 1, scale: 1.4, duration: 2.5, ease: "power2.out" }, 9)
       .to(ofYouRef.current, { opacity: 1, y: 0, duration: 1 }, 9.5)
 
-      .to(bushRef.current, { yPercent: 0, duration: 1.2, ease: "power2.inOut" }, 12)
-      .to({}, { duration: 0.8 }) 
+      // Bush depth effect
+      .to(bushRef.current, { yPercent: 0, duration: 1.5, ease: "power2.inOut" }, 11.5)
+      .to(swimmerRef.current, { scale: 0.5, duration: 1.5, ease: "power2.inOut" }, 11.5)
+      .to(stageRef.current, { scale: 1, duration: 1.5, ease: "power2.inOut" }, 11.5)
       
-      // Finale Split
+      // SCENE 3: FINALE
       .to(finaleBgRef.current, { opacity: 1, duration: 0.8 }, 13.2)
       .to(oceanRef.current, { opacity: 0, duration: 0.5 }, 13.2)
       .to(bushRef.current, { yPercent: 100, duration: 1.5, ease: "power2.inOut" }, 13.5)
-      .to(stageRef.current, { scale: 1, duration: 2 }, 13.5)
 
       /* --- FINAL MERGE --- */
-      // Move Skydiver Left
-      .to(fuelRef.current, { opacity: 1, x: "-32vw", y: "10vh", scale: 0.35, color: "#FFFFFF", duration: 1 }, 14)
-      .to(diverRef.current, { opacity: 1, x: "-32vw", y: "-25vh", scale: 0.45, duration: 1 }, 14)
-
-      // Center Elements
+      .to(fuelRef.current, { opacity: 1, x: "-32vw", y: 100, scale: 0.35, color: "#FFFFFF", duration: 1 }, 14)
+      .to(diverRef.current, { opacity: 1, x: "-32vw", y: -150, scale: 0.45, duration: 1 }, 14)
       .to(horizonRef.current, { 
-        opacity: 1, x: "0vw", y: "-20vh", scale: 0.35, 
+        opacity: 1, x: "0vw", y: -120, scale: 0.35, 
         color: "#fbbf24", webkitTextFillColor: "#fbbf24", zIndex: 150, duration: 1 
       }, 14)
       .to(hillManRef.current, { opacity: 1, yPercent: 10, scale: 1, xPercent: -50, duration: 1 }, 14)
-
-      // Move Swimmer Right (Fixed the x: 32vw here)
-      .to(ofYouRef.current, { opacity: 1, x: "32vw", y: "10vh", scale: 0.35, color: "#22d3ee", webkitTextFillColor: "#22d3ee", duration: 1 }, 14)
-      .to(swimmerRef.current, { opacity: 1, x: "32vw", y: "-12vh", scale: 0.45, duration: 1 }, 14)
+      .to(ofYouRef.current, { opacity: 1, x: "32vw", y: 100, scale: 0.35, color: "#22d3ee", webkitTextFillColor: "#22d3ee", duration: 1 }, 14)
+      .to(swimmerRef.current, { opacity: 1, x: "32vw", y: -80, scale: 0.45, duration: 1 }, 14)
 
       .to({}, { duration: 5 });
 
     return () => tl.kill();
   }, []);
+
+
 
   return (
     <section className="relative w-full h-screen overflow-hidden bg-[#9ad1e5]">
