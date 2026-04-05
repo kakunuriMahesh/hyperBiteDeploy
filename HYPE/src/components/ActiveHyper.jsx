@@ -6,11 +6,11 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 gsap.registerPlugin(ScrollTrigger);
 
 const products = [
-  { id: 0, name: "Millet Matrix", img: "/assets/millet-matrix-pack.png", glow: "rgba(34, 197, 94, 0.5)" }, 
-  { id: 1, name: "Power Chunk", img: "/assets/power-Chunk-pack.png", glow: "rgba(249, 115, 22, 0.5)" },  
-  { id: 2, name: "Oat Octane", img: "/assets/oats-octane-pack.png", glow: "rgba(20, 184, 166, 0.5)" },   
-  { id: 3, name: "Cashew Charge", img: "/assets/cashew-charge-pack.png", glow: "rgba(255, 255, 255, 0.3)" }, 
-  { id: 4, name: "Seed Boost", img: "/assets/speed-boost-pack.png", glow: "rgba(168, 85, 247, 0.5)" },   
+  { id: 0, name: "Millet Matrix", img: "/assets/Millet_pack.webp", glow: "rgba(34, 197, 94, 0.5)" }, 
+  { id: 1, name: "Power Chunk", img: "/assets/Power_pack.webp", glow: "rgba(249, 115, 22, 0.5)" },  
+  { id: 2, name: "Oat Octane", img: "/assets/Oat_Pack.webp", glow: "rgba(20, 184, 166, 0.5)" },   
+  { id: 3, name: "Cashew Charge", img: "/assets/Cashew_pack.webp", glow: "rgba(255, 255, 255, 0.3)" }, 
+  { id: 4, name: "Seed Boost", img: "/assets/Seed_pack.webp", glow: "rgba(168, 85, 247, 0.5)" },   
 ];
 
 const ActiveHyper = () => {

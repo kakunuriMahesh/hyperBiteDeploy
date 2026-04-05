@@ -27,13 +27,13 @@ export const productDetails = {
     fiber: '4g'
   },
   price: '30 RS',
-  image: '/assets/millet-matrix-pack.png',
-  packImg: '/assets/millet-matrix-pack.png',
+  image: '/assets/Millet_pack.webp',
+  packImg: '/assets/Millet_pack.webp',
   images: [
-    '/assets/millet-matrix-pack.png',
+    '/assets/Millet_pack.webp',
     '/assets/milletMatrix-mock.jpeg', 
     '/assets/MilletMixHoney.jpeg',
-    '/assets/millet-matrix-pack.png'
+    '/assets/Millet_pack.webp'
   ],
   reviews: [
     {
@@ -84,13 +84,13 @@ oatsOctane:{
     fiber: '4g'
   },
   price: '30 RS',
-  image: '/assets/oats-octane-pack.png',
-  packImg: '/assets/oats-octane-pack.png',
+  image: '/assets/Oat_Pack.webp',
+  packImg: '/assets/Oat_Pack.webp',
   images: [
-    '/assets/oats-octane-pack.png',
+    '/assets/Oat_Pack.webp',
     '/assets/oatsOctane-mock.jpeg',
     '/assets/OatsOctaneHoney.jpeg',
-    '/assets/oatsOctane-mock2.jpeg', 
+    '/assets/Oat_Pack.webp', 
   ],
   reviews: [
     {
@@ -141,13 +141,13 @@ cashewCharge:{
     fiber: '4g'
   },
   price: '30 RS',
-  image: '/assets/cashew-charge-pack.png',
-  packImg: '/assets/cashew-charge-pack.png',
+  image: '/assets/Cashew_pack.webp',
+  packImg: '/assets/Cashew_pack.webp',
   images: [
-    '/assets/cashew-charge-pack.png',
+    '/assets/Cashew_pack.webp',
     '/assets/cashew_charge-mock.jpeg',
     '/assets/cashew_charge-mock2.jpeg',
-    '/assets/cashew-charge-pack.png'
+    '/assets/Cashew_pack.webp'
   ],
   reviews: [
     {
@@ -198,13 +198,13 @@ seedBoost:{
     fiber: '4g'
   },
   price: '30 RS',
-  image: '/assets/speed-boost-pack.png',
-  packImg: '/assets/speed-boost-pack.png',
+  image: '/assets/Seed_pack.webp',
+  packImg: '/assets/Seed_pack.webp',
   images: [
-    '/assets/speed-boost-pack.png',
+    '/assets/Seed_pack.webp',
     '/assets/seedboost-mock.jpeg',
     '/assets/seedboost-mocke.jpeg',
-    '/assets/speed-boost-pack.png'
+    '/assets/Seed_pack.webp'
   ],
   reviews: [
     {
@@ -255,13 +255,13 @@ powerChunk:{
     fiber: '4g'
   },
   price: '30 RS',
-  image: '/assets/power-Chunk-pack.png',
-  packImg: '/assets/power-Chunk-pack.png',
+  image: '/assets/Power_pack.webp',
+  packImg: '/assets/Power_pack.webp',
   images: [
-    '/assets/power-Chunk-pack.png',
+    '/assets/Power_pack.webp',
     '/assets/powerChunk-mock.jpeg',
     '/assets/powerChunk-mock2.jpeg',
-    '/assets/power-Chunk-pack.png'
+    '/assets/Power_pack.webp'
   ], 
   reviews: [
     {

@@ -37,13 +37,14 @@ const navigate = useNavigate();
       {/* ================= HERO ================= */}
 <HeroCarousel  onEnterPremiumMode={onEnterPremiumMode}/>
 
+<ActiveHyper />
+
       {/* Divider */}
       {/* <div className="w-full h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent"></div> */}
 
      {/* ================= PRODUCTS ================= */}
-<section className="max-w-7xl mt-10 mx-auto px-5 md:px-10 py-16">
+{/* <section className="max-w-7xl mt-10 mx-auto px-5 md:px-10 py-16">
 
-  {/* Heading */}
   <div className="text-center mb-10">
     <h2 className="text-2xl md:text-3xl font-extrabold text-gray-900">
       Available Now
@@ -53,7 +54,6 @@ const navigate = useNavigate();
     </p>
   </div>
 
-  {/* Grid (same cards everywhere) */}
   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
     {products.slice(0, 3).map((product) => (
       <div
@@ -61,7 +61,6 @@ const navigate = useNavigate();
         key={product.id}
         className="bg-white border border-gray-100 rounded-xl p-4 flex gap-4 items-center hover:shadow-sm transition cursor-pointer"
       >
-        {/* Image */}
         <div className="w-24 h-24 flex-shrink-0 flex items-center justify-center bg-gray-50 rounded-lg">
           <img
             src={product.packImg}
@@ -70,7 +69,6 @@ const navigate = useNavigate();
           />
         </div>
 
-        {/* Content */}
         <div className="flex-1">
           <h3 className="text-sm font-semibold text-gray-900">
             {product.name}
@@ -83,54 +81,11 @@ const navigate = useNavigate();
           <div className="text-sm font-semibold text-gray-900 mb-2">
             ₹{product.price.split(" ")[0]}
           </div>
-
-          {/* Controls */}
-          {/* <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => handleDecreaseQuantity(product.id)}
-                className="w-6 h-6 border rounded flex items-center justify-center text-gray-600"
-              >
-                <FaMinus size={9} />
-              </button>
-
-              <span className="text-xs font-medium">
-                {getQuantity(product.id)}
-              </span>
-
-              <button
-                onClick={() => handleIncreaseQuantity(product.id)}
-                className="w-6 h-6 bg-gray-900 text-white rounded flex items-center justify-center"
-              >
-                <FaPlus size={9} />
-              </button>
-            </div>
-
-            <button
-              onClick={() => {
-                const message = formatProductMessage({
-                  ...product,
-                  quantity: getQuantity(product.id),
-                });
-
-                sendWhatsAppMessage(message);
-
-                setQuantities((prev) => ({
-                  ...prev,
-                  [product.id]: 1,
-                }));
-              }}
-              className="text-xs font-medium text-gray-900 border px-3 py-1 rounded hover:bg-gray-900 hover:text-white transition"
-            >
-              Add
-            </button>
-          </div> */}
         </div>
       </div>
     ))}
   </div>
 
-  {/* View All Button (bottom center) */}
   <div className="flex justify-center mt-10">
     <button
       onClick={() => navigate("/products")}
@@ -139,7 +94,7 @@ const navigate = useNavigate();
       View All Products →
     </button>
   </div>
-</section>
+</section> */}
 
      <section className="py-16 md:py-24 bg-white">
   <div className="max-w-6xl mx-auto px-5 md:px-10">
@@ -271,8 +226,6 @@ const navigate = useNavigate();
 
   </div>
 </section>
-
-<ActiveHyper />
 
 <HyperBiteManifesto />
 <ProductsShowcase />
