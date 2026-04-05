@@ -2,155 +2,495 @@ import React, { useRef, useEffect } from "react";
 import gsap from "gsap";
 
 const HeroSection = () => {
-  const stageRef = useRef(null);
-  const skyRef = useRef(null);
-  const oceanRef = useRef(null);
-  const finaleBgRef = useRef(null);
-  const fuelRef = useRef(null);
-  const horizonRef = useRef(null);
-  const ofYouRef = useRef(null);
-  const diverRef = useRef(null);
-  const hillManRef = useRef(null);
-  const swimmerRef = useRef(null);
-  const bushRef = useRef(null);
+  const stageRef = useRef(null);
+  const skyRef = useRef(null);
+  const oceanRef = useRef(null);
+  const finaleBgRef = useRef(null);
+  const fuelRef = useRef(null);
+  const horizonRef = useRef(null);
+  const ofYouRef = useRef(null);
+  const diverRef = useRef(null);
+  const hillManRef = useRef(null);
+  const swimmerRef = useRef(null);
+  const bushRef = useRef(null);
+  const rightBubbleContainerRef = useRef(null);
 
-  useEffect(() => {
-    const tl = gsap.timeline({ repeat: -1 });
+  useEffect(() => {
+    const tl = gsap.timeline({ repeat: -1 });
 
-    gsap.set([oceanRef.current, finaleBgRef.current], { opacity: 0 });
-    gsap.set(swimmerRef.current, { opacity: 0, scale: 0.1 });
-    gsap.set(diverRef.current, { marginTop: "-100vh" });
-    gsap.set(bushRef.current, { yPercent: 100 });
-    gsap.set(hillManRef.current, { yPercent: 100, xPercent: -50, scale: 1 });
+    // --- INITIAL STATE ---
+    gsap.set([oceanRef.current, finaleBgRef.current, rightBubbleContainerRef.current], { opacity: 0 });
+    gsap.set(swimmerRef.current, { opacity: 0, scale: 0.1, x: "0vw" }); // Ensure x starts at 0
+    gsap.set(diverRef.current, { marginTop: "-100vh" });
+    gsap.set(bushRef.current, { yPercent: 100 });
+    gsap.set(hillManRef.current, { yPercent: 100, xPercent: -50, scale: 1 });
 
-    // Floating Diver Animation
-    gsap.to(diverRef.current, {
-      y: "+=15",
-      rotation: 3,
-      duration: 2.5,
-      ease: "sine.inOut",
-      repeat: -1,
-      yoyo: true
-    });
+    // 1. Skydiver Floating (Air)
+    gsap.to(diverRef.current, {
+      y: "+=15",
+      rotation: 3,
+      duration: 2.5,
+      ease: "sine.inOut",
+      repeat: -1,
+      yoyo: true
+    });
 
-    // Main Animation Sequence
-    tl.to(stageRef.current, { scale: 1.05, duration: 4, ease: "power1.inOut" })
-      .to(fuelRef.current, { opacity: 1, y: 0, duration: 1 }, 0)
-      .to(diverRef.current, { marginTop: "0vh", opacity: 1, duration: 2, ease: "power2.out" }, 0)
-      .to([fuelRef.current, diverRef.current], { opacity: 0, duration: 0.5 }, 4)
+    // 2. Ocean Diver Floating (Water)
+    gsap.to(swimmerRef.current, {
+      y: "+=20",
+      rotation: -2,
+      duration: 3,
+      ease: "sine.inOut",
+      repeat: -1,
+      yoyo: true
+    });
 
-      .to(stageRef.current, { scale: 1, duration: 4 }, 4)
-      .to(skyRef.current, { opacity: 1 }, 4)
-      .to(hillManRef.current, { yPercent: 0, duration: 1.5, ease: "power2.out" }, 4.5)
-      .to(horizonRef.current, { opacity: 1, y: 0, duration: 1 }, 5)
-      .to([horizonRef.current, hillManRef.current], { opacity: 0, yPercent: 100, duration: 1 }, 8)
+    // 3. Bubble Animation (Targeting bubbles inside the right container)
+    const bubbles = rightBubbleContainerRef.current.querySelectorAll(".bubble");
+    bubbles.forEach((bubble) => {
+      gsap.set(bubble, { 
+        x: `random(0, 45, 1)vw`, // Restricted to the 50% width of the right panel
+        y: "110vh", 
+        opacity: `random(0.3, 0.6)` 
+      });
+      gsap.to(bubble, {
+        y: "-10vh",
+        duration: `random(4, 8)`,
+        repeat: -1,
+        delay: `random(0, 5)`,
+        ease: "none"
+      });
+    });
 
-      .to(skyRef.current, { opacity: 0, duration: 1 }, 8)
-      .to(oceanRef.current, { opacity: 1, duration: 1 }, 8)
-      .to(stageRef.current, { scale: 1.2, duration: 4 }, 8)
-      .to(swimmerRef.current, { opacity: 1, scale: 1.4, duration: 2.5, ease: "power2.out" }, 9)
-      .to(ofYouRef.current, { opacity: 1, y: 0, duration: 1 }, 9.5)
+    // --- MAIN TIMELINE ---
+    tl.to(stageRef.current, { scale: 1.05, duration: 4, ease: "power1.inOut" })
+      .to(fuelRef.current, { opacity: 1, y: 0, duration: 1 }, 0)
+      .to(diverRef.current, { marginTop: "0vh", opacity: 1, duration: 2, ease: "power2.out" }, 0)
+      .to([fuelRef.current, diverRef.current], { opacity: 0, duration: 0.5 }, 4)
 
-      .to(bushRef.current, { yPercent: 0, duration: 1.2, ease: "power2.inOut" }, 12)
-      .to({}, { duration: 0.8 }) 
-      
-      .to(finaleBgRef.current, { opacity: 1, duration: 0.5 }, 13.2)
-      .to(oceanRef.current, { opacity: 0, duration: 0.5 }, 13.2)
-      .to(bushRef.current, { yPercent: 100, duration: 1.5, ease: "power2.inOut" }, 13.5)
-      .to(stageRef.current, { scale: 1, duration: 2 }, 13.5)
+      .to(stageRef.current, { scale: 1, duration: 4 }, 4)
+      .to(skyRef.current, { opacity: 1 }, 4)
+      .to(hillManRef.current, { yPercent: 0, duration: 1.5, ease: "power2.out" }, 4.5)
+      .to(horizonRef.current, { opacity: 1, y: 0, duration: 1 }, 5)
+      .to([horizonRef.current, hillManRef.current], { opacity: 0, yPercent: 100, duration: 1 }, 8)
 
-      /* --- FINAL MERGE ADJUSTMENT ZONE --- */
+      // Ocean Scene Starts
+      .to(skyRef.current, { opacity: 0, duration: 1 }, 8)
+      .to(oceanRef.current, { opacity: 1, duration: 1 }, 8)
+      .to(rightBubbleContainerRef.current, { opacity: 1, duration: 1 }, 8) 
+      .to(stageRef.current, { scale: 1.2, duration: 4 }, 8)
+      .to(swimmerRef.current, { opacity: 1, scale: 1.4, duration: 2.5, ease: "power2.out" }, 9)
+      .to(ofYouRef.current, { opacity: 1, y: 0, duration: 1 }, 9.5)
 
-      // 1. FUEL EVERY + SKYDIVER (Left Side)
-      .to(fuelRef.current, { 
-        opacity: 1, x: "-32vw", y: "20vh", scale: 0.35, color: "#FFFFFF", duration: 1 
-      }, 14)
-      .to(diverRef.current, { 
-        opacity: 1, x: "-32vw", y: "-15vh", scale: 0.45, duration: 1 
-      }, 14)
+      .to(bushRef.current, { yPercent: 0, duration: 1.2, ease: "power2.inOut" }, 12)
+      .to({}, { duration: 0.8 }) 
+      
+      // Finale Split
+      .to(finaleBgRef.current, { opacity: 1, duration: 0.8 }, 13.2)
+      .to(oceanRef.current, { opacity: 0, duration: 0.5 }, 13.2)
+      .to(bushRef.current, { yPercent: 100, duration: 1.5, ease: "power2.inOut" }, 13.5)
+      .to(stageRef.current, { scale: 1, duration: 2 }, 13.5)
 
-      // 2. HORIZON + HILLMAN (Center)
-      .to(horizonRef.current, { 
-        opacity: 1, x: "0vw", y: "-10vh", scale: 0.35, 
-        color: "#fbbf24", 
-        backgroundImage: "none", 
-        webkitTextFillColor: "#fbbf24",
-        zIndex: 150, // FORCE TEXT TO TOP
-        duration: 1 
-      }, 14)
-      .to(hillManRef.current, { 
-        opacity: 1, 
-        yPercent: 10,  // Change this if he is too high/low
-        scale: 1,     // SET TO 1 FOR FULL WIDTH
-        xPercent: -50, 
-        duration: 1 
-      }, 14)
+      /* --- FINAL MERGE --- */
+      // Move Skydiver Left
+      .to(fuelRef.current, { opacity: 1, x: "-32vw", y: "10vh", scale: 0.35, color: "#FFFFFF", duration: 1 }, 14)
+      .to(diverRef.current, { opacity: 1, x: "-32vw", y: "-25vh", scale: 0.45, duration: 1 }, 14)
 
-      // 3. OF YOU + SEADIVER (Right Side)
-      .to(ofYouRef.current, { 
-        opacity: 1, x: "32vw", y: "20vh", scale: 0.35, 
-        color: "#22d3ee", 
-        backgroundImage: "none", 
-        webkitTextFillColor: "#22d3ee",
-        duration: 1 
-      }, 14)
-      .to(swimmerRef.current, { 
-        opacity: 1, 
-        x: "32vw",   // MATCH the x of "Of You" text
-        y: "-1vh",  // Adjust vertical position above text
-        scale: 0.45, 
-        duration: 1 
-      }, 14)
+      // Center Elements
+      .to(horizonRef.current, { 
+        opacity: 1, x: "0vw", y: "-20vh", scale: 0.35, 
+        color: "#fbbf24", webkitTextFillColor: "#fbbf24", zIndex: 150, duration: 1 
+      }, 14)
+      .to(hillManRef.current, { opacity: 1, yPercent: 10, scale: 1, xPercent: -50, duration: 1 }, 14)
 
-      .to({}, { duration: 5 });
+      // Move Swimmer Right (Fixed the x: 32vw here)
+      .to(ofYouRef.current, { opacity: 1, x: "32vw", y: "10vh", scale: 0.35, color: "#22d3ee", webkitTextFillColor: "#22d3ee", duration: 1 }, 14)
+      .to(swimmerRef.current, { opacity: 1, x: "32vw", y: "-12vh", scale: 0.45, duration: 1 }, 14)
 
-    return () => tl.kill();
-  }, []);
+      .to({}, { duration: 5 });
 
-  return (
-    <section className="relative w-full h-screen overflow-hidden bg-[#9ad1e5]">
-      <div ref={finaleBgRef} className="absolute inset-0 bg-cover bg-center opacity-0" 
-           style={{ backgroundImage: "url('https://res.cloudinary.com/dbkvlr1fd/image/upload/q_auto/f_auto/v1775185316/screen1bg_sky_lwam8s.png')" }} />
+    return () => tl.kill();
+  }, []);
 
-      <div ref={stageRef} className="relative w-full h-full flex items-center justify-center">
-        
-        <div ref={skyRef} className="absolute inset-0 bg-cover bg-center z-[1]" 
-             style={{ backgroundImage: "url('https://res.cloudinary.com/dbkvlr1fd/image/upload/q_auto/f_auto/v1775185316/screen1bg_sky_lwam8s.png')" }} />
-        <div ref={oceanRef} className="absolute inset-0 bg-cover bg-center z-[2] opacity-0" 
-             style={{ backgroundImage: "url('https://res.cloudinary.com/dbkvlr1fd/image/upload/q_auto/f_auto/v1775185315/underwaterSea_v9v0su.png')" }} />
+  return (
+    <section className="relative w-full h-screen overflow-hidden bg-[#9ad1e5]">
+      
+      {/* Split Background System */}
+      <div ref={finaleBgRef} className="absolute inset-0 flex z-0 opacity-0 pointer-events-none">
+        <div className="w-1/2 h-full bg-cover bg-center" style={{ backgroundImage: "url('https://res.cloudinary.com/dbkvlr1fd/image/upload/q_auto/f_auto/v1775185316/screen1bg_sky_lwam8s.png')" }} />
+        
+        {/* Right Side Ocean Background + Bubbles Contained inside it */}
+        <div className="relative w-1/2 h-full overflow-hidden">
+          <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: "url('https://res.cloudinary.com/dbkvlr1fd/image/upload/q_auto/f_auto/v1775185315/underwaterSea_v9v0su.png')" }} />
+          
+          {/* Bubbles restricted only to this right half div */}
+          <div ref={rightBubbleContainerRef} className="absolute inset-0 z-[5] pointer-events-none">
+            {[...Array(12)].map((_, i) => (
+              <div 
+                key={i} 
+                className="bubble absolute bg-white/30 rounded-full border border-white/10" 
+                style={{ width: `${Math.random() * 12 + 4}px`, height: `${Math.random() * 12 + 4}px` }}
+              />
+            ))}
+          </div>
+        </div>
+      </div>
 
-        {/* Text Layer: Increased Z-Index to z-[20] to stay above hill image */}
-        <div className="absolute inset-0 flex items-center justify-center z-[20] pointer-events-none">
-          <h2 ref={fuelRef} className="absolute opacity-0 text-[12vw] font-bold uppercase text-white whitespace-nowrap">
-            Fuel Every
-          </h2>
-          <h2 ref={horizonRef} className="absolute opacity-0 text-[18vw] font-bold uppercase bg-clip-text text-transparent bg-gradient-to-br from-[#b09163] via-[#d4af37] to-[#9e7f4c] whitespace-nowrap">
-            Horizon
-          </h2>
-          <h2 ref={ofYouRef} className="absolute opacity-0 text-[20vw] font-bold uppercase bg-clip-text text-transparent bg-gradient-to-b from-white to-[#a1c4fd] whitespace-nowrap">
-            Of You
-          </h2>
-        </div>
+      <div ref={stageRef} className="relative w-full h-full flex items-center justify-center">
+        
+        <div ref={skyRef} className="absolute inset-0 bg-cover bg-center z-[1]" 
+             style={{ backgroundImage: "url('https://res.cloudinary.com/dbkvlr1fd/image/upload/q_auto/f_auto/v1775185316/screen1bg_sky_lwam8s.png')" }} />
+        
+        <div ref={oceanRef} className="absolute inset-0 bg-cover bg-center z-[2] opacity-0" 
+             style={{ backgroundImage: "url('https://res.cloudinary.com/dbkvlr1fd/image/upload/q_auto/f_auto/v1775185315/underwaterSea_v9v0su.png')" }} />
 
-        {/* Actors */}
-        <img ref={diverRef} src="https://res.cloudinary.com/dbkvlr1fd/image/upload/q_auto/f_auto/v1775185457/skyDiver_fv4ry3.png" 
-             className="absolute z-30 w-[300px] opacity-0" alt="Skydiver" />
-        
-        {/* Hillman: Lowered Z-Index to z-[15] so text (z-20) shows over him */}
-        <img ref={hillManRef} src="https://res.cloudinary.com/dbkvlr1fd/image/upload/q_auto/f_auto/v1775185316/manonHills_vmmg2n.png" 
-             className="absolute z-[15] w-full h-full object-cover bottom-0 left-1/2" alt="Man on hill" />
+        {/* Text Layer */}
+        <div className="absolute inset-0 flex items-center justify-center z-[20] pointer-events-none">
+          <h2 ref={fuelRef} className="absolute opacity-0 text-[12vw] font-bold uppercase text-white whitespace-nowrap">Fuel Every</h2>
+          <h2 ref={horizonRef} className="absolute opacity-0 text-[18vw] font-bold uppercase text-[#fbbf24] whitespace-nowrap">Horizon</h2>
+          <h2 ref={ofYouRef} className="absolute opacity-0 text-[20vw] font-bold uppercase text-[#22d3ee] whitespace-nowrap">Of You</h2>
+        </div>
 
-        <img ref={swimmerRef} src="https://res.cloudinary.com/dbkvlr1fd/image/upload/q_auto/f_auto/v1775185315/diver_mb3o5v.png" 
-             className="absolute z-30 w-[350px] opacity-0" alt="Diver" />
+        {/* Actors */}
+        <img ref={diverRef} src="https://res.cloudinary.com/dbkvlr1fd/image/upload/q_auto/f_auto/v1775185457/skyDiver_fv4ry3.png" 
+             className="absolute z-30 w-[300px] opacity-0" alt="Skydiver" />
+        
+        <img ref={hillManRef} src="https://res.cloudinary.com/dbkvlr1fd/image/upload/q_auto/f_auto/v1775185316/manonHills_vmmg2n.png" 
+             className="absolute z-[15] w-full h-full object-cover bottom-0 left-1/2" alt="Man on hill" />
 
-        <img ref={bushRef} src="https://res.cloudinary.com/dbkvlr1fd/image/upload/q_auto/f_auto/v1775185315/seaBushes_ym0fzq.png" 
-             className="absolute z-[100] bottom-0 left-1/2 -translate-x-1/2 w-[115%] h-[115%] object-cover" alt="Sea Bushes" />
-      </div>
-    </section>
-  );
+        <img ref={swimmerRef} src="https://res.cloudinary.com/dbkvlr1fd/image/upload/q_auto/f_auto/v1775185315/diver_mb3o5v.png" 
+             className="absolute z-30 w-[350px] opacity-0" alt="Diver" />
+
+        <img ref={bushRef} src="https://res.cloudinary.com/dbkvlr1fd/image/upload/q_auto/f_auto/v1775185315/seaBushes_ym0fzq.png" 
+             className="absolute z-[100] bottom-0 left-1/2 -translate-x-1/2 w-[115%] h-[115%] object-cover" alt="Sea Bushes" />
+      </div>
+    </section>
+  );
 };
 
 export default HeroSection;
+
+
+// import React, { useRef, useEffect } from "react";
+// import gsap from "gsap";
+
+// const HeroSection = () => {
+//   const stageRef = useRef(null);
+//   const skyRef = useRef(null);
+//   const oceanRef = useRef(null);
+//   const finaleBgRef = useRef(null);
+//   const fuelRef = useRef(null);
+//   const horizonRef = useRef(null);
+//   const ofYouRef = useRef(null);
+//   const diverRef = useRef(null);
+//   const hillManRef = useRef(null);
+//   const swimmerRef = useRef(null);
+//   const bushRef = useRef(null);
+//   const leftFinaleSkyRef = useRef(null);
+//   const rightFinaleOceanRef = useRef(null);
+
+//   useEffect(() => {
+//     const tl = gsap.timeline({ repeat: -1 });
+
+//     // --- INITIAL STATE ---
+//     gsap.set([oceanRef.current, finaleBgRef.current], { opacity: 0 });
+//     gsap.set(swimmerRef.current, { opacity: 0, scale: 0.1 });
+//     gsap.set(diverRef.current, { marginTop: "-100vh" });
+//     gsap.set(bushRef.current, { yPercent: 100 });
+//     gsap.set(hillManRef.current, { yPercent: 100, xPercent: -50, scale: 1 });
+
+//     // Floating Diver Idle Animation
+//     gsap.to(diverRef.current, {
+//       y: "+=15",
+//       rotation: 3,
+//       duration: 2.5,
+//       ease: "sine.inOut",
+//       repeat: -1,
+//       yoyo: true
+//     });
+
+//     // Main Sequence
+//     tl.to(stageRef.current, { scale: 1.05, duration: 4, ease: "power1.inOut" })
+//       .to(fuelRef.current, { opacity: 1, y: 0, duration: 1 }, 0)
+//       .to(diverRef.current, { marginTop: "0vh", opacity: 1, duration: 2, ease: "power2.out" }, 0)
+//       .to([fuelRef.current, diverRef.current], { opacity: 0, duration: 0.5 }, 4)
+
+//       .to(stageRef.current, { scale: 1, duration: 4 }, 4)
+//       .to(skyRef.current, { opacity: 1 }, 4)
+//       .to(hillManRef.current, { yPercent: 0, duration: 1.5, ease: "power2.out" }, 4.5)
+//       .to(horizonRef.current, { opacity: 1, y: 0, duration: 1 }, 5)
+//       .to([horizonRef.current, hillManRef.current], { opacity: 0, yPercent: 100, duration: 1 }, 8)
+
+//       .to(skyRef.current, { opacity: 0, duration: 1 }, 8)
+//       .to(oceanRef.current, { opacity: 1, duration: 1 }, 8)
+//       .to(stageRef.current, { scale: 1.2, duration: 4 }, 8)
+//       .to(swimmerRef.current, { opacity: 1, scale: 1.4, duration: 2.5, ease: "power2.out" }, 9)
+//       .to(ofYouRef.current, { opacity: 1, y: 0, duration: 1 }, 9.5)
+
+//       .to(bushRef.current, { yPercent: 0, duration: 1.2, ease: "power2.inOut" }, 12)
+//       .to({}, { duration: 0.8 }) 
+      
+//       // SHOW FINALE SPLIT BACKGROUND
+//       .to(finaleBgRef.current, { opacity: 1, duration: 0.8 }, 13.2)
+//       .to(oceanRef.current, { opacity: 0, duration: 0.5 }, 13.2)
+//       .to(bushRef.current, { yPercent: 100, duration: 1.5, ease: "power2.inOut" }, 13.5)
+//       .to(stageRef.current, { scale: 1, duration: 2 }, 13.5)
+
+//       /* --- FINAL MERGE (SCENE POSITIONING) --- */
+
+//       // 1. LEFT SIDE (Sky + Skydiver) - Moved y higher
+//       .to(fuelRef.current, { 
+//         opacity: 1, x: "-32vw", y: "10vh", scale: 0.35, color: "#FFFFFF", duration: 1 
+//       }, 14)
+//       .to(diverRef.current, { 
+//         opacity: 1, x: "-32vw", y: "-25vh", scale: 0.45, duration: 1 
+//       }, 14)
+
+//       // 2. CENTER (Horizon + Hillman) - Moved y higher
+//       .to(horizonRef.current, { 
+//         opacity: 1, x: "0vw", y: "-20vh", scale: 0.35, 
+//         color: "#fbbf24", 
+//         webkitTextFillColor: "#fbbf24",
+//         backgroundImage: "none", 
+//         zIndex: 150, 
+//         duration: 1 
+//       }, 14)
+//       .to(hillManRef.current, { 
+//         opacity: 1, 
+//         yPercent: 10, 
+//         scale: 1, 
+//         xPercent: -50, 
+//         duration: 1 
+//       }, 14)
+
+//       // 3. RIGHT SIDE (Of You + Diver) - Moved y higher
+//       .to(ofYouRef.current, { 
+//         opacity: 1, x: "32vw", y: "10vh", scale: 0.35, 
+//         color: "#22d3ee", 
+//         webkitTextFillColor: "#22d3ee",
+//         backgroundImage: "none", 
+//         duration: 1 
+//       }, 14)
+//       .to(swimmerRef.current, { 
+//         opacity: 1, 
+//         x: "32vw", 
+//         y: "-12vh", 
+//         scale: 0.45, 
+//         duration: 1 
+//       }, 14)
+
+//       .to({}, { duration: 5 });
+
+//     return () => tl.kill();
+//   }, []);
+
+//   return (
+//     <section className="relative w-full h-screen overflow-hidden bg-[#9ad1e5]">
+      
+//       {/* THE SPLIT BACKGROUND (Hidden initially, triggered at 13.2s) */}
+//       <div ref={finaleBgRef} className="absolute inset-0 flex z-0 opacity-0 pointer-events-none">
+//         {/* Left Half: Sky */}
+//         <div ref={leftFinaleSkyRef} className="w-1/2 h-full bg-cover bg-center" 
+//              style={{ backgroundImage: "url('https://res.cloudinary.com/dbkvlr1fd/image/upload/q_auto/f_auto/v1775185316/screen1bg_sky_lwam8s.png')" }} />
+//         {/* Right Half: Ocean */}
+//         <div ref={rightFinaleOceanRef} className="w-1/2 h-full bg-cover bg-center" 
+//              style={{ backgroundImage: "url('https://res.cloudinary.com/dbkvlr1fd/image/upload/q_auto/f_auto/v1775185315/underwaterSea_v9v0su.png')" }} />
+//       </div>
+
+//       <div ref={stageRef} className="relative w-full h-full flex items-center justify-center">
+        
+//         {/* Transitional Backgrounds */}
+//         <div ref={skyRef} className="absolute inset-0 bg-cover bg-center z-[1]" 
+//              style={{ backgroundImage: "url('https://res.cloudinary.com/dbkvlr1fd/image/upload/q_auto/f_auto/v1775185316/screen1bg_sky_lwam8s.png')" }} />
+        
+//         <div ref={oceanRef} className="absolute inset-0 bg-cover bg-center z-[2] opacity-0" 
+//              style={{ backgroundImage: "url('https://res.cloudinary.com/dbkvlr1fd/image/upload/q_auto/f_auto/v1775185315/underwaterSea_v9v0su.png')" }} />
+
+//         {/* Text Layer */}
+//         <div className="absolute inset-0 flex items-center justify-center z-[20] pointer-events-none">
+//           <h2 ref={fuelRef} className="absolute opacity-0 text-[12vw] font-bold uppercase text-white whitespace-nowrap">
+//             Fuel Every
+//           </h2>
+//           <h2 ref={horizonRef} className="absolute opacity-0 text-[18vw] font-bold uppercase bg-clip-text text-transparent bg-gradient-to-br from-[#b09163] via-[#d4af37] to-[#9e7f4c] whitespace-nowrap">
+//             Horizon
+//           </h2>
+//           <h2 ref={ofYouRef} className="absolute opacity-0 text-[20vw] font-bold uppercase bg-clip-text text-transparent bg-gradient-to-b from-white to-[#a1c4fd] whitespace-nowrap">
+//             Of You
+//           </h2>
+//         </div>
+
+//         {/* Actors */}
+//         <img ref={diverRef} src="https://res.cloudinary.com/dbkvlr1fd/image/upload/q_auto/f_auto/v1775185457/skyDiver_fv4ry3.png" 
+//              className="absolute z-30 w-[300px] opacity-0" alt="Skydiver" />
+        
+//         <img ref={hillManRef} src="https://res.cloudinary.com/dbkvlr1fd/image/upload/q_auto/f_auto/v1775185316/manonHills_vmmg2n.png" 
+//              className="absolute z-[15] w-full h-full object-cover bottom-0 left-1/2" alt="Man on hill" />
+
+//         <img ref={swimmerRef} src="https://res.cloudinary.com/dbkvlr1fd/image/upload/q_auto/f_auto/v1775185315/diver_mb3o5v.png" 
+//              className="absolute z-30 w-[350px] opacity-0" alt="Diver" />
+
+//         <img ref={bushRef} src="https://res.cloudinary.com/dbkvlr1fd/image/upload/q_auto/f_auto/v1775185315/seaBushes_ym0fzq.png" 
+//              className="absolute z-[100] bottom-0 left-1/2 -translate-x-1/2 w-[115%] h-[115%] object-cover" alt="Sea Bushes" />
+//       </div>
+//     </section>
+//   );
+// };
+
+// export default HeroSection;
+
+// import React, { useRef, useEffect } from "react";
+// import gsap from "gsap";
+
+// const HeroSection = () => {
+//   const stageRef = useRef(null);
+//   const skyRef = useRef(null);
+//   const oceanRef = useRef(null);
+//   const finaleBgRef = useRef(null);
+//   const fuelRef = useRef(null);
+//   const horizonRef = useRef(null);
+//   const ofYouRef = useRef(null);
+//   const diverRef = useRef(null);
+//   const hillManRef = useRef(null);
+//   const swimmerRef = useRef(null);
+//   const bushRef = useRef(null);
+
+//   useEffect(() => {
+//     const tl = gsap.timeline({ repeat: -1 });
+
+//     gsap.set([oceanRef.current, finaleBgRef.current], { opacity: 0 });
+//     gsap.set(swimmerRef.current, { opacity: 0, scale: 0.1 });
+//     gsap.set(diverRef.current, { marginTop: "-100vh" });
+//     gsap.set(bushRef.current, { yPercent: 100 });
+//     gsap.set(hillManRef.current, { yPercent: 100, xPercent: -50, scale: 1 });
+
+//     // Floating Diver Animation
+//     gsap.to(diverRef.current, {
+//       y: "+=15",
+//       rotation: 3,
+//       duration: 2.5,
+//       ease: "sine.inOut",
+//       repeat: -1,
+//       yoyo: true
+//     });
+
+//     // Main Animation Sequence
+//     tl.to(stageRef.current, { scale: 1.05, duration: 4, ease: "power1.inOut" })
+//       .to(fuelRef.current, { opacity: 1, y: 0, duration: 1 }, 0)
+//       .to(diverRef.current, { marginTop: "0vh", opacity: 1, duration: 2, ease: "power2.out" }, 0)
+//       .to([fuelRef.current, diverRef.current], { opacity: 0, duration: 0.5 }, 4)
+
+//       .to(stageRef.current, { scale: 1, duration: 4 }, 4)
+//       .to(skyRef.current, { opacity: 1 }, 4)
+//       .to(hillManRef.current, { yPercent: 0, duration: 1.5, ease: "power2.out" }, 4.5)
+//       .to(horizonRef.current, { opacity: 1, y: 0, duration: 1 }, 5)
+//       .to([horizonRef.current, hillManRef.current], { opacity: 0, yPercent: 100, duration: 1 }, 8)
+
+//       .to(skyRef.current, { opacity: 0, duration: 1 }, 8)
+//       .to(oceanRef.current, { opacity: 1, duration: 1 }, 8)
+//       .to(stageRef.current, { scale: 1.2, duration: 4 }, 8)
+//       .to(swimmerRef.current, { opacity: 1, scale: 1.4, duration: 2.5, ease: "power2.out" }, 9)
+//       .to(ofYouRef.current, { opacity: 1, y: 0, duration: 1 }, 9.5)
+
+//       .to(bushRef.current, { yPercent: 0, duration: 1.2, ease: "power2.inOut" }, 12)
+//       .to({}, { duration: 0.8 }) 
+//       
+//       .to(finaleBgRef.current, { opacity: 1, duration: 0.5 }, 13.2)
+//       .to(oceanRef.current, { opacity: 0, duration: 0.5 }, 13.2)
+//       .to(bushRef.current, { yPercent: 100, duration: 1.5, ease: "power2.inOut" }, 13.5)
+//       .to(stageRef.current, { scale: 1, duration: 2 }, 13.5)
+
+//       /* --- FINAL MERGE ADJUSTMENT ZONE --- */
+
+//       // 1. FUEL EVERY + SKYDIVER (Left Side)
+//       .to(fuelRef.current, { 
+//         opacity: 1, x: "-32vw", y: "20vh", scale: 0.35, color: "#FFFFFF", duration: 1 
+//       }, 14)
+//       .to(diverRef.current, { 
+//         opacity: 1, x: "-32vw", y: "-15vh", scale: 0.45, duration: 1 
+//       }, 14)
+
+//       // 2. HORIZON + HILLMAN (Center)
+//       .to(horizonRef.current, { 
+//         opacity: 1, x: "0vw", y: "-10vh", scale: 0.35, 
+//         color: "#fbbf24", 
+//         backgroundImage: "none", 
+//         webkitTextFillColor: "#fbbf24",
+//         zIndex: 150, // FORCE TEXT TO TOP
+//         duration: 1 
+//       }, 14)
+//       .to(hillManRef.current, { 
+//         opacity: 1, 
+//         yPercent: 10,  // Change this if he is too high/low
+//         scale: 1,     // SET TO 1 FOR FULL WIDTH
+//         xPercent: -50, 
+//         duration: 1 
+//       }, 14)
+
+//       // 3. OF YOU + SEADIVER (Right Side)
+//       .to(ofYouRef.current, { 
+//         opacity: 1, x: "32vw", y: "20vh", scale: 0.35, 
+//         color: "#22d3ee", 
+//         backgroundImage: "none", 
+//         webkitTextFillColor: "#22d3ee",
+//         duration: 1 
+//       }, 14)
+//       .to(swimmerRef.current, { 
+//         opacity: 1, 
+//         x: "32vw",   // MATCH the x of "Of You" text
+//         y: "-1vh",  // Adjust vertical position above text
+//         scale: 0.45, 
+//         duration: 1 
+//       }, 14)
+
+//       .to({}, { duration: 5 });
+
+//     return () => tl.kill();
+//   }, []);
+
+//   return (
+//     <section className="relative w-full h-screen overflow-hidden bg-[#9ad1e5]">
+//       <div ref={finaleBgRef} className="absolute inset-0 bg-cover bg-center opacity-0" 
+//            style={{ backgroundImage: "url('https://res.cloudinary.com/dbkvlr1fd/image/upload/q_auto/f_auto/v1775185316/screen1bg_sky_lwam8s.png')" }} />
+
+//       <div ref={stageRef} className="relative w-full h-full flex items-center justify-center">
+//         
+//         <div ref={skyRef} className="absolute inset-0 bg-cover bg-center z-[1]" 
+//              style={{ backgroundImage: "url('https://res.cloudinary.com/dbkvlr1fd/image/upload/q_auto/f_auto/v1775185316/screen1bg_sky_lwam8s.png')" }} />
+//         <div ref={oceanRef} className="absolute inset-0 bg-cover bg-center z-[2] opacity-0" 
+//              style={{ backgroundImage: "url('https://res.cloudinary.com/dbkvlr1fd/image/upload/q_auto/f_auto/v1775185315/underwaterSea_v9v0su.png')" }} />
+
+//         {/* Text Layer: Increased Z-Index to z-[20] to stay above hill image */}
+//         <div className="absolute inset-0 flex items-center justify-center z-[20] pointer-events-none">
+//           <h2 ref={fuelRef} className="absolute opacity-0 text-[12vw] font-bold uppercase text-white whitespace-nowrap">
+//             Fuel Every
+//           </h2>
+//           <h2 ref={horizonRef} className="absolute opacity-0 text-[18vw] font-bold uppercase bg-clip-text text-transparent bg-gradient-to-br from-[#b09163] via-[#d4af37] to-[#9e7f4c] whitespace-nowrap">
+//             Horizon
+//           </h2>
+//           <h2 ref={ofYouRef} className="absolute opacity-0 text-[20vw] font-bold uppercase bg-clip-text text-transparent bg-gradient-to-b from-white to-[#a1c4fd] whitespace-nowrap">
+//             Of You
+//           </h2>
+//         </div>
+
+//         {/* Actors */}
+//         <img ref={diverRef} src="https://res.cloudinary.com/dbkvlr1fd/image/upload/q_auto/f_auto/v1775185457/skyDiver_fv4ry3.png" 
+//              className="absolute z-30 w-[300px] opacity-0" alt="Skydiver" />
+//         
+//         {/* Hillman: Lowered Z-Index to z-[15] so text (z-20) shows over him */}
+//         <img ref={hillManRef} src="https://res.cloudinary.com/dbkvlr1fd/image/upload/q_auto/f_auto/v1775185316/manonHills_vmmg2n.png" 
+//              className="absolute z-[15] w-full h-full object-cover bottom-0 left-1/2" alt="Man on hill" />
+
+//         <img ref={swimmerRef} src="https://res.cloudinary.com/dbkvlr1fd/image/upload/q_auto/f_auto/v1775185315/diver_mb3o5v.png" 
+//              className="absolute z-30 w-[350px] opacity-0" alt="Diver" />
+
+//         <img ref={bushRef} src="https://res.cloudinary.com/dbkvlr1fd/image/upload/q_auto/f_auto/v1775185315/seaBushes_ym0fzq.png" 
+//              className="absolute z-[100] bottom-0 left-1/2 -translate-x-1/2 w-[115%] h-[115%] object-cover" alt="Sea Bushes" />
+//       </div>
+//     </section>
+//   );
+// };
+
+// export default HeroSection;
 
 
 // import React, { useState, useEffect } from 'react';
