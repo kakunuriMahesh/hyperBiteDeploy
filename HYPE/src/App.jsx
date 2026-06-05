@@ -36,6 +36,7 @@ import ImpactPage from "./pages/ImpactPage";
 import ChallengesPage from "./pages/ChallengesPage";
 import ChessPage from "./pages/ChessPage";
 import RidesPage from "./pages/RidesPage";
+import ExplorePage from "./pages/ExplorePage";
 
 function HomePage() {
   const navigate = useNavigate();
@@ -195,6 +196,7 @@ export default function App() {
               <Route path="/challenges" element={<ChallengesPage />} />
               <Route path="/chess" element={<ChessPage />} />
               <Route path="/rides" element={<RidesPage />} />
+              <Route path="/explore" element={<ExplorePage />} />
             </Routes>
             <Footer />
           </>

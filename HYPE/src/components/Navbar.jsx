@@ -93,6 +93,7 @@ useEffect(() => {
 
   const navItems = [
     { path: "/", label: "Home" },
+    { path: "/explore", label: "Explore" },
     { path: "/products", label: "Products" },
     { path: "/cart", label: "Cart" },
     { path: "/blog", label: "Blog" },
