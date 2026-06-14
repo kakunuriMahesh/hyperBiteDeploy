@@ -680,12 +680,13 @@ const CustomizePackPage = () => {
                       }}
                       className="min-w-[55%] sm:min-w-[40%] md:min-w-[30%] lg:min-w-[20%] cursor-pointer rounded-2xl overflow-hidden border border-gray-200 shadow-sm hover:shadow-xl transition-all duration-300"
                     >
+                      {product.stock === 'Not Available' && <p className=' text-sm bg-red-100 font-bold w-fit p-1 rounded-lg absolute text-red-500 z-10'>Out of Stock</p>}
                       {/* Active Badge */}
                       {isActive && (
                         <div
-                          style={{
-                            position: 'absolute',
-                            top: '8px',
+                        style={{
+                          position: 'absolute',
+                          top: '8px',
                             right: '8px',
                             backgroundColor: '#067D62',
                             color: '#fff',
@@ -695,7 +696,7 @@ const CustomizePackPage = () => {
                             padding: '2px 8px',
                             borderRadius: '10px',
                           }}
-                        >
+                          >
                           ×{quantity}
                         </div>
                       )}
@@ -708,7 +709,7 @@ const CustomizePackPage = () => {
                           justifyContent: 'center',
                           height: breakpoint === 'mobile' ? '80px' : '100px',
                         }}
-                      >
+                        >
                         <img
                           src={product.packImg}
                           alt={product.name}

@@ -234,7 +234,7 @@ seedBoost:{
 },
 powerChunk:{
   id: 'powerChunk',
-  name: 'Power Chunk',
+  name: 'Power Pulse',
   description: 'The High-Protein Recovery Bite A potent blend of Dates, Nuts, Hemp Protein powder and Dark Chocolate, finished with a refreshing Orange zest.',
   stock:'Not Available',
   ingredients: [

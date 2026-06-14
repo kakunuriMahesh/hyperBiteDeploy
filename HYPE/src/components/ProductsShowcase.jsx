@@ -216,7 +216,7 @@ export default function HyperBiteStackEngine() {
 //     img: "/assets/oats-octane-pack.png"
 //   },
 //   {
-//     packname:"Power Chunk",
+//     packname:"Power Pulse",
 //     selectedpoint: "The High-Protein Recovery Bite",
 //     desc: " A potent blend of Dates, Nuts, Hemp Protein powder and Dark Chocolate, finished with a refreshing Orange zest.",
 //     benefit: "A complete protein source that stops junk-food hunting in its tracks.",

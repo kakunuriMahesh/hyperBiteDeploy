@@ -338,13 +338,17 @@ const ProductDetails = () => {
               </span>
             </div>
 
-            <div
-              style={{
-                display: "flex",
-                flexDirection: breakpoint === "mobile" ? "column" : "row",
-                gap: "16px",
-              }}
-            >
+              {
+                
+                product.stock === "Available" ? (
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: breakpoint === "mobile" ? "column" : "row",
+                    gap: "16px",
+                  }}
+                >
+
               <button
                 onClick={() => {
                   // if (!pincodeVerified) {
@@ -444,6 +448,31 @@ const ProductDetails = () => {
                 ADD TO CART
               </button>
             </div>
+              ) : (
+                <button
+                  style={{
+                    padding: breakpoint === "mobile" ? "14px 28px" : "16px 32px",
+                    fontFamily: "'Inter', sans-serif",
+                    fontSize: breakpoint === "mobile" ? "16px" : "18px",
+                    textTransform: "uppercase",
+                    fontWeight: 600,
+                    letterSpacing: "0.04em",
+                    backgroundColor: "#888",
+                    color: "#fff",
+                    border: "none",
+                    borderRadius: "8px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: "12px",
+                    cursor: "not-allowed",
+                  }}
+                >
+                  Out of Stock
+                </button>
+
+              )
+            }
 
             {/* Pincode Verification Section */}
             {/* <div

@@ -640,7 +640,7 @@ export default HeroSection;
 //   },
 //   { 
 //     id: 5, 
-//     name: "Power Chunk", 
+//     name: "Power Pulse", 
 //     img: "/assets/power-Chunk-pack.png",
 //     bgColor: "#ecfdf5" // Soft Teal
 //   },
