@@ -107,6 +107,10 @@ const CustomizePackPage = () => {
   const progressPercent = Math.min((total / pack.minPrice) * 100, 100);
 
   const handleQuantityChange = (productId, change) => {
+    if (productDetails[productId].stock === "Not Available") {
+      toast.error("Sorry, this product is currently out of stock.");
+      return;
+    }
     const currentQty = quantities[productId] || 0;
     const newQty = Math.max(0, currentQty + change);
     const product = productDetails[productId];
@@ -850,6 +854,7 @@ const CustomizePackPage = () => {
                             min="0"
                           />
                           <button
+                            // disabled={product.stock === "Not Available"}
                             onClick={() => handleQuantityChange(product.id, 1)}
                             style={{
                               width: breakpoint === 'mobile' ? '28px' : '30px',
