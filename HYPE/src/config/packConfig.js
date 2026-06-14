@@ -11,9 +11,9 @@ export const packConfigs = {
     minAmount: 0,
     description: 'Pre-selected mix of premium products prepared by us',
     defaultProducts: [
-      { id: 'nuts', quantity: 2 },
-      { id: 'dates', quantity: 2 },
-      { id: 'seeds', quantity: 2 },
+      { id: 'cashewCharge', quantity: 2 },
+      { id: 'seedBoost', quantity: 2 },
+      { id: 'powerChunk', quantity: 2 },
       { id: 'milletMatrix', quantity: 2 },
       { id: 'oatsOctane', quantity: 2 },
     ],

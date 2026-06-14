@@ -45,9 +45,9 @@ const Products = () => {
 
     // Pincode already exists → proceed directly
     const defaultItems = [
-      { id: 'nuts', quantity: 2 },
-      { id: 'dates', quantity: 2 },
-      { id: 'seeds', quantity: 2 },
+      { id: 'cashewCharge', quantity: 2 },
+      { id: 'seedBoost', quantity: 2 },
+      { id: 'powerChunk', quantity: 2 },
       { id: 'milletMatrix', quantity: 2 },
       { id: 'oatsOctane', quantity: 2 },
     ];
