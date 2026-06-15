@@ -75,10 +75,12 @@ const Navbar = () => {
       lenis?.stop();
     } else {
       document.body.style.overflow = "";
+      document.documentElement.classList.remove("lenis-stopped");
       lenis?.start();
     }
     return () => {
       document.body.style.overflow = "";
+      document.documentElement.classList.remove("lenis", "lenis-smooth", "lenis-stopped");
       getLenis()?.start();
     };
   }, [isMenuOpen]);

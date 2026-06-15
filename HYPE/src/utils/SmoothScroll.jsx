@@ -87,6 +87,16 @@ let rafId = null;
 
 export const SmoothScroll = () => {
   useEffect(() => {
+    const isTouch = "ontouchstart" in window || navigator.maxTouchPoints > 0;
+
+    // On touch devices, skip Lenis entirely — let native scrolling work
+    if (isTouch) {
+      // Ensure no scroll-blocking state from SSR or previous Lenis session
+      document.documentElement.classList.remove("lenis", "lenis-smooth", "lenis-stopped");
+      document.body.style.overflow = "";
+      return;
+    }
+
     if (lenisInstance) return;
 
     // Prevent browser scroll restoration from fighting Lenis
@@ -94,15 +104,12 @@ export const SmoothScroll = () => {
       history.scrollRestoration = "manual";
     }
 
-    const isTouch = "ontouchstart" in window || navigator.maxTouchPoints > 0;
-
     lenisInstance = new Lenis({
       smoothWheel: true,
-      smoothTouch: true,
-      lerp: 0.12,
-      duration: isTouch ? 0.6 : 0.9,
-      wheelMultiplier: 1.2,
-      touchMultiplier: 1.5,
+      smoothTouch: false,
+      lerp: 0.08,
+      duration: 1.2,
+      wheelMultiplier: 0.8,
       normalizeWheel: true,
       infinite: false,
       easing: (t) => 1 - Math.pow(1 - t, 3),
@@ -128,6 +135,11 @@ export const SmoothScroll = () => {
       window.removeEventListener("resize", handleResize);
 
       if (rafId) cancelAnimationFrame(rafId);
+
+      // Ensure scroll-blocking state is reset before destroying Lenis
+      document.documentElement.classList.remove("lenis", "lenis-smooth", "lenis-stopped");
+      document.body.style.overflow = "";
+
       lenisInstance?.destroy();
       lenisInstance = null;
 
