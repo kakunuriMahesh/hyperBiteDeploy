@@ -89,24 +89,30 @@ export const SmoothScroll = () => {
   useEffect(() => {
     if (lenisInstance) return;
 
+    // Prevent browser scroll restoration from fighting Lenis
+    if (history.scrollRestoration) {
+      history.scrollRestoration = "manual";
+    }
+
     const isTouch = "ontouchstart" in window || navigator.maxTouchPoints > 0;
 
     lenisInstance = new Lenis({
       smoothWheel: true,
       smoothTouch: true,
-      lerp: 0.08,
-      duration: isTouch ? 0.8 : 1.2,
-      wheelMultiplier: 0.8,
-      touchMultiplier: 1,
+      lerp: 0.12,
+      duration: isTouch ? 0.6 : 0.9,
+      wheelMultiplier: 1.2,
+      touchMultiplier: 1.5,
       normalizeWheel: true,
       infinite: false,
       easing: (t) => 1 - Math.pow(1 - t, 3),
+      orientation: "vertical",
     });
 
     lenisInstance.on("scroll", ScrollTrigger.update);
 
     const raf = (time) => {
-      if (!lenisInstance) return; // ✅ FIX
+      if (!lenisInstance) return;
       lenisInstance.raf(time);
       rafId = requestAnimationFrame(raf);
     };
@@ -121,9 +127,14 @@ export const SmoothScroll = () => {
     return () => {
       window.removeEventListener("resize", handleResize);
 
-      if (rafId) cancelAnimationFrame(rafId); // ✅ FIX
+      if (rafId) cancelAnimationFrame(rafId);
       lenisInstance?.destroy();
       lenisInstance = null;
+
+      // Restore browser scroll restoration on cleanup
+      if (history.scrollRestoration) {
+        history.scrollRestoration = "auto";
+      }
     };
   }, []);
 

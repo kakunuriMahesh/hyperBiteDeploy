@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { IoMenu } from "react-icons/io5";
 import { IoClose } from "react-icons/io5";
-import { scrollTo } from "../utils/SmoothScroll";
+import { scrollTo, getLenis } from "../utils/SmoothScroll";
 import { BsBag } from "react-icons/bs";
 import { CartProvider, useCart } from "../context/CartContext";
 import { useLanguage } from "../context/LanguageContext";
@@ -69,13 +69,17 @@ const Navbar = () => {
 
   // Prevent body scroll when menu is open
   useEffect(() => {
+    const lenis = getLenis();
     if (isMenuOpen) {
       document.body.style.overflow = "hidden";
+      lenis?.stop();
     } else {
-      document.body.style.overflow = "unset";
+      document.body.style.overflow = "";
+      lenis?.start();
     }
     return () => {
-      document.body.style.overflow = "unset";
+      document.body.style.overflow = "";
+      getLenis()?.start();
     };
   }, [isMenuOpen]);
 

@@ -122,13 +122,10 @@ body {
 }
 
 html {
-  scroll-behavior: smooth;
+  scroll-behavior: auto;
   overflow-x: hidden;
   width: 100%;
   height: 100%;
-  -webkit-overflow-scrolling: touch;
-  overscroll-behavior: none;
-  touch-action: pan-y;
 }
 
 body {
