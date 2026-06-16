@@ -95,10 +95,23 @@ exports.verifyPayment = async (req, res) => {
       if (updated) {
         try {
           console.log("[PaymentController] Triggering Shiprocket order creation...");
-          await shiprocketController.createShiprocketOrder(updated);
+          const result = await shiprocketController.createShiprocketOrder(updated);
           console.log("[PaymentController] Shiprocket order created successfully");
+
+          // Save ShipRocket response to prevent cron from double-processing
+          await Order.findByIdAndUpdate(updated._id, {
+            $set: {
+              shipmentStatus: "CREATED",
+              shiprocketShipmentId: result.shipment_id || result.id,
+              courierName: result.courier_name,
+              awbCode: result.awb_code,
+              trackingUrl: result.tracking_url,
+              shiprocketCreatedAt: new Date()
+            }
+          });
         } catch (err) {
           console.error("[PaymentController] Shiprocket trigger failed:", err.message || err);
+          // Cron will pick this up and retry since shipmentStatus stays PENDING
         }
       } else {
         console.warn("[PaymentController] Order not found for update:", razorpay_order_id);

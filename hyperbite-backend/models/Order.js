@@ -46,7 +46,22 @@ const orderSchema = new mongoose.Schema({
     type: String,
     enum: ["placed", "processing", "shipped", "delivered"],
     default: "placed"
-  }
+  },
+
+  // Shipment
+  shipmentStatus: {
+    type: String,
+    enum: ["PENDING", "PROCESSING", "CREATED", "FAILED"],
+    default: "PENDING"
+  },
+  shiprocketShipmentId: String,
+  courierName: String,
+  awbCode: String,
+  trackingUrl: String,
+  shiprocketError: String,
+  shiprocketCreatedAt: Date,
+  retryCount: { type: Number, default: 0 },
+  lastAttemptedAt: Date
 
 }, { timestamps: true });
 
