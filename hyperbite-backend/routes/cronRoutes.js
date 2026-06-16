@@ -15,9 +15,14 @@ router.get("/process-shipments", async (req, res) => {
   const start = Date.now();
   console.log("[Cron] Shipment processing triggered");
 
-  // Authenticate
-  if (req.query.key !== process.env.CRON_SECRET) {
-    console.warn("[Cron] Unauthorized attempt with key:", req.query.key);
+  // Authenticate: Authorization header or ?key= query param
+  const authHeader = req.headers.authorization || "";
+  const token = authHeader
+    ? authHeader.replace(/^Bearer\s+/i, "")
+    : req.query.key;
+
+  if (!token || token !== process.env.CRON_SECRET) {
+    console.warn("[Cron] Unauthorized attempt — token mismatch");
     return res.status(403).json({ error: "Invalid cron key" });
   }
 
