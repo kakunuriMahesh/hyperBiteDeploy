@@ -13,7 +13,7 @@ export default function ScrollToTop() {
       return;
     }
 
-    scrollTo(0, { duration: 0.6 });
+    scrollTo(0);
   }, [pathname]);
 
   return null;

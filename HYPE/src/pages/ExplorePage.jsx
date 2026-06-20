@@ -23,7 +23,7 @@ const ExplorePage = () => {
 
   const handleProductSelect = (productId) => {
     setSelectedProduct(productId);
-    scrollTo(0, { duration: 0.6 });
+    scrollTo(0);
   };
 
   const handleOpenDetails = () => {

@@ -17,7 +17,6 @@ import Blog from "./pages/Blog";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
 import Cart from "./pages/Cart";
-import { SmoothScroll, scrollTo } from "./utils/SmoothScroll";
 import SeedsLayout from "./components/SeedsLayout";
 import { CartProvider } from "./context/CartContext";
 import { LanguageProvider } from "./context/LanguageContext";
@@ -170,8 +169,6 @@ export default function App() {
     <LanguageProvider>
     <CartProvider>
       <Router>
-        {/* Initialize smooth scroll - runs once on mount */}
-        {!isLoading && <SmoothScroll />}
         {!isLoading && <ScrollToTop />}
         {isLoading && <LoadingScreen onComplete={handleLoadingComplete} />}
         {!isLoading && (
