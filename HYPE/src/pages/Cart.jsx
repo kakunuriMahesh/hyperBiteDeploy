@@ -157,24 +157,31 @@ const PackItemCard = ({
               >
                 {showDetails ? "Hide" : "View"} {showDetails ? <FaChevronUp size={9} /> : <FaChevronDown size={9} />}
               </button>
-              <span style={{ color: "#d1d5db", fontSize: "10px" }}>|</span>
-              <button
-                onClick={handleEdit}
-                style={{
-                  background: "none",
-                  border: "none",
-                  color: "#3b82f6",
-                  cursor: "pointer",
-                  fontSize: "11px",
-                  fontFamily: "'Inter', sans-serif",
-                  padding: 0,
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "3px",
-                }}
-              >
-                <FaEdit size={10} /> Edit
-              </button>
+             <div>
+        </div>
+              {pack.packName !== "The Discovery Pack (10 Pcs)" && (
+                <>
+                  <span style={{ color: "#d1d5db", fontSize: "10px" }}>|</span>
+
+                  <button
+                    onClick={handleEdit}
+                    style={{
+                      background: "none",
+                      border: "none",
+                      color: "#3b82f6",
+                      cursor: "pointer",
+                      fontSize: "11px",
+                      fontFamily: "'Inter', sans-serif",
+                      padding: 0,
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "3px",
+                    }}
+                  >
+                    <FaEdit size={10} /> Edit
+                  </button>
+                </>
+              )}
               <span style={{ color: "#d1d5db", fontSize: "10px" }}>|</span>
             </>
           )}

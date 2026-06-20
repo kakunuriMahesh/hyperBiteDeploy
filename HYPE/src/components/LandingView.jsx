@@ -5,7 +5,8 @@ import { formatProductMessage, sendWhatsAppMessage } from "../utils/whatsapp";
 import { FaPlus, FaMinus, FaTimes, FaBolt, FaLeaf, FaShieldAlt, FaHeart, FaCheck } from "react-icons/fa";
 import LiveCommunityHub from "./LiveCommunityHub";
 import ProductsShowcase from "./ProductsShowcase";
-import HeroCarousel from "../pages/HeroCarousel";
+// import HeroCarousel from "../pages/HeroCarousel";
+import OrbitSlider from "./OrbitSlider";
 import HyperBiteManifesto from "./OurSection";
 import CinematicSceneTailwind from "./CinematicSceneTailwind";
 import ActiveHyper from "./ActiveHyper";
@@ -35,7 +36,8 @@ const navigate = useNavigate();
     <div className="bg-gradient-to-b from-amber-50 to-white min-h-screen">
 
       {/* ================= HERO ================= */}
-<HeroCarousel  onEnterPremiumMode={onEnterPremiumMode}/>
+{/* <HeroCarousel  onEnterPremiumMode={onEnterPremiumMode}/> */}
+<OrbitSlider />
 
 <ActiveHyper />
 
