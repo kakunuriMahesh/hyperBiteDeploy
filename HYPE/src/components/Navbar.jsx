@@ -4,8 +4,8 @@ import { IoMenu } from "react-icons/io5";
 import { IoClose } from "react-icons/io5";
 import { scrollTo } from "../utils/SmoothScroll";
 import { BsBag } from "react-icons/bs";
-import { CartProvider, useCart } from "../context/CartContext";
-import { useLanguage } from "../context/LanguageContext";
+import { useCart } from "../store/hooks/useCart";
+import { useLanguage } from "../store/hooks/useLanguage";
 import { FaChevronDown, FaChevronRight } from "react-icons/fa";
 
 const Navbar = () => {

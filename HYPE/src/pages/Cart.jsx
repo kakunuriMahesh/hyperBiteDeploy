@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { useCart } from "../context/CartContext";
+import { useCart } from "../store/hooks/useCart";
 import Navbar from "../components/Navbar";
 import { formatCartMessage } from "../utils/whatsapp";
 import { getCookie, setCookie } from "../utils/cookies";

@@ -4,7 +4,7 @@ import { FaArrowLeft, FaPlus, FaMinus, FaCheckCircle, FaGift, FaStar, FaShipping
 import { GrPowerReset } from "react-icons/gr";
 import { productDetails } from '../config/productDetails';
 import { packConfigs } from '../config/packConfig';
-import { useCart } from '../context/CartContext';
+import { useCart } from '../store/hooks/useCart';
 import { toast } from 'react-toastify';
 // 
 import { gsap } from 'gsap';

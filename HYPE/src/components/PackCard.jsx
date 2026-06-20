@@ -1,7 +1,7 @@
 import React from 'react';
 import { FaPlus, FaTag } from 'react-icons/fa';
-import { useCart } from '../context/CartContext';
-import { useLanguage } from '../context/LanguageContext';
+import { useCart } from '../store/hooks/useCart';
+import { useLanguage } from '../store/hooks/useLanguage';
 
 const PackCard = ({ pack, breakpoint, onClickCustomize, onClickAdd, isCustomized = false, onViewDetails }) => {
   const { 

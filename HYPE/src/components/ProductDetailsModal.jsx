@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useCart } from '../context/CartContext';
+import { useCart } from '../store/hooks/useCart';
 
 const ProductDetailsModal = ({ productDetails, isOpen, onClose, breakpoint }) => {
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);

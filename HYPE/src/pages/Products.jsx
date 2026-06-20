@@ -4,7 +4,7 @@ import Navbar from "../components/Navbar";
 import PackCard from "../components/PackCard";
 import { productDetails } from "../config/productDetails";
 import { getAllPacks } from "../config/packConfig";
-import { useCart } from "../context/CartContext";
+import { useCart } from "../store/hooks/useCart";
 import { toast } from "react-toastify";
 import 'react-toastify/dist/ReactToastify.css';
 import PincodeModal from "../components/PincodeModal";

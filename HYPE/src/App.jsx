@@ -18,8 +18,6 @@ import About from "./pages/About";
 import Contact from "./pages/Contact";
 import Cart from "./pages/Cart";
 import SeedsLayout from "./components/SeedsLayout";
-import { CartProvider } from "./context/CartContext";
-import { LanguageProvider } from "./context/LanguageContext";
 import WhatsAppFloat from "./components/WhatsAppFloat";
 import ScrollToTop from "./components/ScrollToTop";
 import { ToastContainer } from "react-toastify";
@@ -166,8 +164,7 @@ export default function App() {
   };
 
   return (
-    <LanguageProvider>
-    <CartProvider>
+    <>
       <Router>
         {!isLoading && <ScrollToTop />}
         {isLoading && <LoadingScreen onComplete={handleLoadingComplete} />}
@@ -199,7 +196,6 @@ export default function App() {
           </>
         )}
       </Router>
-      {/* <ToastContainer position="top-right" autoClose={3000} hideProgressBar={false} newestOnTop={false} closeOnClick rtl={false} pauseOnFocusLoss draggable pauseOnHover theme="light"/> */}
       <ToastContainer
         position="bottom-center"
         autoClose={3000}
@@ -212,7 +208,6 @@ export default function App() {
         pauseOnHover
         theme="dark"
       />
-    </CartProvider>
-    </LanguageProvider>
+    </>
   );
 }

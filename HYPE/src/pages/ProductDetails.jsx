@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { productDetails } from "../config/productDetails";
 import Navbar from "../components/Navbar";
-import { useCart } from "../context/CartContext";
+import { useCart } from "../store/hooks/useCart";
 import { formatProductMessage, sendWhatsAppMessage } from "../utils/whatsapp";
 import { FaWhatsapp, FaShoppingCart } from "react-icons/fa";
 import { toast } from "react-toastify";
