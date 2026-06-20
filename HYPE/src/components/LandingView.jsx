@@ -33,7 +33,7 @@ const navigate = useNavigate();
   };
 
   return (
-    <div className="bg-gradient-to-b from-amber-50 to-white min-h-screen">
+    <div className="bg-gradient-to-b from-amber-50 to-white min-h-screen" style={{ fontFamily: "'Istok Web', sans-serif" }}>
 
       {/* ================= HERO ================= */}
 {/* <HeroCarousel  onEnterPremiumMode={onEnterPremiumMode}/> */}

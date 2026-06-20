@@ -1,16 +1,19 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { gsap } from 'gsap'
+import { orbitSliderConfig as products } from '../config/orbitSliderConfig'
 
-const slides = [
-  { img: '/assets/SKU/skuCashewCharge.webp', desc: 'Crunchy cashew energy bites for a sustained charge throughout your day.', word: 'Charge' },
-  { img: '/assets/SKU/skuMilletMatrix.webp', desc: 'Ancient grain millet matrix packed with fibre and essential nutrients.', word: 'Fuel' },
-  { img: '/assets/SKU/skuOatsOctane.webp', desc: 'Oats meet octane — high-energy snacking for an active lifestyle.', word: 'Power' },
-  { img: '/assets/SKU/skuPowerChunk.webp', desc: 'Power-packed chunks of nutrition in every single bite.', word: 'Boost' },
-  { img: '/assets/SKU/skuSeedBoost.webp', desc: 'Seed-based boost for natural energy without the crash.', word: 'Ignite' },
-]
+const allOrbitItems = products.flatMap((p, productIdx) =>
+  p.orbitImages.map(img => ({ productIdx, img }))
+)
+const step = (Math.PI * 2) / products.length
 
-const emojis = ['🌾', '🥜', '🌰']
-const step = (Math.PI * 2) / slides.length
+function productBaseIndex(productIdx) {
+  let idx = 0
+  for (let i = 0; i < productIdx; i++) {
+    idx += products[i].orbitImages.length
+  }
+  return idx
+}
 
 export default function OrbitSlider() {
   const [active, setActive] = useState(0)
@@ -46,7 +49,7 @@ export default function OrbitSlider() {
     return isMobile ? -Math.PI * 5 / 6 : Math.PI
   }, [isMobile])
 
-  const createSprinkle = useCallback(() => {
+  const createSprinkle = useCallback((productIdx) => {
     const parent = visualRef.current
     if (!parent || !productRef.current) return
 
@@ -58,9 +61,10 @@ export default function OrbitSlider() {
     const cx = pRect.left - vRect.left + pRect.width / 2
     const cy = pRect.top - vRect.top + pRect.height / 2
 
+    const emojiPool = products[productIdx].ingredients
     for (let i = 0; i < 20; i++) {
       const el = document.createElement('div')
-      el.innerHTML = emojis[Math.floor(Math.random() * emojis.length)]
+      el.innerHTML = emojiPool[Math.floor(Math.random() * emojiPool.length)]
       el.style.cssText = `position:absolute;pointer-events:none;user-select:none;z-index:5;font-size:${18 + Math.random() * 18}px;left:${cx}px;top:${cy}px;`
       parent.appendChild(el)
       ingredientRef.current.push(el)
@@ -80,26 +84,31 @@ export default function OrbitSlider() {
     gsap.to(el, {
       opacity: 0, y: -10, duration: 0.2,
       onComplete: () => {
-        el.innerText = slides[idx].word
+        el.innerText = products[idx].word
+        el.style.color = products[idx].accentColor
         gsap.to(el, { opacity: 1, y: 0, duration: 0.3 })
       },
     })
   }, [])
 
   const updateUI = useCallback((idx) => {
-    if (descRef.current) descRef.current.innerText = slides[idx].desc
+    const p = products[idx]
+    if (descRef.current) {
+      descRef.current.innerText = p.tagline
+      descRef.current.style.color = p.textColor
+    }
     if (productRef.current) {
       gsap.fromTo(productRef.current,
         { rotation: -15, transformOrigin: 'center center' },
         { rotation: 0, duration: 0.8, ease: 'power3.out' }
       )
     }
-    createSprinkle()
+    createSprinkle(idx)
     if (productImgRef.current) {
       gsap.to(productImgRef.current, {
         opacity: 0, duration: 0.2,
         onComplete: () => {
-          productImgRef.current.src = slides[idx].img
+          productImgRef.current.src = p.productImage
           gsap.to(productImgRef.current, { opacity: 1, duration: 0.4 })
         },
       })
@@ -115,6 +124,7 @@ export default function OrbitSlider() {
     if (orbitRingRef.current) {
       gsap.set(orbitRingRef.current, {
         width: r * 2, height: r * 2, left: cx - r, top: cy - r,
+        borderColor: products[currentActive].orbitColor,
       })
     }
 
@@ -128,33 +138,40 @@ export default function OrbitSlider() {
       })
     }
 
-    slides.forEach((_, i) => {
-      const angle = (i * step) + rot
-      const x = cx + r * Math.cos(angle)
-      const y = cy + r * Math.sin(angle)
-      const depth = (Math.sin(angle) + 1) / 2
-      const isActiveItem = i === currentActive
-      const size = isActiveItem ? (m ? 140 : 170) : (55 + depth * 60)
+    products.forEach((p, productIdx) => {
+      const baseIdx = productBaseIndex(productIdx)
+      const itemsPerProduct = p.orbitImages.length
 
-      const el = itemsRef.current[i]
-      if (el) {
-        gsap.to(el, {
-          x: x - size / 2, y: y - size / 2,
-          width: size, height: size,
-          opacity: isActiveItem ? 1 : 0.25 + depth * 0.4,
-          duration: 0.7,
-          ease: 'power3.out',
-        })
-        el.style.zIndex = isActiveItem ? 999 : Math.floor(depth * 100)
-        el.style.border = isActiveItem ? '3px solid #8d00a8' : 'none'
+      for (let offset = 0; offset < itemsPerProduct; offset++) {
+        const orbitIdx = baseIdx + offset
+        const angle = (orbitIdx * step) + rot
+        const x = cx + r * Math.cos(angle)
+        const y = cy + r * Math.sin(angle)
+        const depth = (Math.sin(angle) + 1) / 2
+        const isActiveItem = productIdx === currentActive && offset === 0
+        const size = isActiveItem ? (m ? 140 : 170) : (55 + depth * 60)
+
+        const el = itemsRef.current[orbitIdx]
+        if (el) {
+          gsap.to(el, {
+            x: x - size / 2, y: y - size / 2,
+            width: size, height: size,
+            opacity: isActiveItem ? 1 : 0.25 + depth * 0.4,
+            duration: 0.7,
+            ease: 'power3.out',
+          })
+          el.style.zIndex = isActiveItem ? 999 : Math.floor(depth * 100)
+          el.style.border = isActiveItem ? `3px solid ${products[currentActive].accentColor}` : 'none'
+        }
       }
     })
   }, [getLayout])
 
   const goTo = useCallback((idx) => {
-    const nextIdx = ((idx % slides.length) + slides.length) % slides.length
+    const nextIdx = ((idx % products.length) + products.length) % products.length
     const focus = getFocusAngle()
-    rotationRef.current = focus - (nextIdx * step)
+    const baseIdx = productBaseIndex(nextIdx)
+    rotationRef.current = focus - (baseIdx * step)
 
     activeRef.current = nextIdx
     setActive(nextIdx)
@@ -162,12 +179,14 @@ export default function OrbitSlider() {
     positionItems()
   }, [getFocusAngle, updateUI, positionItems])
 
-  // Directional handlers — rotate the full orbit by ±step
   const rotate = useCallback((direction) => {
-    rotationRef.current += direction * step
+    const currentProduct = activeRef.current
+    const itemsPerProduct = products[currentProduct].orbitImages.length
+    rotationRef.current += direction * step * itemsPerProduct
+
     const focus = getFocusAngle()
     const unwrapped = (focus - rotationRef.current) / step
-    const nextIdx = ((Math.round(unwrapped) % slides.length) + slides.length) % slides.length
+    const nextIdx = ((Math.round(unwrapped) % products.length) + products.length) % products.length
 
     activeRef.current = nextIdx
     setActive(nextIdx)
@@ -176,12 +195,12 @@ export default function OrbitSlider() {
   }, [getFocusAngle, updateUI, positionItems])
 
   const next = useCallback(() => {
-    rotate(-1)  // anticlockwise
+    rotate(-1)
     resetAuto()
   }, [rotate])
 
   const prev = useCallback(() => {
-    rotate(1)   // clockwise
+    rotate(1)
     resetAuto()
   }, [rotate])
 
@@ -192,15 +211,14 @@ export default function OrbitSlider() {
     }, 4000)
   }, [rotate])
 
-  // Initial render on mount
   useEffect(() => {
     const focus = getFocusAngle()
-    rotationRef.current = focus
+    const baseIdx = productBaseIndex(0)
+    rotationRef.current = focus - (baseIdx * step)
     updateUI(0)
     positionItems()
   }, [getFocusAngle, updateUI, positionItems])
 
-  // Auto rotation
   useEffect(() => {
     resetAuto()
     const onResize = () => positionItems()
@@ -217,12 +235,13 @@ export default function OrbitSlider() {
   return (
     <div style={{
       width: '100%',
-      height: `calc(100vh - ${navbarH}px)`,
-      marginTop: `${navbarH}px`,
+      // height: `calc(100vh - ${navbarH}px)`,
+      height: `calc(100vh )`,
+      paddingTop: `${navbarH}px`,
       display: 'flex',
       flexDirection: isMobile ? 'column' : 'row',
-      background: 'radial-gradient(circle at 20% 20%, #fff 0%, #f3e8ff 40%, #e6d3ff 100%)',
-      fontFamily: 'Inter, sans-serif',
+      background: products[active].background,
+      fontFamily: "'Istok Web', sans-serif",
       overflow: 'hidden',
     }}>
       <div style={{
@@ -234,8 +253,8 @@ export default function OrbitSlider() {
         flexDirection: 'column',
         justifyContent: 'center',
       }}>
-        <h1 style={{ fontSize: isMobile ? '32px' : '70px', lineHeight: 1, margin: 0 }}>
-          <span ref={mainWordRef} style={{ color: '#8d00a8' }}>Charge</span><br />
+        <h1 style={{ fontSize: isMobile ? '32px' : '90px', lineHeight: 1, margin: 0 }}>
+          <span className="font-bold" ref={mainWordRef} style={{ color: products[0].accentColor }}>{products[0].word}</span><br />
           With Hyper Bite
         </h1>
         <p ref={descRef} style={{
@@ -243,10 +262,10 @@ export default function OrbitSlider() {
           fontSize: isMobile ? '13px' : '20px',
           lineHeight: 1.4,
           maxWidth: isMobile ? '90%' : '500px',
-          color: '#333',
+          color: products[0].textColor,
           alignSelf: isMobile ? 'center' : 'flex-start',
         }}>
-          {slides[0].desc}
+          {products[0].tagline}
         </p>
       </div>
 
@@ -257,24 +276,24 @@ export default function OrbitSlider() {
       }}>
         <div ref={orbitRingRef} style={{
           position: 'absolute', borderRadius: '50%',
-          border: '4px solid rgba(140,80,255,.25)',
+          border: `4px solid ${products[active].orbitColor}`,
         }} />
 
         <div ref={productRef} style={{
           position: 'absolute', borderRadius: '20px', overflow: 'hidden', zIndex: 10,
         }}>
           <img ref={productImgRef}
-            src={slides[0].img} alt=""
+            src={products[0].productImage} alt=""
             style={{ width: '100%', height: '100%', objectFit: 'cover' }}
           />
         </div>
 
-        {slides.map((_, i) => (
+        {allOrbitItems.map((item, i) => (
           <div key={i} ref={el => itemsRef.current[i] = el} style={{
             position: 'absolute', borderRadius: '50%', overflow: 'hidden',
             boxShadow: '0 4px 12px rgba(0,0,0,.1)',
           }}>
-            <img src={slides[i].img} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            <img src={item.img} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
           </div>
         ))}
       </div>
