@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { gsap } from 'gsap'
-import { orbitSliderConfig as products } from '../config/orbitSliderConfig'
+import { orbitSliderConfig as products, orbitSvgImage } from '../config/orbitSliderConfig'
 
 const n = products.length
 const orbitStep = (2 * Math.PI) / n
@@ -17,6 +17,7 @@ export default function OrbitSlider() {
   const [active, setActive] = useState(0)
   const visualRef = useRef(null)
   const orbitRingRef = useRef(null)
+  const orbitSvgRef = useRef(null)
   const productRef = useRef(null)
   const productImgRef = useRef(null)
   const mainWordRef = useRef(null)
@@ -214,6 +215,9 @@ export default function OrbitSlider() {
           idx++
         }
       })
+      if (orbitSvgRef.current) {
+        orbitSvgRef.current.style.transform = `rotate(${-rot}rad)`
+      }
     }
 
     if (Math.abs(targetRot - fromRot) < 0.0001) {
@@ -354,9 +358,14 @@ export default function OrbitSlider() {
         position: 'relative',
       }}>
         <div ref={orbitRingRef} style={{
-          position: 'absolute', borderRadius: '50%',
+          position: 'absolute', borderRadius: '50%', overflow: 'hidden',
           border: `4px solid ${products[active].orbitColor}`,
-        }} />
+        }}>
+          <div ref={orbitSvgRef}
+            dangerouslySetInnerHTML={{ __html: orbitSvgImage.replace('width="1560" height="1604"', '') }}
+            style={{ width: '80%', height: '80%', margin: '10%', pointerEvents: 'none' }}
+          />
+        </div>
 
         <div ref={productRef} style={{
           position: 'absolute', borderRadius: '20px', overflow: 'hidden', zIndex: 10,
