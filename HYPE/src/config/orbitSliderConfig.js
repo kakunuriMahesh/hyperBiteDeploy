@@ -9,7 +9,7 @@ export const orbitSliderConfig = [
     textColor: '#92400e',
     ingredients: ['🥜', '🧈', '🫘', '🟤'],
     productImage: '/assets/Cashew_pack.webp',
-    orbitImages: ['/assets/SKU/skuCashewCharge.webp', '/assets/Cashew_pack.webp', '/assets/SKU/skuCashewCharge.webp'],
+    orbitImages: ['/assets/SKU/skuCashewCharge.webp', '/assets/Cashew_pack.webp'],
   },
   {
     id: 'milletMatrix',
