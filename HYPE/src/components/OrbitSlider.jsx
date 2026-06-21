@@ -44,19 +44,16 @@ function hslToHex(h, s, l) {
   return `#${f(0)}${f(8)}${f(4)}`
 }
 
-const svgOrigColors = (() => {
-  const regex = /fill="(#[0-9A-Fa-f]{6})"/g
-  const colors = new Set()
-  let m
-  while ((m = regex.exec(orbitSvgImage)) !== null) colors.add(m[1])
-  return [...colors]
-})()
+const dynamicColors = [
+  '#F5EBFA', '#A47FB5', '#875CA0', '#7C4B99', '#6B3188',
+  '#956EA9', '#BE99CE', '#E8DDEB', '#BCAAB1', '#D2C3CA', '#F2E6F7', '#DBC1E8',
+]
 
 function applyProductPalette(svg, product) {
   const accentHsl = hexToHsl(product.accentColor)
   const targetHue = accentHsl.h
   let result = svg.replace('width="1560" height="1604"', '')
-  for (const orig of svgOrigColors) {
+  for (const orig of dynamicColors) {
     const hsl = hexToHsl(orig)
     if (hsl.s < 5) continue
     let diff = targetHue - hsl.h
