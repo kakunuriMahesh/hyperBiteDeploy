@@ -8,8 +8,8 @@ export const orbitSliderConfig = [
     accentColor: '#d97706',
     textColor: '#92400e',
     ingredients: ['🥜', '🧈', '🫘', '🟤'],
-    productImage: '/assets/SKU/skuCashewCharge.webp',
-    orbitImages: ['/assets/SKU/skuCashewCharge.webp'],
+    productImage: '/assets/Cashew_pack.webp',
+    orbitImages: ['/assets/SKU/skuCashewCharge.webp', '/assets/Cashew_pack.webp'],
   },
   {
     id: 'milletMatrix',
@@ -20,8 +20,8 @@ export const orbitSliderConfig = [
     accentColor: '#059669',
     textColor: '#065f46',
     ingredients: ['🌾', '🌽', '🌰', '🟢'],
-    productImage: '/assets/SKU/skuMilletMatrix.webp',
-    orbitImages: ['/assets/SKU/skuMilletMatrix.webp'],
+    productImage: '/assets/Millet_pack.webp',
+    orbitImages: ['/assets/SKU/skuMilletMatrix.webp', '/assets/Millet_pack.webp', '/assets/SKU/skuCashewCharge.webp'],
   },
   {
     id: 'oatsOctane',
@@ -32,8 +32,8 @@ export const orbitSliderConfig = [
     accentColor: '#4f46e5',
     textColor: '#3730a3',
     ingredients: ['🌾', '🥜', '🍯', '🔵'],
-    productImage: '/assets/SKU/skuOatsOctane.webp',
-    orbitImages: ['/assets/SKU/skuOatsOctane.webp'],
+    productImage: '/assets/Oat_Pack.webp',
+    orbitImages: ['/assets/SKU/skuOatsOctane.webp', '/assets/Oat_Pack.webp'],
   },
   {
     id: 'powerChunk',
@@ -44,8 +44,8 @@ export const orbitSliderConfig = [
     accentColor: '#db2777',
     textColor: '#9d174d',
     ingredients: ['🌴', '🍫', '🍊', '🔴'],
-    productImage: '/assets/SKU/skuPowerChunk.webp',
-    orbitImages: ['/assets/SKU/skuPowerChunk.webp'],
+    productImage: '/assets/Power_pack.webp',
+    orbitImages: ['/assets/SKU/skuPowerChunk.webp', '/assets/Power_pack.webp', '/assets/SKU/skuSeedBoost.webp'],
   },
   {
     id: 'seedBoost',
@@ -56,7 +56,7 @@ export const orbitSliderConfig = [
     accentColor: '#7c3aed',
     textColor: '#5b21b6',
     ingredients: ['🌻', '🎃', '🫘', '🟣'],
-    productImage: '/assets/SKU/skuSeedBoost.webp',
-    orbitImages: ['/assets/SKU/skuSeedBoost.webp'],
+    productImage: '/assets/Seed_pack.webp',
+    orbitImages: ['/assets/SKU/skuSeedBoost.webp', '/assets/Seed_pack.webp'],
   },
 ]
