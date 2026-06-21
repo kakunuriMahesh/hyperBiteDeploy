@@ -106,29 +106,31 @@ export default function OrbitSlider() {
   }, [])
 
   const createSprinkle = useCallback((productIdx) => {
-    const parent = visualRef.current
-    if (!parent || !productRef.current) return
-
     ingredientRef.current.forEach(el => { try { el.remove() } catch {} })
     ingredientRef.current = []
 
-    const pRect = productRef.current.getBoundingClientRect()
-    const vRect = parent.getBoundingClientRect()
-    const cx = pRect.left - vRect.left + pRect.width / 2
-    const cy = pRect.top - vRect.top + pRect.height / 2
+    const seedPool = products[productIdx].seedImages
+    if (!seedPool) return
 
-    const emojiPool = products[productIdx].ingredients
+    const vw = window.innerWidth
+    const vh = window.innerHeight
+
+    const pRect = productRef.current?.getBoundingClientRect()
+    const cx = pRect ? pRect.left + pRect.width / 2 : vw / 2
+    const cy = pRect ? pRect.top + pRect.height / 2 : vh / 2
+
     for (let i = 0; i < 20; i++) {
-      const el = document.createElement('div')
-      el.innerHTML = emojiPool[Math.floor(Math.random() * emojiPool.length)]
-      el.style.cssText = `position:absolute;pointer-events:none;user-select:none;z-index:5;font-size:${18 + Math.random() * 18}px;left:${cx}px;top:${cy}px;`
-      parent.appendChild(el)
-      ingredientRef.current.push(el)
-      gsap.to(el, {
-        x: (Math.random() * 500) - 300,
-        y: (Math.random() * 450) - 275,
+      const img = document.createElement('img')
+      img.src = seedPool[Math.floor(Math.random() * seedPool.length)]
+      img.style.cssText = `position:fixed;pointer-events:none;user-select:none;z-index:10;width:${24 + Math.random() * 12}px;height:auto;left:${cx}px;top:${cy}px;transform:translate(-50%,-50%);opacity:0.9;`
+      document.body.appendChild(img)
+      ingredientRef.current.push(img)
+      gsap.to(img, {
+        x: (Math.random() * vw * 1.5) - vw * 0.75,
+        y: (Math.random() * vh * 1.5) - vh * 0.75,
         rotation: (Math.random() * 720) - 360,
-        duration: 1.2,
+        scale: 0.3 + Math.random() * 0.7,
+        duration: 1.5 + Math.random() * 0.5,
         ease: 'power2.out',
       })
     }
@@ -382,6 +384,7 @@ export default function OrbitSlider() {
       flexDirection: isMobile ? 'column' : 'row',
       background: products[active].background,
       fontFamily: "'Istok Web', sans-serif",
+      position: 'relative',
       overflow: 'hidden',
     }}>
       <div style={{
@@ -445,7 +448,7 @@ export default function OrbitSlider() {
       </div>
 
       <div style={{
-        position: 'fixed',
+        position: 'absolute',
         left: isMobile ? '50%' : '60px',
         bottom: isMobile ? '16px' : '30px',
         transform: isMobile ? 'translateX(-50%)' : 'none',
