@@ -9,7 +9,7 @@ export const orbitSliderConfig = [
     textColor: '#92400e',
     ingredients: ['🥜', '🧈', '🫘', '🟤'],
     productImage: '/assets/Cashew_pack.webp',
-    orbitImages: ['/assets/SKU/skuCashewCharge.webp', '/assets/Cashew_pack.webp'],
+    orbitImages: ['/assets/SKU/skuCashewCharge.webp', '/assets/Cashew_pack.webp', '/assets/SKU/skuCashewCharge.webp'],
   },
   {
     id: 'milletMatrix',
@@ -33,7 +33,7 @@ export const orbitSliderConfig = [
     textColor: '#3730a3',
     ingredients: ['🌾', '🥜', '🍯', '🔵'],
     productImage: '/assets/Oat_Pack.webp',
-    orbitImages: ['/assets/SKU/skuOatsOctane.webp', '/assets/Oat_Pack.webp'],
+    orbitImages: ['/assets/SKU/skuOatsOctane.webp', '/assets/Oat_Pack.webp', '/assets/SKU/skuOatsOctane.webp'],
   },
   {
     id: 'powerChunk',
@@ -57,6 +57,6 @@ export const orbitSliderConfig = [
     textColor: '#5b21b6',
     ingredients: ['🌻', '🎃', '🫘', '🟣'],
     productImage: '/assets/Seed_pack.webp',
-    orbitImages: ['/assets/SKU/skuSeedBoost.webp', '/assets/Seed_pack.webp'],
+    orbitImages: ['/assets/SKU/skuSeedBoost.webp', '/assets/Seed_pack.webp', '/assets/Seed_pack.webp'],
   },
 ]

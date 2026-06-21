@@ -144,20 +144,20 @@ export default function OrbitSlider() {
 
     function interpolateSlotHour(slot) {
       const nSlots = slotHours.length
-      const i1 = ((Math.floor(slot) % nSlots) + nSlots) % nSlots
-      const i2 = (i1 + 1) % nSlots
-      const t = slot - Math.floor(slot)
-      const h1 = slotHours[i1]
-      const h2 = slotHours[i2]
-      let diff = h2 - h1
+      const from = Math.ceil(slot) % nSlots
+      const to = Math.floor(slot)
+      const hFrom = slotHours[from]
+      const hTo = slotHours[to < 0 ? nSlots - 1 : to]
+      const t = 1 - (slot - Math.floor(slot))
+      let diff = hTo - hFrom
       if (diff > 0) diff -= 12
-      let hour = h1 + diff * t
+      let hour = hFrom + diff * t
       if (hour < 0) hour += 12
       if (hour >= 12) hour -= 12
       return hour
     }
 
-    const maxSize = m ? 140 : 170
+    const maxSize = m ? 110 : 170
     const minSize = m ? 30 : 40
 
     function renderAll(rot) {
@@ -179,8 +179,8 @@ export default function OrbitSlider() {
           let size, x, y, op
 
           if (isActive && offset > 0) {
-            const extraAngle = hourAngle(9 + (offset / (count - 1)) * 3)
-            size = maxSize * 0.55
+            const extraAngle = hourAngle(9 + (offset / (count - 1)) * 4)
+            size = maxSize
             x = cx + r * Math.cos(extraAngle) - size / 2
             y = cy - r * Math.sin(extraAngle) - size / 2
             op = 0.85
