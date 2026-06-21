@@ -1,11 +1,8 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
+import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { gsap } from 'gsap'
 import { orbitSliderConfig as products } from '../config/orbitSliderConfig'
 
 const n = products.length
-
-const desktopSlots = [Math.PI, (11 * Math.PI) / 12, (5 * Math.PI) / 6, (3 * Math.PI) / 4, (2 * Math.PI) / 3]
-const mobileSlots = [(5 * Math.PI) / 6, (19 * Math.PI) / 24, (3 * Math.PI) / 4, (2 * Math.PI) / 3, (5 * Math.PI) / 8]
 
 const allOrbitItems = products.flatMap((p, productIdx) =>
   p.orbitImages.map(img => ({ productIdx, img }))
@@ -27,6 +24,8 @@ export default function OrbitSlider() {
   const autoRef = useRef(null)
   const ingredientRef = useRef([])
   const activeRef = useRef(active)
+  const rotationRef = useRef(0)
+  const tweenRef = useRef(null)
 
   const [isMobile, setIsMobile] = useState(false)
 
@@ -36,8 +35,6 @@ export default function OrbitSlider() {
     window.addEventListener('resize', check)
     return () => window.removeEventListener('resize', check)
   }, [])
-
-  const slotAngles = useMemo(() => isMobile ? mobileSlots : desktopSlots, [isMobile])
 
   const getLayout = useCallback(() => {
     if (!visualRef.current) return { cx: 0, cy: 0, r: 0 }
@@ -115,12 +112,13 @@ export default function OrbitSlider() {
 
   const positionItems = useCallback(() => {
     const { cx, cy, r } = getLayout()
-    const currentActive = activeRef.current
+    const active = activeRef.current
+    const step = (2 * Math.PI) / n
 
     if (orbitRingRef.current) {
       gsap.set(orbitRingRef.current, {
         width: r * 2, height: r * 2, left: cx - r, top: cy - r,
-        borderColor: products[currentActive].orbitColor,
+        borderColor: products[active].orbitColor,
       })
     }
 
@@ -138,67 +136,76 @@ export default function OrbitSlider() {
       return Math.PI / 2 - (h % 12) * (Math.PI / 6)
     }
 
-    const activeCount = productOrbitCount(currentActive)
-    const activeHours = []
-    for (let i = 0; i < activeCount; i++) {
-      activeHours.push(activeCount === 1 ? 9 : 9 + (i / (activeCount - 1)) * 3)
-    }
-
-    const inactiveProductIndices = products
-      .map((_, i) => i)
-      .filter(i => i !== currentActive)
-
-    const inactiveHours = []
-    for (let i = 0; i < inactiveProductIndices.length; i++) {
-      inactiveHours.push(1 + (i / (inactiveProductIndices.length - 1 || 1)) * 7)
-    }
-
     const maxSize = m ? 140 : 170
-    const gap = m ? 12 : 18
+    const minSize = m ? 30 : 40
+    const targetRot = active * step
+    const currentRot = rotationRef.current
 
-    let globalIdx = 0
-    products.forEach((p, productIdx) => {
-      const count = productOrbitCount(productIdx)
-      const isActive = productIdx === currentActive
+    function renderAll(rot) {
+      let idx = 0
+      products.forEach((p, productIdx) => {
+        const count = productOrbitCount(productIdx)
+        const isActive = productIdx === active
+        const baseAngle = rot - productIdx * step - Math.PI
+        const depth = (Math.sin(baseAngle) + 1) / 2
 
-      for (let offset = 0; offset < count; offset++) {
-        const el = itemsRef.current[globalIdx]
-        if (!el) { globalIdx++; continue }
+        for (let offset = 0; offset < count; offset++) {
+          const el = itemsRef.current[idx]
+          if (!el) { idx++; continue }
 
-        if (offset === 0 || isActive) {
-          const hour = isActive ? activeHours[offset] : inactiveHours[inactiveProductIndices.indexOf(productIdx)]
-          const angle = hourAngle(hour)
-          const isFocus = isActive && offset === 0
-          const isActiveOther = isActive && offset > 0
+          let size, x, y, op
 
-          const size = isFocus ? maxSize : (isActiveOther ? maxSize * 0.55 : m ? 30 : 40)
-          const x = cx + r * Math.cos(angle)
-          const y = cy - r * Math.sin(angle)
+          if (isActive && offset > 0) {
+            const angle = hourAngle(9 + (offset / (count - 1)) * 3)
+            size = maxSize * 0.55
+            x = cx + r * Math.cos(angle) - size / 2
+            y = cy - r * Math.sin(angle) - size / 2
+            op = 0.85
+            el.style.zIndex = 800 - offset
+            el.style.border = 'none'
+          } else if (isActive) {
+            size = maxSize
+            x = cx + r * Math.cos(baseAngle) - size / 2
+            y = cy - r * Math.sin(baseAngle) - size / 2
+            op = 1
+            el.style.zIndex = 999
+            el.style.border = `3px solid ${products[active].accentColor}`
+          } else if (offset === 0) {
+            size = minSize + depth * (maxSize - minSize) * 0.6
+            x = cx + r * Math.cos(baseAngle) - size / 2
+            y = cy - r * Math.sin(baseAngle) - size / 2
+            op = 0.25 + depth * 0.5
+            el.style.zIndex = Math.floor(depth * 100)
+            el.style.border = 'none'
+          } else {
+            size = 0
+            x = cx + r * Math.cos(baseAngle)
+            y = cy - r * Math.sin(baseAngle)
+            op = 0
+          }
 
-          gsap.to(el, {
-            x: x - size / 2, y: y - size / 2,
-            width: size, height: size,
-            opacity: isFocus ? 1 : (isActiveOther ? 0.85 : 0.5),
-            duration: 0.7,
-            ease: 'power3.out',
-          })
-          el.style.zIndex = isFocus ? 999 : (isActiveOther ? 800 - offset : 500 - hour)
-          el.style.border = isFocus ? `3px solid ${products[currentActive].accentColor}` : 'none'
-        } else {
-          const hideHour = inactiveHours[inactiveProductIndices.indexOf(productIdx)] || 1
-          const hideAngle = hourAngle(hideHour)
-          const x0 = cx + r * Math.cos(hideAngle)
-          const y0 = cy - r * Math.sin(hideAngle)
-          gsap.to(el, {
-            x: x0, y: y0,
-            width: 0, height: 0,
-            opacity: 0,
-            duration: 0.5,
-            ease: 'power2.out',
-          })
+          el.style.transform = `translate(${x}px, ${y}px)`
+          el.style.width = `${size}px`
+          el.style.height = `${size}px`
+          el.style.opacity = op
+          idx++
         }
-        globalIdx++
-      }
+      })
+    }
+
+    if (Math.abs(targetRot - currentRot) < 0.0001) {
+      renderAll(currentRot)
+      return
+    }
+
+    if (tweenRef.current) tweenRef.current.kill()
+    const state = { rot: currentRot }
+    tweenRef.current = gsap.to(state, {
+      rot: targetRot,
+      duration: 0.7,
+      ease: 'power3.out',
+      onUpdate: () => renderAll(state.rot),
+      onComplete: () => { rotationRef.current = targetRot }
     })
   }, [getLayout])
 
