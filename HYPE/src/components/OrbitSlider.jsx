@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react'
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { gsap } from 'gsap'
 import { orbitSliderConfig as products, orbitSvgImage } from '../config/orbitSliderConfig'
 
@@ -11,6 +11,65 @@ const allOrbitItems = products.flatMap((p, productIdx) =>
 
 function productOrbitCount(productIdx) {
   return products[productIdx].orbitImages.length
+}
+
+function hexToHsl(hex) {
+  let r = parseInt(hex.slice(1, 3), 16) / 255
+  let g = parseInt(hex.slice(3, 5), 16) / 255
+  let b = parseInt(hex.slice(5, 7), 16) / 255
+  let max = Math.max(r, g, b), min = Math.min(r, g, b)
+  let h, s, l = (max + min) / 2
+  if (max === min) {
+    h = s = 0
+  } else {
+    let d = max - min
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min)
+    switch (max) {
+      case r: h = ((g - b) / d + (g < b ? 6 : 0)) / 6; break
+      case g: h = ((b - r) / d + 2) / 6; break
+      case b: h = ((r - g) / d + 4) / 6; break
+    }
+    h *= 360
+  }
+  return { h, s: s * 100, l: l * 100 }
+}
+
+function hslToHex(h, s, l) {
+  h /= 360; s /= 100; l /= 100
+  let a = s * Math.min(l, 1 - l)
+  let f = n => {
+    let k = (n + h * 12) % 12
+    return Math.round(255 * (l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1))).toString(16).padStart(2, '0')
+  }
+  return `#${f(0)}${f(8)}${f(4)}`
+}
+
+const svgOrigColors = (() => {
+  const regex = /fill="(#[0-9A-Fa-f]{6})"/g
+  const colors = new Set()
+  let m
+  while ((m = regex.exec(orbitSvgImage)) !== null) colors.add(m[1])
+  return [...colors]
+})()
+
+function applyProductPalette(svg, product) {
+  const accentHsl = hexToHsl(product.accentColor)
+  const targetHue = accentHsl.h
+  let result = svg.replace('width="1560" height="1604"', '')
+  for (const orig of svgOrigColors) {
+    const hsl = hexToHsl(orig)
+    if (hsl.s < 5) continue
+    let diff = targetHue - hsl.h
+    if (diff > 180) diff -= 360
+    if (diff < -180) diff += 360
+    const newHsl = {
+      h: ((hsl.h + diff) % 360 + 360) % 360,
+      s: hsl.s,
+      l: hsl.l,
+    }
+    result = result.replaceAll(orig, hslToHex(newHsl.h, newHsl.s, newHsl.l))
+  }
+  return result
 }
 
 export default function OrbitSlider() {
@@ -32,6 +91,8 @@ export default function OrbitSlider() {
   const tweenRef = useRef(null)
 
   const [isMobile, setIsMobile] = useState(false)
+
+  const processedSvg = useMemo(() => applyProductPalette(orbitSvgImage, products[active]), [active])
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth <= 1024)
@@ -362,7 +423,7 @@ export default function OrbitSlider() {
           border: `4px solid ${products[active].orbitColor}`,
         }}>
           <div ref={orbitSvgRef}
-            dangerouslySetInnerHTML={{ __html: orbitSvgImage.replace('width="1560" height="1604"', '') }}
+            dangerouslySetInnerHTML={{ __html: processedSvg }}
             style={{ width: '80%', height: '80%', margin: '10%', pointerEvents: 'none' }}
           />
         </div>
