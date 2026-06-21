@@ -3,6 +3,7 @@ import { gsap } from 'gsap'
 import { orbitSliderConfig as products } from '../config/orbitSliderConfig'
 
 const n = products.length
+const orbitStep = (2 * Math.PI) / n
 
 const allOrbitItems = products.flatMap((p, productIdx) =>
   p.orbitImages.map(img => ({ productIdx, img }))
@@ -25,6 +26,8 @@ export default function OrbitSlider() {
   const ingredientRef = useRef([])
   const activeRef = useRef(active)
   const rotationRef = useRef(0)
+  const prevRotRef = useRef(0)
+  const totalActiveRef = useRef(0)
   const tweenRef = useRef(null)
 
   const [isMobile, setIsMobile] = useState(false)
@@ -113,7 +116,8 @@ export default function OrbitSlider() {
   const positionItems = useCallback(() => {
     const { cx, cy, r } = getLayout()
     const active = activeRef.current
-    const step = (2 * Math.PI) / n
+    const targetRot = rotationRef.current
+    const fromRot = prevRotRef.current
 
     if (orbitRingRef.current) {
       gsap.set(orbitRingRef.current, {
@@ -138,15 +142,13 @@ export default function OrbitSlider() {
 
     const maxSize = m ? 140 : 170
     const minSize = m ? 30 : 40
-    const targetRot = active * step
-    const currentRot = rotationRef.current
 
     function renderAll(rot) {
       let idx = 0
       products.forEach((p, productIdx) => {
         const count = productOrbitCount(productIdx)
         const isActive = productIdx === active
-        const baseAngle = rot - productIdx * step - Math.PI
+        const baseAngle = rot - productIdx * orbitStep - Math.PI
         const depth = (Math.sin(baseAngle) + 1) / 2
 
         for (let offset = 0; offset < count; offset++) {
@@ -193,58 +195,74 @@ export default function OrbitSlider() {
       })
     }
 
-    if (Math.abs(targetRot - currentRot) < 0.0001) {
-      renderAll(currentRot)
+    if (Math.abs(targetRot - fromRot) < 0.0001) {
+      renderAll(targetRot)
       return
     }
 
     if (tweenRef.current) tweenRef.current.kill()
-    const state = { rot: currentRot }
+    const state = { rot: fromRot }
     tweenRef.current = gsap.to(state, {
       rot: targetRot,
       duration: 0.7,
       ease: 'power3.out',
       onUpdate: () => renderAll(state.rot),
-      onComplete: () => { rotationRef.current = targetRot }
+      onComplete: () => { prevRotRef.current = targetRot }
     })
   }, [getLayout])
 
   const goTo = useCallback((idx) => {
-    const nextIdx = ((idx % n) + n) % n
-    activeRef.current = nextIdx
-    setActive(nextIdx)
-    updateUI(nextIdx)
+    const clamped = ((idx % n) + n) % n
+    const current = ((activeRef.current % n) + n) % n
+    let diff = ((clamped - current) % n + n) % n
+    if (diff === 0) return
+    if (diff > n / 2) diff -= n
+
+    prevRotRef.current = rotationRef.current
+    totalActiveRef.current += diff
+    activeRef.current = ((totalActiveRef.current % n) + n) % n
+    rotationRef.current = totalActiveRef.current * orbitStep
+    setActive(activeRef.current)
+    updateUI(activeRef.current)
     positionItems()
   }, [updateUI, positionItems])
 
   const next = useCallback(() => {
-    const nextIdx = (activeRef.current + 1) % n
-    activeRef.current = nextIdx
-    setActive(nextIdx)
-    updateUI(nextIdx)
+    prevRotRef.current = rotationRef.current
+    totalActiveRef.current += 1
+    activeRef.current = ((totalActiveRef.current % n) + n) % n
+    rotationRef.current = totalActiveRef.current * orbitStep
+    setActive(activeRef.current)
+    updateUI(activeRef.current)
     positionItems()
     if (autoRef.current) clearInterval(autoRef.current)
     autoRef.current = setInterval(() => {
-      const ni = (activeRef.current + 1) % n
-      activeRef.current = ni
-      setActive(ni)
-      updateUI(ni)
+      prevRotRef.current = rotationRef.current
+      totalActiveRef.current += 1
+      activeRef.current = ((totalActiveRef.current % n) + n) % n
+      rotationRef.current = totalActiveRef.current * orbitStep
+      setActive(activeRef.current)
+      updateUI(activeRef.current)
       positionItems()
     }, 4000)
   }, [updateUI, positionItems])
 
   const prev = useCallback(() => {
-    const nextIdx = ((activeRef.current - 1) % n + n) % n
-    activeRef.current = nextIdx
-    setActive(nextIdx)
-    updateUI(nextIdx)
+    prevRotRef.current = rotationRef.current
+    totalActiveRef.current -= 1
+    activeRef.current = ((totalActiveRef.current % n) + n) % n
+    rotationRef.current = totalActiveRef.current * orbitStep
+    setActive(activeRef.current)
+    updateUI(activeRef.current)
     positionItems()
     if (autoRef.current) clearInterval(autoRef.current)
     autoRef.current = setInterval(() => {
-      const ni = (activeRef.current + 1) % n
-      activeRef.current = ni
-      setActive(ni)
-      updateUI(ni)
+      prevRotRef.current = rotationRef.current
+      totalActiveRef.current += 1
+      activeRef.current = ((totalActiveRef.current % n) + n) % n
+      rotationRef.current = totalActiveRef.current * orbitStep
+      setActive(activeRef.current)
+      updateUI(activeRef.current)
       positionItems()
     }, 4000)
   }, [updateUI, positionItems])
@@ -253,10 +271,12 @@ export default function OrbitSlider() {
     updateUI(0)
     positionItems()
     autoRef.current = setInterval(() => {
-      const ni = (activeRef.current + 1) % n
-      activeRef.current = ni
-      setActive(ni)
-      updateUI(ni)
+      prevRotRef.current = rotationRef.current
+      totalActiveRef.current += 1
+      activeRef.current = ((totalActiveRef.current % n) + n) % n
+      rotationRef.current = totalActiveRef.current * orbitStep
+      setActive(activeRef.current)
+      updateUI(activeRef.current)
       positionItems()
     }, 4000)
     const onResize = () => positionItems()
