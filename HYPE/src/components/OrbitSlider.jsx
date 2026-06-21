@@ -140,16 +140,37 @@ export default function OrbitSlider() {
       return Math.PI / 2 - (h % 12) * (Math.PI / 6)
     }
 
+    const slotHours = [9, 1, 10 / 3, 17 / 3, 8]
+
+    function interpolateSlotHour(slot) {
+      const nSlots = slotHours.length
+      const i1 = ((Math.floor(slot) % nSlots) + nSlots) % nSlots
+      const i2 = (i1 + 1) % nSlots
+      const t = slot - Math.floor(slot)
+      const h1 = slotHours[i1]
+      const h2 = slotHours[i2]
+      let diff = h2 - h1
+      if (diff > 0) diff -= 12
+      let hour = h1 + diff * t
+      if (hour < 0) hour += 12
+      if (hour >= 12) hour -= 12
+      return hour
+    }
+
     const maxSize = m ? 140 : 170
     const minSize = m ? 30 : 40
 
     function renderAll(rot) {
+      const floatActive = rot / orbitStep
+      const visualActive = Math.round(floatActive) % n
       let idx = 0
       products.forEach((p, productIdx) => {
         const count = productOrbitCount(productIdx)
-        const isActive = productIdx === active
-        const baseAngle = rot - productIdx * orbitStep - Math.PI
-        const depth = (Math.sin(baseAngle) + 1) / 2
+        const isActive = productIdx === visualActive
+        const slot = ((productIdx - floatActive) % n + n) % n
+        const hour = interpolateSlotHour(slot)
+        const angle = hourAngle(hour)
+        const depth = (1 - Math.cos(angle)) / 2
 
         for (let offset = 0; offset < count; offset++) {
           const el = itemsRef.current[idx]
@@ -158,31 +179,31 @@ export default function OrbitSlider() {
           let size, x, y, op
 
           if (isActive && offset > 0) {
-            const angle = hourAngle(9 + (offset / (count - 1)) * 3)
+            const extraAngle = hourAngle(9 + (offset / (count - 1)) * 3)
             size = maxSize * 0.55
-            x = cx + r * Math.cos(angle) - size / 2
-            y = cy - r * Math.sin(angle) - size / 2
+            x = cx + r * Math.cos(extraAngle) - size / 2
+            y = cy - r * Math.sin(extraAngle) - size / 2
             op = 0.85
             el.style.zIndex = 800 - offset
             el.style.border = 'none'
           } else if (isActive) {
             size = maxSize
-            x = cx + r * Math.cos(baseAngle) - size / 2
-            y = cy - r * Math.sin(baseAngle) - size / 2
+            x = cx + r * Math.cos(angle) - size / 2
+            y = cy - r * Math.sin(angle) - size / 2
             op = 1
             el.style.zIndex = 999
-            el.style.border = `3px solid ${products[active].accentColor}`
+            el.style.border = `3px solid ${products[visualActive].accentColor}`
           } else if (offset === 0) {
             size = minSize + depth * (maxSize - minSize) * 0.6
-            x = cx + r * Math.cos(baseAngle) - size / 2
-            y = cy - r * Math.sin(baseAngle) - size / 2
+            x = cx + r * Math.cos(angle) - size / 2
+            y = cy - r * Math.sin(angle) - size / 2
             op = 0.25 + depth * 0.5
             el.style.zIndex = Math.floor(depth * 100)
             el.style.border = 'none'
           } else {
             size = 0
-            x = cx + r * Math.cos(baseAngle)
-            y = cy - r * Math.sin(baseAngle)
+            x = cx + r * Math.cos(angle)
+            y = cy - r * Math.sin(angle)
             op = 0
           }
 
