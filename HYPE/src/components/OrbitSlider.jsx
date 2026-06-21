@@ -216,8 +216,8 @@ export default function OrbitSlider() {
       return hour
     }
 
-    const maxSize = m ? 110 : 170
-    const minSize = m ? 30 : 40
+    const maxSize = m ? 70 : 130
+    const minSize = m ? 20 : 30
 
     function renderAll(rot) {
       const floatActive = rot / orbitStep
@@ -436,7 +436,7 @@ export default function OrbitSlider() {
 
         {allOrbitItems.map((item, i) => (
           <div key={i} ref={el => itemsRef.current[i] = el} style={{
-            position: 'absolute', borderRadius: '50%', overflow: 'hidden',
+            position: 'absolute', top: 0, left: 0, borderRadius: '50%', overflow: 'hidden',
             boxShadow: '0 4px 12px rgba(0,0,0,.1)',
           }}>
             <img src={item.img} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
