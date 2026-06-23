@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   BrowserRouter as Router,
   Routes,
@@ -159,9 +159,9 @@ export default function App() {
     }
   }, [animationComplete, imagesLoaded]);
 
-  const handleLoadingComplete = () => {
+  const handleLoadingComplete = useCallback(() => {
     setAnimationComplete(true);
-  };
+  }, []);
 
   return (
     <>
