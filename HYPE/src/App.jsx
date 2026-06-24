@@ -1,4 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { openSpinWheel, selectIdentifier, selectCanSpin } from "./store/slices/rewardsSlice";
 import {
   BrowserRouter as Router,
   Routes,
@@ -17,6 +19,9 @@ import Blog from "./pages/Blog";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
 import Cart from "./pages/Cart";
+import CheckoutPage from "./pages/CheckoutPage";
+import RewardsPage from "./pages/RewardsPage";
+import SpinWheel from "./components/SpinWheel";
 import SeedsLayout from "./components/SeedsLayout";
 import WhatsAppFloat from "./components/WhatsAppFloat";
 import ScrollToTop from "./components/ScrollToTop";
@@ -102,6 +107,9 @@ function HomePage() {
 }
 
 export default function App() {
+  const dispatch = useDispatch();
+  const savedIdentifier = useSelector(selectIdentifier);
+  const canSpin = useSelector(selectCanSpin);
   const [isLoading, setIsLoading] = useState(true);
   const [imagesLoaded, setImagesLoaded] = useState(false);
   const [animationComplete, setAnimationComplete] = useState(false);
@@ -159,6 +167,17 @@ export default function App() {
     }
   }, [animationComplete, imagesLoaded]);
 
+  const showSpinOnLoad = !savedIdentifier || canSpin;
+
+  useEffect(() => {
+    if (!isLoading && showSpinOnLoad) {
+      const timer = setTimeout(() => {
+        dispatch(openSpinWheel());
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [isLoading, showSpinOnLoad, dispatch]);
+
   const handleLoadingComplete = useCallback(() => {
     setAnimationComplete(true);
   }, []);
@@ -191,11 +210,14 @@ export default function App() {
               <Route path="/chess" element={<ChessPage />} />
               <Route path="/rides" element={<RidesPage />} />
               <Route path="/explore" element={<ExplorePage />} />
+              <Route path="/rewards" element={<RewardsPage />} />
+              <Route path="/checkout" element={<CheckoutPage />} />
             </Routes>
             <Footer />
           </>
         )}
       </Router>
+      <SpinWheel />
       <ToastContainer
         position="bottom-center"
         autoClose={3000}

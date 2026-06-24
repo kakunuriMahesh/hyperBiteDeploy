@@ -1,4 +1,4 @@
-import { createSlice } from '@reduxjs/toolkit'
+import { createSlice, createSelector } from '@reduxjs/toolkit'
 import en from '../../i18n/en.json'
 import hi from '../../i18n/hi.json'
 import ar from '../../i18n/ar.json'
@@ -42,9 +42,10 @@ export const { changeLanguage } = languageSlice.actions
 
 export const selectCurrentLang = state => state.language.currentLang
 export const selectLanguages = () => languages
-export const selectT = state => {
-  const lang = state.language.currentLang
-  return (key) => languages[lang]?.translations[key] || languages.en.translations[key] || key
-}
+const selectCurrentLangRaw = state => state.language.currentLang
+export const selectT = createSelector(
+  [selectCurrentLangRaw],
+  (lang) => (key) => languages[lang]?.translations[key] || languages.en.translations[key] || key
+)
 
 export default languageSlice.reducer

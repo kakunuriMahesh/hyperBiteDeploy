@@ -1,0 +1,679 @@
+import React, { useState, useEffect, useMemo } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+import { useCart } from "../store/hooks/useCart";
+import { formatCartMessage } from "../utils/whatsapp";
+import { getCookie, setCookie } from "../utils/cookies";
+import { FaChevronDown, FaChevronUp } from "react-icons/fa";
+import { toast } from "react-toastify";
+import { allowedPincodes } from "../config/allowedPincodes";
+import { productDetails } from "../config/productDetails";
+import Navbar from "../components/Navbar";
+
+const CheckoutPage = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const {
+    cartItems,
+    packItems,
+    pincode,
+    getCartTotal,
+    clearCart,
+  } = useCart();
+
+  const routeState = location.state || {};
+  const [appliedReward] = useState(routeState.appliedReward || null);
+  const [appliedCoupon] = useState(routeState.appliedCoupon || null);
+
+  const [breakpoint, setBreakpoint] = useState("desktop");
+  const isDesktop = breakpoint !== "mobile";
+  const [orderExpanded, setOrderExpanded] = useState(window.innerWidth >= 768);
+  const [formData, setFormData] = useState({
+    name: "",
+    phone: "",
+    email: "",
+    whatsapp: "",
+    address: "",
+    city: "",
+    state: "",
+    country: "",
+    pincode: "",
+  });
+  const [pincodeError, setPincodeError] = useState("");
+  const [isPaymentLoading, setIsPaymentLoading] = useState(false);
+  const [isFormSubmitting, setIsFormSubmitting] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [successData, setSuccessData] = useState({ points: 0, email: '' });
+
+  const checkoutSummary = useMemo(() => {
+    const totalItems = cartItems.reduce((sum, item) => sum + item.quantity, 0)
+      + packItems.reduce((sum, pack) => sum + pack.quantity, 0);
+    const totalMRP = cartItems.reduce((sum, item) => {
+      const price = typeof item.price === 'string' ? parseFloat(item.price.replace(/[^0-9.]/g, '')) : item.price;
+      return sum + (price * item.quantity);
+    }, 0) + packItems.reduce((sum, pack) => {
+      const mrp = (pack.packOffPrice && pack.packOffPrice > 0 && pack.packOffPrice !== pack.packPrice)
+        ? pack.packOffPrice : pack.packPrice;
+      return sum + (mrp * pack.quantity);
+    }, 0);
+    const sellingTotal = getCartTotal();
+    const totalDiscount = totalMRP - sellingTotal;
+    const deliveryCharge = 0;
+    let extraDiscount = 0;
+    let freeShippingApplied = false;
+    if (appliedReward) {
+      if (appliedReward.type === 'discount_percent') {
+        extraDiscount = sellingTotal * (appliedReward.value / 100);
+      }
+      if (appliedReward.type === 'free_shipping') {
+        freeShippingApplied = true;
+      }
+    }
+    if (appliedCoupon) {
+      if (appliedCoupon.discount > 0) {
+        extraDiscount = sellingTotal * (appliedCoupon.discount / 100);
+      }
+      if (appliedCoupon.freeShipping) {
+        freeShippingApplied = true;
+      }
+    }
+    const finalTotal = Math.max(0, sellingTotal - extraDiscount);
+    return { totalItems, totalMRP, sellingTotal, totalDiscount, deliveryCharge, extraDiscount, freeShippingApplied, finalTotal };
+  }, [cartItems, packItems, getCartTotal, appliedReward, appliedCoupon]);
+
+  useEffect(() => {
+    const updateBreakpoint = () => {
+      const viewportWidth = window.innerWidth;
+      const newBP = viewportWidth < 768 ? "mobile" : viewportWidth < 1024 ? "tablet" : "desktop";
+      setBreakpoint(newBP);
+      if (newBP !== "mobile") {
+        setOrderExpanded(true);
+      }
+    };
+    updateBreakpoint();
+    window.addEventListener("resize", updateBreakpoint);
+    return () => window.removeEventListener("resize", updateBreakpoint);
+  }, []);
+
+  useEffect(() => {
+    const savedDetails = getCookie("userDetails");
+    if (savedDetails) {
+      setFormData(savedDetails);
+    }
+    if (pincode) {
+      setFormData((prev) => ({ ...prev, pincode }));
+    }
+  }, [pincode]);
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+    if (name === "pincode") setPincodeError("");
+  };
+
+  const handlePayNow = () => {
+    if (!formData.pincode.trim()) {
+      setPincodeError("Please enter a pincode");
+      return;
+    }
+    initiateRazorpay();
+  };
+
+  const loadRazorpayScript = () => {
+    return new Promise((resolve) => {
+      const script = document.createElement("script");
+      script.src = "https://checkout.razorpay.com/v1/checkout.js";
+      script.onload = () => resolve(true);
+      script.onerror = () => resolve(false);
+      document.body.appendChild(script);
+    });
+  };
+
+  const initiateRazorpay = async () => {
+    if (!formData.pincode.trim()) {
+      setPincodeError("Please enter a pincode");
+      return;
+    }
+
+    try {
+      setIsPaymentLoading(true);
+
+      const items = [];
+      cartItems.forEach((it) => {
+        const price = typeof it.price === 'string' ? parseFloat(it.price.replace(/[^0-9.]/g, '')) : Number(it.price);
+        items.push({
+          id: it.id,
+          name: it.name + (it.variation && it.variation !== "default" ? ` (${it.variation})` : ""),
+          price: price || 0,
+          quantity: it.quantity || 1,
+          type: "product",
+        });
+      });
+      packItems.forEach((p) => {
+        const subItems = (p.items || []).map((sub) => {
+          const detail = productDetails[sub.id];
+          return {
+            id: sub.id,
+            name: detail?.name || sub.id,
+            quantity: sub.quantity || 1,
+          };
+        });
+        items.push({
+          id: p.packId || p.instanceId,
+          name: p.packName,
+          price: Number(p.packPrice) || 0,
+          quantity: p.quantity || 1,
+          type: "pack",
+          subItems,
+        });
+      });
+
+      const resp = await fetch("https://hyperbitedeploy.onrender.com/api/payment/create-order", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          customer: {
+            name: formData.name,
+            email: formData.email,
+            phone: formData.phone,
+            whatsapp: formData.whatsapp,
+            address: formData.address,
+            city: formData.city,
+            state: formData.state,
+            country: formData.country,
+            pincode: formData.pincode,
+          },
+          items,
+        }),
+      });
+
+      if (!resp.ok) {
+        const err = await resp.json().catch(() => ({}));
+        throw new Error(err.error || "Could not create order");
+      }
+
+      const data = await resp.json();
+
+      const ok = await loadRazorpayScript();
+      if (!ok) throw new Error("Razorpay SDK failed to load. Check your connection.");
+
+      const options = {
+        key: data.keyId,
+        amount: data.razorpayOrder.amount,
+        currency: data.razorpayOrder.currency || "INR",
+        name: "Hyperbite",
+        description: "Order Payment",
+        order_id: data.razorpayOrder.id,
+        handler: async function (response) {
+          try {
+            const verifyRes = await fetch("https://hyperbitedeploy.onrender.com/api/payment/verify", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(response),
+            });
+
+            const verifyJson = await verifyRes.json();
+            if (verifyRes.ok && verifyJson.success) {
+              const paidAmount = Math.round((data.razorpayOrder.amount || 0) / 100);
+              clearCart();
+              setIsPaymentLoading(false);
+              setSuccessData({ points: paidAmount, email: formData.email });
+              setShowSuccessModal(true);
+            } else {
+              toast.error("Payment verification failed.");
+              setIsPaymentLoading(false);
+            }
+          } catch (err) {
+            toast.error("Verification error: " + (err.message || err));
+            setIsPaymentLoading(false);
+          }
+        },
+        prefill: {
+          name: formData.name,
+          email: formData.email,
+          contact: formData.phone,
+        },
+        theme: { color: "#1e3a8a" },
+      };
+
+      const rzp = new window.Razorpay(options);
+      setIsPaymentLoading(false);
+      rzp.on("payment.failed", function (response) {
+        toast.error("Payment failed. " + (response.error?.description || ""));
+        setIsPaymentLoading(false);
+      });
+      rzp.open();
+    } catch (error) {
+      toast.error(error.message || "Payment init failed");
+      setIsPaymentLoading(false);
+    }
+  };
+
+  const handlePlaceOrder = (e) => {
+    e.preventDefault();
+
+    if (!formData.pincode.trim()) {
+      setPincodeError("Please enter a pincode");
+      return;
+    }
+
+    setCookie("userDetails", formData, 30);
+    setIsFormSubmitting(true);
+
+    setTimeout(() => {
+      const message = formatCartMessage(cartItems, packItems, formData);
+      const encodedMessage = encodeURIComponent(message);
+      const whatsappUrl = `https://wa.me/919985944466?text=${encodedMessage}`;
+      window.open(whatsappUrl, "_blank");
+
+      clearCart();
+      toast.success("Order placed successfully!", { position: "bottom-center", autoClose: 12000 });
+      setIsFormSubmitting(false);
+      navigate("/");
+    }, 1500);
+  };
+
+  const { totalItems, totalMRP, sellingTotal, totalDiscount, deliveryCharge, extraDiscount, freeShippingApplied, finalTotal } = checkoutSummary;
+
+  const isMobile = breakpoint === "mobile";
+
+  const containerStyle = {
+    maxWidth: isMobile ? "720px" : "1100px",
+    margin: "0 auto",
+    padding: isMobile ? "24px 16px" : "32px 32px",
+  };
+
+  const renderSuccessModal = () => (
+    <div
+      style={{
+        position: "fixed", top: 0, left: 0, width: "100%", height: "100%",
+        backgroundColor: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center",
+        zIndex: 9999, backdropFilter: "blur(4px)",
+      }}
+      onClick={() => { setShowSuccessModal(false); navigate("/"); }}
+    >
+      <div onClick={(e) => e.stopPropagation()} style={{
+        backgroundColor: "#fff", borderRadius: "20px", padding: "40px 32px",
+        maxWidth: "420px", width: "90%", textAlign: "center",
+        boxShadow: "0 20px 60px rgba(0,0,0,0.2)",
+      }}>
+        <div style={{
+          width: "80px", height: "80px", borderRadius: "50%",
+          background: "linear-gradient(135deg, #22c55e 0%, #16a34a 100%)",
+          display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 20px",
+          boxShadow: "0 4px 16px rgba(34,197,94,0.3)",
+        }}>
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
+        </div>
+        <h2 style={{ fontFamily: "'Nunito Sans', sans-serif", fontSize: "26px", fontWeight: 800, color: "#1f2937", marginBottom: "8px" }}>
+          Payment Successful!
+        </h2>
+        <p style={{ fontFamily: "'Inter', sans-serif", fontSize: "14px", color: "#6b7280", marginBottom: "24px" }}>
+          Thank you for your order
+        </p>
+        <div style={{ background: "linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)", borderRadius: "12px", padding: "20px", marginBottom: "20px", border: "1px solid #fde68a" }}>
+          <p style={{ fontFamily: "'Inter', sans-serif", fontSize: "13px", color: "#92400e", marginBottom: "8px", fontWeight: 500 }}>🎉 You earned</p>
+          <p style={{ fontFamily: "'Nunito Sans', sans-serif", fontSize: "40px", fontWeight: 800, color: "#d97706", margin: "0 0 4px 0", lineHeight: 1 }}>{successData.points}</p>
+          <p style={{ fontFamily: "'Inter', sans-serif", fontSize: "14px", color: "#92400e", fontWeight: 600, margin: 0 }}>HyperBite Points</p>
+        </div>
+        {successData.email && (
+          <div style={{ background: "#f3f4f6", borderRadius: "8px", padding: "12px 16px", marginBottom: "24px" }}>
+            <p style={{ fontFamily: "'Inter', sans-serif", fontSize: "12px", color: "#6b7280", margin: "0 0 4px 0" }}>Track your points with</p>
+            <p style={{ fontFamily: "'Inter', sans-serif", fontSize: "14px", color: "#1f2937", fontWeight: 600, margin: 0, wordBreak: "break-all" }}>{successData.email}</p>
+          </div>
+        )}
+        <button
+          onClick={() => { setShowSuccessModal(false); navigate("/"); }}
+          style={{
+            width: "100%", padding: "14px", fontFamily: "'Inter', sans-serif", fontSize: "16px", fontWeight: 600,
+            background: "linear-gradient(135deg, #1e3a8a 0%, #1d4ed8 100%)", color: "#fff",
+            border: "none", borderRadius: "10px", cursor: "pointer", transition: "all 0.3s ease",
+            boxShadow: "0 4px 12px rgba(30,58,138,0.2)",
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 6px 16px rgba(30,58,138,0.3)"; }}
+          onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "0 4px 12px rgba(30,58,138,0.2)"; }}
+        >
+          Continue Shopping
+        </button>
+      </div>
+    </div>
+  );
+
+  const renderOrderSummaryHeader = () => (
+    <div style={{
+      display: "flex", alignItems: "center", justifyContent: "space-between",
+      padding: isMobile ? "14px 16px" : "16px 20px", gap: 12,
+      cursor: "pointer",
+      transition: "background 0.2s",
+    }}
+      onClick={() => setOrderExpanded(o => !o)}
+      onMouseEnter={(e) => { if (!orderExpanded) e.currentTarget.style.background = "#fafafa"; }}
+      onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+    >
+      <div style={{ display: "flex", alignItems: "center", gap: 12, flex: 1, minWidth: 0 }}>
+        <div style={{
+          width: 40, height: 40, borderRadius: 10,
+          background: "linear-gradient(135deg, #EEF2FF, #E0E7FF)",
+          display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+        }}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4F46E5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4zM3 6h18" /><path d="M16 10a4 4 0 01-8 0" />
+          </svg>
+        </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <p style={{ margin: 0, fontSize: isMobile ? "13px" : "14px", fontWeight: 600, color: "#111827", fontFamily: "'Inter', sans-serif" }}>
+            Order Summary
+          </p>
+          <p style={{ margin: "2px 0 0", fontSize: "12px", color: "#6B7280", fontFamily: "'Inter', sans-serif" }}>
+            {totalItems} {totalItems === 1 ? "item" : "items"}
+          </p>
+        </div>
+      </div>
+      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+        <span style={{ fontSize: isMobile ? "16px" : "18px", fontWeight: 700, color: "#111827", fontFamily: "'Nunito Sans', sans-serif" }}>
+          ₹{finalTotal.toFixed(2)}
+        </span>
+        {orderExpanded ? <FaChevronUp size={14} color="#9CA3AF" /> : <FaChevronDown size={14} color="#9CA3AF" />}
+      </div>
+    </div>
+  );
+
+  const renderOrderSummaryBody = () => (
+    <div>
+      <div style={{ padding: isMobile ? "8px 16px" : "8px 20px", maxHeight: isMobile ? "240px" : "280px", overflowY: "auto" }}>
+        {cartItems.map((item, idx) => (
+          <div key={idx} style={{
+            display: "flex", justifyContent: "space-between", alignItems: "center",
+            padding: "8px 0", fontFamily: "'Inter', sans-serif",
+            fontSize: isMobile ? "12px" : "13px", borderBottom: "1px solid #f3f4f6",
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1, minWidth: 0 }}>
+              <div style={{ width: isMobile ? 28 : 32, height: isMobile ? 28 : 32, borderRadius: 6, backgroundColor: '#F3F4F6', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, overflow: 'hidden' }}>
+                <img src={item.image || item.images?.[0] || "/assets/CustomizePack.jpeg"} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              </div>
+              <span style={{ color: "#374151", fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.name || `Item ${idx + 1}`}</span>
+            </div>
+            <span style={{ color: "#6B7280", whiteSpace: 'nowrap', marginLeft: 8 }}>x{item.quantity}</span>
+          </div>
+        ))}
+        {packItems.map((pack, idx) => (
+          <div key={`pack-${idx}`} style={{
+            display: "flex", justifyContent: "space-between", alignItems: "center",
+            padding: "8px 0", fontFamily: "'Inter', sans-serif",
+            fontSize: isMobile ? "12px" : "13px", borderBottom: "1px solid #f3f4f6",
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1, minWidth: 0 }}>
+              <div style={{ width: isMobile ? 28 : 32, height: isMobile ? 28 : 32, borderRadius: 6, backgroundColor: '#F3F4F6', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, overflow: 'hidden' }}>
+                <img src="/assets/CustomizePack.jpeg" alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              </div>
+              <span style={{ color: "#374151", fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{pack.packName}</span>
+            </div>
+            <span style={{ color: "#6B7280", whiteSpace: 'nowrap', marginLeft: 8 }}>x{pack.quantity}</span>
+          </div>
+        ))}
+      </div>
+
+      <div style={{ padding: isMobile ? "10px 16px" : "12px 20px", borderTop: "1px solid #f3f4f6", backgroundColor: "#FAFAFA" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "5px 0", fontFamily: "'Inter', sans-serif", fontSize: isMobile ? "12px" : "13px" }}>
+          <span style={{ color: "#6B7280" }}>Total MRP</span>
+          <span style={{ color: "#6B7280" }}>₹{totalMRP.toFixed(2)}</span>
+        </div>
+        {totalDiscount > 0 && (
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "5px 0", fontFamily: "'Inter', sans-serif", fontSize: isMobile ? "12px" : "13px" }}>
+            <span style={{ color: "#16A34A" }}>Discount on MRP</span>
+            <span style={{ color: "#16A34A", fontWeight: 600 }}>− ₹{totalDiscount.toFixed(2)}</span>
+          </div>
+        )}
+        {extraDiscount > 0 && (
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "5px 0", fontFamily: "'Inter', sans-serif", fontSize: isMobile ? "12px" : "13px" }}>
+            <span style={{ color: "#F59E0B" }}>
+              {appliedReward ? 'Reward Discount' : 'Coupon Discount'}
+              {appliedCoupon && ` (${appliedCoupon.code})`}
+            </span>
+            <span style={{ color: "#F59E0B", fontWeight: 600 }}>− ₹{extraDiscount.toFixed(2)}</span>
+          </div>
+        )}
+        {freeShippingApplied && (
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "5px 0", fontFamily: "'Inter', sans-serif", fontSize: isMobile ? "12px" : "13px" }}>
+            <span style={{ color: "#16A34A" }}>Free Shipping</span>
+            <span style={{ color: "#16A34A", fontWeight: 600 }}>✓ Applied</span>
+          </div>
+        )}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "5px 0", fontFamily: "'Inter', sans-serif", fontSize: isMobile ? "12px" : "13px" }}>
+          <span style={{ color: "#6B7280" }}>Delivery</span>
+          <span style={{ color: "#16A34A", fontWeight: 600 }}>FREE</span>
+        </div>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0 0", marginTop: "6px", borderTop: "1px dashed #e5e7eb", fontFamily: "'Nunito Sans', sans-serif" }}>
+          <span style={{ fontSize: isMobile ? "15px" : "16px", fontWeight: 700, color: "#111827" }}>Total</span>
+          <span style={{ fontSize: isMobile ? "17px" : "18px", fontWeight: 800, color: "#111827" }}>₹{finalTotal.toFixed(2)}</span>
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderForm = () => (
+    <form onSubmit={handlePlaceOrder} style={{
+      backgroundColor: "#ffffff", padding: isMobile ? "16px" : "24px",
+      borderRadius: "12px",
+      boxShadow: "0 1px 4px rgba(0,0,0,0.06)", border: "1px solid #e5e7eb",
+    }}>
+      <h2 style={{ fontFamily: "'Nunito Sans', sans-serif", fontSize: isMobile ? "20px" : "22px", marginBottom: "24px", color: "#1f2937", fontWeight: 700 }}>
+        Delivery Details
+      </h2>
+
+      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(2, 1fr)", gap: "16px", marginBottom: "24px" }}>
+        {[
+          { name: "name", label: "Full Name", type: "text", required: true },
+          { name: "phone", label: "Phone Number", type: "tel", required: true },
+          { name: "email", label: "Email Address", type: "email", required: true },
+          { name: "whatsapp", label: "WhatsApp Number", type: "tel", required: true },
+          { name: "pincode", label: "Pincode", type: "text", required: true },
+          { name: "city", label: "City / Town", type: "text", required: true },
+          { name: "state", label: "State", type: "text", required: true },
+          { name: "country", label: "Country", type: "text", required: true },
+        ].map((field) => (
+          <div key={field.name}>
+            <label style={{ fontFamily: "'Inter', sans-serif", fontSize: "13px", marginBottom: "6px", color: "#4b5563", fontWeight: 500, display: "flex", alignItems: "center", gap: "4px" }}>
+              {field.label} {field.required && <span style={{ color: "#ef4444" }}>*</span>}
+              {field.name === "pincode" && pincode && (
+                <span style={{ background: "linear-gradient(135deg, #22c55e 0%, #16a34a 100%)", color: "#fff", padding: "2px 8px", borderRadius: "12px", fontSize: "11px", fontWeight: 500 }}>
+                  Verified
+                </span>
+              )}
+            </label>
+            <input
+              type={field.type} name={field.name} value={formData[field.name]}
+              onChange={handleInputChange} required={field.required}
+              style={{
+                width: "100%", padding: "10px 12px",
+                border: pincodeError && field.name === "pincode" ? "1px solid #ef4444"
+                  : pincode && field.name === "pincode" ? "1px solid #22c55e" : "1px solid #d1d5db",
+                borderRadius: "8px", fontFamily: "'Inter', sans-serif", fontSize: "14px",
+                backgroundColor: "#fff", transition: "border-color 0.2s ease", boxSizing: "border-box",
+              }}
+              onFocus={(e) => { e.target.style.borderColor = "#3b82f6"; }}
+              onBlur={(e) => {
+                e.target.style.borderColor = pincodeError && field.name === "pincode"
+                  ? "#ef4444" : pincode && field.name === "pincode" ? "#22c55e" : "#d1d5db";
+              }}
+            />
+            {pincodeError && field.name === "pincode" && (
+              <p style={{ color: "#ef4444", fontSize: "12px", marginTop: "4px", fontFamily: "'Inter', sans-serif" }}>{pincodeError}</p>
+            )}
+          </div>
+        ))}
+      </div>
+
+      <div style={{ marginBottom: "32px" }}>
+        <label style={{ display: "block", fontFamily: "'Inter', sans-serif", fontSize: "13px", marginBottom: "6px", color: "#4b5563", fontWeight: 500 }}>
+          Full Address / Landmark Details <span style={{ color: "#ef4444" }}>*</span>
+        </label>
+        <textarea
+          name="address" value={formData.address} onChange={handleInputChange} required
+          placeholder="Enter your complete address with landmark details"
+          style={{
+            width: "100%", padding: "10px 12px", border: "1px solid #d1d5db",
+            borderRadius: "8px", fontFamily: "'Inter', sans-serif", fontSize: "14px",
+            backgroundColor: "#fff", minHeight: "80px", transition: "border-color 0.2s ease", boxSizing: "border-box",
+          }}
+          onFocus={(e) => { e.target.style.borderColor = "#3b82f6"; }}
+          onBlur={(e) => { e.target.style.borderColor = "#d1d5db"; }}
+        />
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(2, 1fr)", gap: "12px", marginBottom: "12px" }}>
+        <button
+          type="button" disabled={isFormSubmitting} onClick={handlePlaceOrder}
+          style={{
+            padding: "12px", fontFamily: "'Inter', sans-serif", fontSize: "14px",
+            background: isFormSubmitting ? "#9ca3af" : "linear-gradient(135deg, #22c55e 0%, #16a34a 100%)",
+            color: "#fff", border: "none", borderRadius: "8px",
+            cursor: isFormSubmitting ? "not-allowed" : "pointer", transition: "all 0.3s ease",
+            display: "flex", alignItems: "center", justifyContent: "center", gap: "8px",
+            fontWeight: 600, boxShadow: "0 2px 8px rgba(34,197,94,0.2)",
+          }}
+          onMouseEnter={(e) => { if (!isFormSubmitting) { e.target.style.transform = "translateY(-2px)"; e.target.style.boxShadow = "0 4px 12px rgba(34,197,94,0.3)"; } }}
+          onMouseLeave={(e) => { if (!isFormSubmitting) { e.target.style.transform = "translateY(0)"; e.target.style.boxShadow = "0 2px 8px rgba(34,197,94,0.2)"; } }}
+        >
+          {isFormSubmitting ? (
+            <><div style={{ width: "16px", height: "16px", border: "2px solid #fff", borderTop: "2px solid transparent", borderRadius: "50%", animation: "spin 1s linear infinite" }} /> Processing...</>
+          ) : (
+            <><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z" /></svg> Place via WhatsApp</>
+          )}
+        </button>
+
+        <button
+          type="button" disabled={isPaymentLoading} onClick={handlePayNow}
+          style={{
+            padding: "12px", fontFamily: "'Inter', sans-serif", fontSize: "14px",
+            background: isPaymentLoading ? "#9ca3af" : "linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)",
+            color: "#fff", border: "none", borderRadius: "8px",
+            cursor: isPaymentLoading ? "not-allowed" : "pointer", transition: "all 0.3s ease",
+            display: "flex", alignItems: "center", justifyContent: "center", gap: "8px",
+            fontWeight: 600, boxShadow: "0 2px 8px rgba(59,130,246,0.2)",
+          }}
+          onMouseEnter={(e) => { if (!isPaymentLoading) { e.target.style.transform = "translateY(-2px)"; e.target.style.boxShadow = "0 4px 12px rgba(59,130,246,0.3)"; } }}
+          onMouseLeave={(e) => { if (!isPaymentLoading) { e.target.style.transform = "translateY(0)"; e.target.style.boxShadow = "0 2px 8px rgba(59,130,246,0.2)"; } }}
+        >
+          {isPaymentLoading ? (
+            <><div style={{ width: "16px", height: "16px", border: "2px solid #fff", borderTop: "2px solid transparent", borderRadius: "50%", animation: "spin 1s linear infinite" }} /> Processing...</>
+          ) : (
+            <><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 5h18M3 19h18M3 12h18" strokeLinecap="round" strokeLinejoin="round"/></svg> Pay Securely</>
+          )}
+        </button>
+      </div>
+
+      <button
+        type="button" onClick={() => navigate("/cart")}
+        style={{
+          width: "100%", padding: "10px", fontFamily: "'Inter', sans-serif", fontSize: "13px",
+          backgroundColor: "#f3f4f6", color: "#4b5563", border: "none", borderRadius: "8px",
+          cursor: "pointer", transition: "all 0.2s ease",
+        }}
+        onMouseEnter={(e) => { e.target.style.backgroundColor = "#e5e7eb"; }}
+        onMouseLeave={(e) => { e.target.style.backgroundColor = "#f3f4f6"; }}
+      >
+        Back to Cart
+      </button>
+    </form>
+  );
+
+  return (
+    <div style={{ backgroundColor: "#f9fafb", minHeight: "100vh", paddingTop: "80px" }}>
+      {showSuccessModal && renderSuccessModal()}
+
+      <div style={containerStyle}>
+        <div style={{ display: "flex", alignItems: "center", gap: isMobile ? "10px" : "16px", marginBottom: isMobile ? "16px" : "24px" }}>
+          <button
+            onClick={() => navigate("/cart")}
+            style={{
+              width: isMobile ? "32px" : "40px", height: isMobile ? "32px" : "40px",
+              borderRadius: "50%", border: "1px solid #e5e7eb", background: "#ffffff",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              cursor: "pointer", transition: "all 0.2s ease", flexShrink: 0,
+              boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.background = "#f3f4f6"; }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = "#ffffff"; }}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1f2937" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="19" y1="12" x2="5" y2="12" /><polyline points="12 19 5 12 12 5" />
+            </svg>
+          </button>
+          <div>
+            <h1 style={{ fontFamily: "'Nunito Sans', sans-serif", fontSize: isMobile ? "20px" : "28px", color: "#1f2937", fontWeight: 800, letterSpacing: "-0.025em", margin: 0, lineHeight: 1.2 }}>
+              Checkout
+            </h1>
+            <p style={{ fontFamily: "'Inter', sans-serif", fontSize: isMobile ? "12px" : "13px", color: "#9ca3af", margin: "2px 0 0 0" }}>
+              Complete your order
+            </p>
+          </div>
+        </div>
+
+        {isMobile ? (
+          <div>
+            <div style={{
+              backgroundColor: "#ffffff", borderRadius: "16px",
+              border: "1px solid #e5e7eb",
+              boxShadow: orderExpanded ? "0 4px 20px rgba(0,0,0,0.08)" : "0 2px 8px rgba(0,0,0,0.04)",
+              overflow: "hidden", marginBottom: 16,
+              transition: "box-shadow 0.3s ease",
+            }}>
+              {renderOrderSummaryHeader()}
+              {orderExpanded && renderOrderSummaryBody()}
+            </div>
+            {renderForm()}
+          </div>
+        ) : (
+          <div style={{ display: "flex", gap: 24, alignItems: "flex-start" }}>
+            <div style={{ flex: "0 0 380px", position: "sticky", top: 104 }}>
+              <div style={{
+                backgroundColor: "#ffffff", borderRadius: "16px",
+                border: "1px solid #e5e7eb",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+                overflow: "hidden",
+                transition: "box-shadow 0.3s ease",
+              }}>
+                {renderOrderSummaryHeader()}
+                {orderExpanded && renderOrderSummaryBody()}
+              </div>
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              {renderForm()}
+            </div>
+          </div>
+        )}
+
+        {(isPaymentLoading || isFormSubmitting) && (
+          <div style={{
+            position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
+            backgroundColor: "rgba(255,255,255,0.8)", display: "flex",
+            alignItems: "center", justifyContent: "center", zIndex: 9999,
+            backdropFilter: "blur(8px)",
+          }}>
+            <div style={{
+              backgroundColor: "#ffffff", padding: "32px", borderRadius: "16px",
+              textAlign: "center", boxShadow: "0 8px 32px rgba(0,0,0,0.15)", minWidth: "280px",
+            }}>
+              <div style={{
+                width: "48px", height: "48px", border: "3px solid #f3f4f6",
+                borderTop: "3px solid #3b82f6", borderRadius: "50%",
+                animation: "spin 1s linear infinite", margin: "0 auto 16px",
+              }} />
+              <h3 style={{ fontFamily: "'Nunito Sans', sans-serif", fontSize: "18px", color: "#1f2937", marginBottom: "8px", fontWeight: 700 }}>
+                {isPaymentLoading ? "Securing Payment" : "Verifying Order"}
+              </h3>
+              <p style={{ fontFamily: "'Inter', sans-serif", fontSize: "14px", color: "#6b7280" }}>
+                Please wait a moment...
+              </p>
+            </div>
+            <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default CheckoutPage;
