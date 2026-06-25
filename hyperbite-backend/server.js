@@ -6,6 +6,7 @@ const connectDB = require("./config/db");
 const paymentRoutes = require("./routes/paymentRoutes");
 const adminRoutes = require("./routes/adminRoutes");
 const cronRoutes = require("./routes/cronRoutes");
+const rewardRoutes = require("./routes/rewardRoutes");
 
 const app = express();
 
@@ -16,6 +17,7 @@ app.use(express.json());
 app.use("/api/payment", paymentRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/cron", cronRoutes);
+app.use("/api/rewards", rewardRoutes);
 
 const PORT = process.env.PORT || 5000;
 

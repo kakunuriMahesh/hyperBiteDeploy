@@ -12,7 +12,14 @@ const orderSchema = new mongoose.Schema({
     country: String,
     pincode: String,
   },
-  
+
+  customerIdentifier: {
+    type: String,
+    lowercase: true,
+    trim: true,
+    default: null,
+  },
+
   items: [
     {
       productId: String,
@@ -32,6 +39,28 @@ const orderSchema = new mongoose.Schema({
   ],
 
   totalAmount: Number,
+  finalAmount: Number,
+
+  appliedReward: {
+    rewardId: { type: mongoose.Schema.Types.ObjectId, ref: 'Reward', default: null },
+    type: String,
+    value: Number,
+    label: String,
+  },
+
+  appliedCoupon: {
+    couponId: { type: mongoose.Schema.Types.ObjectId, ref: 'Coupon', default: null },
+    code: String,
+    type: String,
+    discount: Number,
+    freeShipping: Boolean,
+  },
+
+  referralAgentId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Agent',
+    default: null,
+  },
 
   razorpayOrderId: String,
   razorpayPaymentId: String,
@@ -64,5 +93,9 @@ const orderSchema = new mongoose.Schema({
   lastAttemptedAt: Date
 
 }, { timestamps: true });
+
+orderSchema.index({ customerIdentifier: 1 });
+orderSchema.index({ 'appliedCoupon.code': 1 });
+orderSchema.index({ referralAgentId: 1 });
 
 module.exports = mongoose.model("Order", orderSchema);

@@ -10,6 +10,7 @@ import {
   selectUnclaimedRewards,
   claimReward,
 } from "../store/slices/rewardsSlice";
+import { validateCoupon, validateReward, checkIdentifier } from "../utils/api";
 
 const PackItemCard = ({
   pack,
@@ -339,6 +340,14 @@ const Cart = () => {
   const [couponCode, setCouponCode] = useState('');
   const [appliedCoupon, setAppliedCoupon] = useState(null);
   const [couponError, setCouponError] = useState('');
+  const [couponLoading, setCouponLoading] = useState(false);
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
+
+  // Identifier lookup
+  const [lookupValue, setLookupValue] = useState(rewardsIdentifier || '');
+  const [lookupData, setLookupData] = useState(null);
+  const [lookupLoading, setLookupLoading] = useState(false);
+  const [lookupError, setLookupError] = useState('');
 
   const checkoutSummary = useMemo(() => {
     const totalItems = cartItems.reduce((sum, item) => sum + item.quantity, 0)
@@ -376,33 +385,95 @@ const Cart = () => {
     return { totalItems, totalMRP, sellingTotal, totalDiscount, deliveryCharge, extraDiscount, freeShippingApplied, finalTotal };
   }, [cartItems, packItems, getCartTotal, appliedReward, appliedCoupon]);
 
-  const handleApplyReward = (reward) => {
+  const saveCartState = (overrides = {}) => {
+    try {
+      const current = JSON.parse(localStorage.getItem('cart_lookup') || '{}');
+      localStorage.setItem('cart_lookup', JSON.stringify({ ...current, ...overrides }));
+    } catch {}
+  };
+
+  const handleApplyReward = (reward, fromLookup) => {
     if (appliedReward && appliedReward.id === reward.id) {
       setAppliedReward(null);
+      saveCartState({ appliedReward: null, appliedCoupon: null, couponCode: '' });
       return;
     }
     setAppliedReward(reward);
     setAppliedCoupon(null);
     setCouponCode('');
-    dispatchRewards(claimReward(reward.id));
+    if (!fromLookup) {
+      dispatchRewards(claimReward(reward.id));
+    }
     toast.success(`${reward.label} applied!`);
+    saveCartState({ appliedReward: reward, appliedCoupon: null, couponCode: '' });
   };
 
-  const handleApplyCoupon = () => {
+  const handleApplyCoupon = async () => {
     if (!couponCode.trim()) return;
     const code = couponCode.trim().toUpperCase();
-    if (code === 'HYPER10') {
-      setAppliedCoupon({ code: 'HYPER10', discount: 10 });
+    // Check minCartValue from lookup data for offer coupons
+    const matchedOffer = lookupData?.offerCoupons?.find(o => o.code === code);
+    if (matchedOffer && matchedOffer.minCartValue > 0 && checkoutSummary.sellingTotal < matchedOffer.minCartValue) {
+      setCouponError(`Minimum cart value of ₹${matchedOffer.minCartValue} required to use this coupon`);
+      return;
+    }
+    setCouponLoading(true);
+    setCouponError('');
+    try {
+      const result = await validateCoupon(code);
+      if (!result.valid) {
+        setCouponError(result.reason || 'Invalid coupon code');
+        return;
+      }
+      setAppliedCoupon(result.coupon);
       setAppliedReward(null);
-      setCouponError('');
-      toast.success('Coupon HYPER10 applied! 10% off');
-    } else if (code === 'FREESHIP') {
-      setAppliedCoupon({ code: 'FREESHIP', discount: 0, freeShipping: true });
+      toast.success(`Coupon ${code} applied!`);
+      saveCartState({ appliedCoupon: result.coupon, appliedReward: null, couponCode: '' });
+    } catch (err) {
+      setCouponError('Failed to validate coupon. Please try again.');
+    } finally {
+      setCouponLoading(false);
+    }
+  };
+
+  const handleLookup = async () => {
+    const val = lookupValue.trim();
+    if (!val) return;
+    setLookupLoading(true);
+    setLookupError('');
+    try {
+      const data = await checkIdentifier(val);
+      setLookupData(data);
+      saveCartState({ lookupValue: val, lookupData: data });
+    } catch (err) {
+      setLookupError(err.message);
+    } finally {
+      setLookupLoading(false);
+    }
+  };
+
+  const handleApplyOfferCoupon = async (offerCode, minCartValue) => {
+    if (minCartValue > 0 && checkoutSummary.sellingTotal < minCartValue) {
+      setCouponError(`Minimum cart value of ₹${minCartValue} required to use this coupon`);
+      return;
+    }
+    setCouponLoading(true);
+    setCouponError('');
+    try {
+      const result = await validateCoupon(offerCode, lookupValue || rewardsIdentifier);
+      if (!result.valid) {
+        setCouponError(result.reason || 'Cannot apply this coupon');
+        return;
+      }
+      setAppliedCoupon(result.coupon);
       setAppliedReward(null);
-      setCouponError('');
-      toast.success('Free shipping coupon applied!');
-    } else {
-      setCouponError('Invalid coupon code');
+      setCouponCode('');
+      toast.success(`Coupon ${offerCode} applied!`);
+      saveCartState({ appliedCoupon: result.coupon, appliedReward: null, couponCode: '' });
+    } catch (err) {
+      setCouponError('Failed to apply coupon.');
+    } finally {
+      setCouponLoading(false);
     }
   };
 
@@ -411,6 +482,7 @@ const Cart = () => {
     setAppliedCoupon(null);
     setCouponCode('');
     setCouponError('');
+    saveCartState({ appliedReward: null, appliedCoupon: null, couponCode: '' });
   };
 
   useEffect(() => {
@@ -430,7 +502,68 @@ const Cart = () => {
     return () => window.removeEventListener("resize", updateBreakpoint);
   }, []);
 
+  // Auto-fetch rewards & offers on mount
+  useEffect(() => {
+    if (rewardsIdentifier) {
+      setLookupValue(rewardsIdentifier);
+      (async () => {
+        setLookupLoading(true);
+        try {
+          const data = await checkIdentifier(rewardsIdentifier);
+          setLookupData(data);
+        } catch (err) {
+          // silent
+        } finally {
+          setLookupLoading(false);
+        }
+      })();
+    }
+  }, [rewardsIdentifier]);
 
+  // Restore lookup + applied state from localStorage on mount
+  useEffect(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem('cart_lookup'));
+      if (saved) {
+        if (saved.lookupValue && saved.lookupData) {
+          setLookupValue(saved.lookupValue);
+          setLookupData(saved.lookupData);
+        }
+        if (saved.appliedCoupon) {
+          setAppliedCoupon(saved.appliedCoupon);
+          setAppliedReward(null);
+        } else if (saved.appliedReward) {
+          setAppliedReward(saved.appliedReward);
+          setAppliedCoupon(null);
+        }
+      }
+    } catch {}
+  }, []);
+
+  // Auto-remove applied coupon if cart total drops below minCartValue
+  useEffect(() => {
+    const sellingTotal = checkoutSummary.sellingTotal;
+    if (!appliedCoupon || !lookupData) return;
+
+    let minCart = appliedCoupon.minCartValue || 0;
+    if (!minCart && lookupData.offerCoupons) {
+      const matched = lookupData.offerCoupons.find(o => o.code === appliedCoupon.code);
+      if (matched) minCart = matched.minCartValue || 0;
+    }
+    if (!minCart && lookupData.agent && appliedCoupon.code === lookupData.agent.personalCode) {
+      minCart = lookupData.agent.personalMinCartValue || 0;
+    }
+    if (!minCart && lookupData.referralAgent && appliedCoupon.code === lookupData.referralAgent.referralCode) {
+      minCart = lookupData.referralAgent.referralMinCartValue || 0;
+    }
+
+    if (minCart > 0 && sellingTotal < minCart) {
+      setAppliedCoupon(null);
+      setCouponCode('');
+      saveCartState({ appliedCoupon: null, appliedReward, couponCode: '' });
+      toast.info(`Coupon removed — minimum cart value of ₹${minCart} no longer met`);
+    }
+  }, [checkoutSummary.sellingTotal, appliedCoupon, lookupData, appliedReward]);
 
   if (cartItems.length === 0 && packItems.length === 0 && inProgressPacks.length === 0) {
     return (
@@ -1152,8 +1285,66 @@ const Cart = () => {
                   letterSpacing: "0.5px",
                   textTransform: "uppercase",
                 }}>
-                  Apply Offer
+                  Email/Phone
                 </p>
+
+                {/* Identifier Lookup */}
+                <div style={{
+                  display: "flex",
+                  gap: 8,
+                  marginBottom: lookupData ? 8 : 14,
+                }}>
+                  <input
+                    type="text"
+                    value={lookupValue}
+                    onChange={(e) => { setLookupValue(e.target.value); setLookupData(null); localStorage.removeItem('cart_lookup'); }}
+                    placeholder="Enter email/phone to check rewards & offers"
+                    style={{
+                      flex: 1,
+                      padding: "9px 12px",
+                      fontSize: "12px",
+                      border: `2px solid ${lookupError ? '#FCA5A5' : '#E5E7EB'}`,
+                      borderRadius: 8,
+                      outline: "none",
+                      fontFamily: "'Inter', sans-serif",
+                      color: '#111827',
+                    }}
+                    onKeyDown={(e) => { if (e.key === 'Enter') handleLookup() }}
+                  />
+                  <button
+                    onClick={handleLookup}
+                    disabled={!lookupValue.trim() || lookupLoading}
+                    style={{
+                      padding: "9px 16px",
+                      fontSize: "12px",
+                      fontWeight: 600,
+                      border: "none",
+                      borderRadius: 8,
+                      cursor: lookupValue.trim() && !lookupLoading ? "pointer" : "not-allowed",
+                      background: lookupValue.trim() && !lookupLoading
+                        ? "linear-gradient(135deg, #6366f1, #4f46e5)"
+                        : "#F3F4F6",
+                      color: lookupValue.trim() && !lookupLoading ? "#fff" : "#9CA3AF",
+                      fontFamily: "'Inter', sans-serif",
+                      whiteSpace: "nowrap",
+                      transition: 'all 0.2s',
+                    }}
+                  >
+                    {lookupLoading ? '...' : 'Verify'}
+                  </button>
+                </div>
+
+                {lookupError && (
+                  <p style={{ margin: "0 0 12px", fontSize: "11px", color: "#EF4444", fontFamily: "'Inter', sans-serif" }}>
+                    {lookupError}
+                  </p>
+                )}
+
+                {lookupData && lookupData.totalPoints > 0 && lookupData.hasRewards === false && lookupData.hasOffers === false && !lookupData.agent && !lookupData.referralAgent && (
+                  <p style={{ margin: "0 0 14px", fontSize: "11px", color: "#9CA3AF", fontFamily: "'Inter', sans-serif", textAlign: "center", padding: "10px 0" }}>
+                    No rewards or offers found for this identifier
+                  </p>
+                )}
 
                 <div style={{
                   display: "flex",
@@ -1184,6 +1375,21 @@ const Cart = () => {
                     }}
                   >
                     <FaGift size={13} color={applyMode === 'reward' ? '#F59E0B' : '#9CA3AF'} /> Reward
+                    {lookupData?.hasRewards && lookupData.rewards.length > 0 && (
+                      <span style={{
+                        fontSize: "10px",
+                        fontWeight: 700,
+                        background: applyMode === 'reward' ? '#F59E0B' : '#D1D5DB',
+                        color: applyMode === 'reward' ? '#fff' : '#6B7280',
+                        borderRadius: 10,
+                        padding: "1px 6px",
+                        minWidth: 18,
+                        textAlign: "center",
+                        lineHeight: "16px",
+                      }}>
+                        {lookupData.rewards.length}
+                      </span>
+                    )}
                   </button>
                   <button
                     onClick={() => { setApplyMode('coupon'); setCouponError(''); }}
@@ -1207,6 +1413,27 @@ const Cart = () => {
                     }}
                   >
                     <FaTag size={13} color={applyMode === 'coupon' ? '#F59E0B' : '#9CA3AF'} /> Coupon
+                    {(() => {
+                      const offerCount = lookupData?.offerCoupons?.filter(o => !o.usedByCurrentUser)?.length || 0;
+                      const agentCount = lookupData?.agent ? 1 : 0;
+                      const referralCount = !lookupData?.agent && lookupData?.referralAgent ? 1 : 0;
+                      const total = offerCount + agentCount + referralCount;
+                      return total > 0 ? (
+                        <span style={{
+                          fontSize: "10px",
+                          fontWeight: 700,
+                          background: applyMode === 'coupon' ? '#F59E0B' : '#D1D5DB',
+                          color: applyMode === 'coupon' ? '#fff' : '#6B7280',
+                          borderRadius: 10,
+                          padding: "1px 6px",
+                          minWidth: 18,
+                          textAlign: "center",
+                          lineHeight: "16px",
+                        }}>
+                          {total}
+                        </span>
+                      ) : null;
+                    })()}
                   </button>
                 </div>
 
@@ -1271,7 +1498,42 @@ const Cart = () => {
 
                 {applyMode === 'reward' && !appliedReward && !appliedCoupon && (
                   <div>
-                    {!rewardsIdentifier ? (
+                    {/* Show lookup rewards if available */}
+                    {lookupData && lookupData.hasRewards ? (
+                      <div>
+                        <p style={{ margin: "0 0 8px", fontSize: "10px", fontWeight: 600, color: "#6B7280", fontFamily: "'Inter', sans-serif", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                          Your Rewards ({lookupData.totalPoints} points)
+                        </p>
+                        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                          {lookupData.rewards.map((r) => (
+                            <button
+                              key={r.id}
+                              onClick={() => handleApplyReward(r, true)}
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 10,
+                                padding: "10px 12px",
+                                background: "#FFFBEB",
+                                borderRadius: 8,
+                                border: "1px solid #FDE68A",
+                                cursor: "pointer",
+                                width: "100%",
+                                textAlign: "left",
+                                fontFamily: "'Inter', sans-serif",
+                                transition: "all 0.2s",
+                              }}
+                              onMouseEnter={(e) => { e.currentTarget.style.borderColor = "#F59E0B"; e.currentTarget.style.backgroundColor = "#FEF3C7"; }}
+                              onMouseLeave={(e) => { e.currentTarget.style.borderColor = "#FDE68A"; e.currentTarget.style.backgroundColor = "#FFFBEB"; }}
+                            >
+                              <FaGift size={14} color="#F59E0B" />
+                              <span style={{ flex: 1, fontSize: "12px", fontWeight: 600, color: "#92400E" }}>{r.label}</span>
+                              <span style={{ fontSize: "11px", padding: "3px 10px", background: "#FEF3C7", borderRadius: 4, color: "#D97706", fontWeight: 600 }}>Apply</span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    ) : !rewardsIdentifier ? (
                       <div style={{ textAlign: "center", padding: "20px 12px" }}>
                         <FaGift size={28} color="#D1D5DB" style={{ marginBottom: 8 }} />
                         <p style={{ fontSize: "12px", color: "#9CA3AF", margin: 0, fontFamily: "'Inter', sans-serif" }}>
@@ -1282,7 +1544,7 @@ const Cart = () => {
                       <div style={{ textAlign: "center", padding: "20px 12px" }}>
                         <FaGift size={28} color="#D1D5DB" style={{ marginBottom: 8 }} />
                         <p style={{ fontSize: "12px", color: "#9CA3AF", margin: 0, fontFamily: "'Inter', sans-serif" }}>
-                          No unclaimed rewards available
+                          No rewards available
                         </p>
                       </div>
                     ) : (
@@ -1397,17 +1659,17 @@ const Cart = () => {
                       />
                       <button
                         onClick={handleApplyCoupon}
-                        disabled={!couponCode.trim()}
+                        disabled={!couponCode.trim() || couponLoading}
                         style={{
                           padding: "11px 20px",
                           fontSize: "12px",
                           fontWeight: 600,
                           border: "none",
-                          cursor: couponCode.trim() ? "pointer" : "not-allowed",
-                          background: couponCode.trim()
+                          cursor: couponCode.trim() && !couponLoading ? "pointer" : "not-allowed",
+                          background: couponCode.trim() && !couponLoading
                             ? "linear-gradient(135deg, #F59E0B, #D97706)"
                             : "#F3F4F6",
-                          color: couponCode.trim() ? "#fff" : "#9CA3AF",
+                          color: couponCode.trim() && !couponLoading ? "#fff" : "#9CA3AF",
                           fontFamily: "'Inter', sans-serif",
                           whiteSpace: "nowrap",
                           transition: 'all 0.2s',
@@ -1431,6 +1693,139 @@ const Cart = () => {
                         </svg>
                         {couponError}
                       </p>
+                    )}
+
+                    {/* Available Coupons — offer coupons only */}
+                    {lookupData?.hasOffers && (
+                      <div style={{ marginTop: 12 }}>
+                        <p style={{ margin: "0 0 6px", fontSize: "10px", fontWeight: 600, color: "#6B7280", fontFamily: "'Inter', sans-serif", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                          Available Coupons
+                        </p>
+                        <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                          {lookupData.offerCoupons.filter(o => !o.usedByCurrentUser).map((o) => {
+                            const eligible = sellingTotal >= (o.minCartValue || 0);
+                            return (
+                              <button
+                                key={o.id}
+                                onClick={() => eligible && handleApplyOfferCoupon(o.code, o.minCartValue)}
+                                disabled={!eligible}
+                                style={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "space-between",
+                                  padding: "8px 12px",
+                                  background: eligible ? "#F0FDF4" : "#F9FAFB",
+                                  borderRadius: 8,
+                                  border: `1px solid ${eligible ? '#BBF7D0' : '#E5E7EB'}`,
+                                  cursor: eligible ? "pointer" : "not-allowed",
+                                  width: "100%",
+                                  textAlign: "left",
+                                  fontFamily: "'Inter', sans-serif",
+                                  transition: "all 0.2s",
+                                  opacity: eligible ? 1 : 0.6,
+                                }}
+                                onMouseEnter={(e) => { if (eligible) { e.currentTarget.style.borderColor = "#22C55E"; e.currentTarget.style.backgroundColor = "#DCFCE7"; }}}
+                                onMouseLeave={(e) => { if (eligible) { e.currentTarget.style.borderColor = "#BBF7D0"; e.currentTarget.style.backgroundColor = "#F0FDF4"; }}}
+                              >
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                  <span style={{ fontSize: "12px", fontWeight: 600, color: eligible ? "#166534" : "#9CA3AF" }}>
+                                    {o.code} {o.discount > 0 ? `- ${o.discount}% OFF` : ''} {o.freeShipping ? '• Free Shipping' : ''}
+                                  </span>
+                                  {!eligible && o.minCartValue > 0 && (
+                                    <p style={{ margin: "2px 0 0", fontSize: "10px", color: "#9CA3AF" }}>Min order: ₹{o.minCartValue}</p>
+                                  )}
+                                </div>
+                                <span style={{ fontSize: "11px", padding: "2px 10px", background: eligible ? "#DCFCE7" : "#F3F4F6", borderRadius: 4, color: eligible ? "#16A34A" : "#9CA3AF", fontWeight: 600, whiteSpace: "nowrap" }}>
+                                  {eligible ? 'Apply' : 'Locked'}
+                                </span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Your Codes — collaborator / referral codes (shown below in a distinct section) */}
+                    {(lookupData?.agent || lookupData?.referralAgent) && (
+                      <div style={{ marginTop: lookupData?.hasOffers ? 16 : 12 }}>
+                        <p style={{ margin: "0 0 6px", fontSize: "10px", fontWeight: 600, color: "#6B7280", fontFamily: "'Inter', sans-serif", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                          Your Codes
+                        </p>
+                        <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                          {lookupData.agent && (() => {
+                            const minCart = lookupData.agent.personalMinCartValue || 0;
+                            const eligible = sellingTotal >= minCart;
+                            return (
+                              <button
+                                onClick={() => eligible && handleApplyOfferCoupon(lookupData.agent.personalCode, minCart)}
+                                style={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "space-between",
+                                  padding: "8px 12px",
+                                  background: eligible ? "#F0F0FF" : "#F9FAFB",
+                                  borderRadius: 8,
+                                  border: `1px solid ${eligible ? '#C7D2FE' : '#E5E7EB'}`,
+                                  cursor: eligible ? "pointer" : "not-allowed",
+                                  width: "100%",
+                                  textAlign: "left",
+                                  fontFamily: "'Inter', sans-serif",
+                                  transition: "all 0.2s",
+                                  opacity: eligible ? 1 : 0.6,
+                                }}
+                                onMouseEnter={(e) => { if (eligible) { e.currentTarget.style.borderColor = "#818CF8"; e.currentTarget.style.backgroundColor = "#E0E7FF"; }}}
+                                onMouseLeave={(e) => { if (eligible) { e.currentTarget.style.borderColor = "#C7D2FE"; e.currentTarget.style.backgroundColor = "#F0F0FF"; }}}
+                              >
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                  <span style={{ fontSize: "12px", fontWeight: 600, color: eligible ? "#4338CA" : "#9CA3AF" }}>
+                                    {lookupData.agent.personalCode} — {lookupData.agent.personalDiscountPercent}% off
+                                  </span>
+                                  <p style={{ margin: "1px 0 0", fontSize: "10px", color: eligible ? "#818CF8" : "#9CA3AF" }}>
+                                    Collaborator code{!eligible && minCart > 0 ? ` • Min ₹${minCart}` : ''}
+                                  </p>
+                                </div>
+                                <span style={{ fontSize: "11px", padding: "2px 10px", background: eligible ? "#E0E7FF" : "#F3F4F6", borderRadius: 4, color: eligible ? "#4F46E5" : "#9CA3AF", fontWeight: 600 }}>{eligible ? 'Apply' : 'Locked'}</span>
+                              </button>
+                            );
+                          })()}
+                          {!lookupData.agent && lookupData.referralAgent && (() => {
+                            const minCart = lookupData.referralAgent.referralMinCartValue || 0;
+                            const eligible = sellingTotal >= minCart;
+                            return (
+                              <button
+                                onClick={() => eligible && handleApplyOfferCoupon(lookupData.referralAgent.referralCode, minCart)}
+                                style={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "space-between",
+                                  padding: "8px 12px",
+                                  background: eligible ? "#FAF5FF" : "#F9FAFB",
+                                  borderRadius: 8,
+                                  border: `1px solid ${eligible ? '#E9D5FF' : '#E5E7EB'}`,
+                                  cursor: eligible ? "pointer" : "not-allowed",
+                                  width: "100%",
+                                  textAlign: "left",
+                                  fontFamily: "'Inter', sans-serif",
+                                  transition: "all 0.2s",
+                                  opacity: eligible ? 1 : 0.6,
+                                }}
+                                onMouseEnter={(e) => { if (eligible) { e.currentTarget.style.borderColor = "#C084FC"; e.currentTarget.style.backgroundColor = "#F3E8FF"; }}}
+                                onMouseLeave={(e) => { if (eligible) { e.currentTarget.style.borderColor = "#E9D5FF"; e.currentTarget.style.backgroundColor = "#FAF5FF"; }}}
+                              >
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                  <span style={{ fontSize: "12px", fontWeight: 600, color: eligible ? "#7C3AED" : "#9CA3AF" }}>
+                                    {lookupData.referralAgent.referralCode}
+                                  </span>
+                                  <p style={{ margin: "1px 0 0", fontSize: "10px", color: eligible ? "#A855F7" : "#9CA3AF" }}>
+                                    Referral code{!eligible && minCart > 0 ? ` • Min ₹${minCart}` : ''}
+                                  </p>
+                                </div>
+                                <span style={{ fontSize: "11px", padding: "2px 10px", background: eligible ? "#F3E8FF" : "#F3F4F6", borderRadius: 4, color: eligible ? "#9333EA" : "#9CA3AF", fontWeight: 600 }}>{eligible ? 'Apply' : 'Locked'}</span>
+                              </button>
+                            );
+                          })()}
+                        </div>
+                      </div>
                     )}
                   </div>
                 )}
@@ -1565,22 +1960,47 @@ const Cart = () => {
         })()}
 
         <button
-          onClick={() => navigate("/checkout", {
-            state: { appliedReward, appliedCoupon }
-          })}
+          onClick={async () => {
+            setCheckoutLoading(true);
+            try {
+              if (appliedReward && appliedReward.id) {
+                const result = await validateReward(appliedReward.id, rewardsIdentifier);
+                if (!result.valid) {
+                  toast.error(result.reason || 'Applied reward is no longer valid');
+                  setAppliedReward(null);
+                  return;
+                }
+              }
+              if (appliedCoupon && appliedCoupon.code) {
+                const result = await validateCoupon(appliedCoupon.code);
+                if (!result.valid) {
+                  toast.error(result.reason || 'Applied coupon is no longer valid');
+                  setAppliedCoupon(null);
+                  setCouponCode('');
+                  return;
+                }
+              }
+              navigate("/checkout", { state: { appliedReward, appliedCoupon } });
+            } catch {
+              toast.error('Unable to validate discounts. Please try again.');
+            } finally {
+              setCheckoutLoading(false);
+            }
+          }}
+          disabled={checkoutLoading}
           style={{
             width: "100%",
             padding: breakpoint === "mobile" ? "13px" : "15px",
             fontFamily: "'Inter', sans-serif",
             fontSize: breakpoint === "mobile" ? "14px" : "16px",
-            background: "linear-gradient(135deg, #f59e0b 0%, #f97316 100%)",
-            color: "#1f2937",
+            background: checkoutLoading ? "#9CA3AF" : "linear-gradient(135deg, #f59e0b 0%, #f97316 100%)",
+            color: checkoutLoading ? "#fff" : "#1f2937",
             fontWeight: 700,
             border: "none",
             borderRadius: "8px",
-            cursor: "pointer",
+            cursor: checkoutLoading ? "not-allowed" : "pointer",
             transition: "all 0.2s ease",
-            boxShadow: "0 2px 8px rgba(245,158,11,0.25)",
+            boxShadow: checkoutLoading ? "none" : "0 2px 8px rgba(245,158,11,0.25)",
             letterSpacing: "0.02em",
           }}
           onMouseEnter={(e) => {
@@ -1592,7 +2012,7 @@ const Cart = () => {
             e.target.style.boxShadow = "0 2px 8px rgba(245,158,11,0.25)";
           }}
         >
-          Proceed to Checkout ({cartItems.reduce((s, i) => s + i.quantity, 0) + packItems.reduce((s, p) => s + p.quantity, 0)} items)
+          {checkoutLoading ? 'Validating...' : `Proceed to Checkout (${cartItems.reduce((s, i) => s + i.quantity, 0) + packItems.reduce((s, p) => s + p.quantity, 0)} items)`}
         </button>
 
 

@@ -11,8 +11,10 @@ import {
   selectUnclaimedCount,
   selectCanSpin,
 } from '../store/slices/rewardsSlice'
+import { lookupRewards, claimRewardAPI } from '../utils/api'
 import { FaGift, FaCoins, FaPercentage, FaTruck, FaCheck, FaTimes, FaRedo, FaTrophy, FaClock, FaSearch, FaArrowRight } from 'react-icons/fa'
 import { useNavigate } from 'react-router-dom'
+import { toast } from 'react-toastify'
 
 const FILTERS = ['unclaimed', 'claimed', 'expired', 'all']
 
@@ -35,6 +37,10 @@ const RewardsPage = () => {
   const [lookupValue, setLookupValue] = useState(identifier || '')
   const [showLookup, setShowLookup] = useState(!identifier)
   const [isMobile, setIsMobile] = useState(false)
+  const [apiRewards, setApiRewards] = useState(null)
+  const [apiTotalPoints, setApiTotalPoints] = useState(0)
+  const [lookupLoading, setLookupLoading] = useState(false)
+  const [useApiData, setUseApiData] = useState(false)
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768)
@@ -48,11 +54,51 @@ const RewardsPage = () => {
     return lookupValue.includes('@') || /^[6-9]\d{9}$/.test(lookupValue)
   }, [lookupValue])
 
-  const handleLookup = useCallback(() => {
+  const handleLookup = useCallback(async () => {
     if (!isValid) return
-    dispatch(setIdentifier(lookupValue))
-    setShowLookup(false)
+    setLookupLoading(true)
+    try {
+      const data = await lookupRewards(lookupValue)
+      setApiRewards(data.rewards)
+      setApiTotalPoints(data.totalPoints)
+      setUseApiData(true)
+    } catch {
+      setUseApiData(false)
+    } finally {
+      dispatch(setIdentifier(lookupValue))
+      setShowLookup(false)
+      setLookupLoading(false)
+    }
   }, [lookupValue, isValid, dispatch])
+
+  const handleClaim = useCallback(async (rewardId) => {
+    if (useApiData && apiRewards) {
+      try {
+        await claimRewardAPI(rewardId, identifier)
+        const updated = apiRewards.map(r =>
+          r.id === rewardId ? { ...r, claimed: true } : r
+        )
+        setApiRewards(updated)
+        const pts = updated
+          .filter(r => r.type === 'reward_points' && !r.claimed)
+          .reduce((sum, r) => sum + r.value, 0)
+        setApiTotalPoints(pts)
+        toast.success('Reward claimed successfully!')
+      } catch {
+        toast.error('Failed to claim reward from server.')
+        const updated = apiRewards.map(r =>
+          r.id === rewardId ? { ...r, claimed: true } : r
+        )
+        setApiRewards(updated)
+        const pts = updated
+          .filter(r => r.type === 'reward_points' && !r.claimed)
+          .reduce((sum, r) => sum + r.value, 0)
+        setApiTotalPoints(pts)
+      }
+    } else {
+      dispatch(claimReward(rewardId))
+    }
+  }, [useApiData, apiRewards, identifier, dispatch])
 
   const formatDate = (ts) => {
     const d = new Date(ts)
@@ -61,8 +107,14 @@ const RewardsPage = () => {
 
   const isExpired = (expiresAt) => expiresAt < Date.now()
 
+  const sourceRewards = useApiData && apiRewards ? apiRewards : rewards
+  const sourceTotalPoints = useApiData ? apiTotalPoints : totalPoints
+  const sourceUnclaimedCount = useApiData
+    ? (apiRewards ? apiRewards.filter(r => !r.claimed).length : 0)
+    : unclaimedCount
+
   const filteredRewards = useMemo(() => {
-    const sorted = [...rewards].reverse()
+    const sorted = [...sourceRewards].reverse()
     switch (activeFilter) {
       case 'unclaimed':
         return sorted.filter(r => !r.claimed && !isExpired(r.expiresAt))
@@ -73,13 +125,13 @@ const RewardsPage = () => {
       default:
         return sorted
     }
-  }, [rewards, activeFilter])
+  }, [sourceRewards, activeFilter])
 
   const stats = useMemo(() => [
-    { label: 'Total Points', value: totalPoints, icon: <FaCoins />, color: '#4ECDC4', gradient: 'linear-gradient(135deg, #4ECDC4, #44B09E)' },
-    { label: 'Unclaimed', value: unclaimedCount, icon: <FaGift />, color: '#FFD700', gradient: 'linear-gradient(135deg, #FFD700, #FFA500)' },
-    { label: 'Total Earned', value: rewards.length, icon: <FaTrophy />, color: '#45B7D1', gradient: 'linear-gradient(135deg, #45B7D1, #2E86AB)' },
-  ], [totalPoints, unclaimedCount, rewards.length])
+    { label: 'Total Points', value: sourceTotalPoints, icon: <FaCoins />, color: '#4ECDC4', gradient: 'linear-gradient(135deg, #4ECDC4, #44B09E)' },
+    { label: 'Unclaimed', value: sourceUnclaimedCount, icon: <FaGift />, color: '#FFD700', gradient: 'linear-gradient(135deg, #FFD700, #FFA500)' },
+    { label: 'Total Earned', value: sourceRewards.length, icon: <FaTrophy />, color: '#45B7D1', gradient: 'linear-gradient(135deg, #45B7D1, #2E86AB)' },
+  ], [sourceTotalPoints, sourceUnclaimedCount, sourceRewards.length])
 
   const containerMaxW = isMobile ? '100%' : 960
   const contentPad = isMobile ? '0 16px' : '0 32px'
@@ -246,29 +298,28 @@ const RewardsPage = () => {
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.97 }}
               onClick={handleLookup}
-              disabled={!isValid}
+              disabled={!isValid || lookupLoading}
               style={{
                 padding: isMobile ? '12px 16px' : '14px 28px',
                 fontSize: isMobile ? 13 : 15,
                 fontWeight: 600,
                 border: 'none',
                 borderRadius: isMobile ? 12 : 14,
-                cursor: isValid ? 'pointer' : 'not-allowed',
-                background: isValid
+                cursor: isValid && !lookupLoading ? 'pointer' : 'not-allowed',
+                background: isValid && !lookupLoading
                   ? 'linear-gradient(135deg, #FFD700, #FFA500)'
                   : '#E5E7EB',
-                color: isValid ? '#1a1a1a' : '#9CA3AF',
+                color: isValid && !lookupLoading ? '#1a1a1a' : '#9CA3AF',
                 fontFamily: "'Inter', sans-serif",
                 whiteSpace: 'nowrap',
-                boxShadow: isValid ? '0 4px 16px rgba(255, 165, 0, 0.3)' : 'none',
+                boxShadow: isValid && !lookupLoading ? '0 4px 16px rgba(255, 165, 0, 0.3)' : 'none',
                 display: 'flex',
                 alignItems: 'center',
                 gap: 6,
                 flexShrink: 0,
               }}
             >
-              Check
-              {isValid && !isMobile && <FaArrowRight size={12} />}
+              {lookupLoading ? 'Loading...' : !isMobile && <FaArrowRight size={12} />}
             </motion.button>
           </div>
           {lookupValue && !isValid && (
@@ -651,7 +702,7 @@ const RewardsPage = () => {
                                 <motion.button
                                   whileHover={{ scale: 1.03 }}
                                   whileTap={{ scale: 0.97 }}
-                                  onClick={() => dispatch(claimReward(reward.id))}
+                                  onClick={() => handleClaim(reward.id)}
                                   style={{
                                     background: 'linear-gradient(135deg, #FFD700, #FFA500)',
                                     border: 'none',
