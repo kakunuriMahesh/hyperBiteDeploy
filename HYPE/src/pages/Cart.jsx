@@ -420,7 +420,7 @@ const Cart = () => {
     setCouponLoading(true);
     setCouponError('');
     try {
-      const result = await validateCoupon(code);
+      const result = await validateCoupon(code, lookupValue || rewardsIdentifier);
       if (!result.valid) {
         setCouponError(result.reason || 'Invalid coupon code');
         return;
@@ -898,6 +898,13 @@ const Cart = () => {
           </div>
         </div>
 
+        <div style={{
+          display: "flex",
+          flexDirection: breakpoint === "mobile" ? "column" : "row",
+          gap: breakpoint === "mobile" ? "0" : "24px",
+          alignItems: breakpoint === "mobile" ? "stretch" : "flex-start",
+        }}>
+        <div style={{ flex: 1, minWidth: 0, width: breakpoint === "mobile" ? "100%" : "auto" }}>
         <div style={{ marginBottom: "24px" }}>
           {cartItems.map((item, index) => (
             <div
@@ -1247,7 +1254,11 @@ const Cart = () => {
             />
           ))}
         </div>
+        </div>
 
+        <div style={{
+          ...(breakpoint === "mobile" ? { width: "100%" } : { flex: "0 0 380px", position: "sticky", top: 104 }),
+        }}>
         {(() => {
           const { totalItems, totalMRP, sellingTotal, totalDiscount, deliveryCharge, extraDiscount, freeShippingApplied, finalTotal } = checkoutSummary;
 
@@ -1346,6 +1357,14 @@ const Cart = () => {
                   </p>
                 )}
 
+                {!lookupData ? (
+                  <div style={{ textAlign: "center", padding: "20px 12px" }}>
+                    <FaTag size={28} color="#D1D5DB" style={{ marginBottom: 8 }} />
+                    <p style={{ fontSize: "12px", color: "#9CA3AF", margin: 0, fontFamily: "'Inter', sans-serif" }}>
+                      Enter your email/phone above and verify to see available rewards & coupons
+                    </p>
+                  </div>
+                ) : (<>
                 <div style={{
                   display: "flex",
                   backgroundColor: "#F3F4F6",
@@ -1618,8 +1637,8 @@ const Cart = () => {
                     )}
                   </div>
                 )}
-
-                {applyMode === 'coupon' && !appliedCoupon && !appliedReward && (
+                </>)}
+                {lookupData && applyMode === 'coupon' && !appliedCoupon && !appliedReward && (
                   <div>
                     <div style={{
                       display: "flex",
@@ -1961,10 +1980,15 @@ const Cart = () => {
 
         <button
           onClick={async () => {
+            if (!lookupData) {
+              toast.warning('Please verify your email/phone before proceeding');
+              return;
+            }
             setCheckoutLoading(true);
             try {
+              const verifiedId = lookupValue || rewardsIdentifier;
               if (appliedReward && appliedReward.id) {
-                const result = await validateReward(appliedReward.id, rewardsIdentifier);
+                const result = await validateReward(appliedReward.id, verifiedId);
                 if (!result.valid) {
                   toast.error(result.reason || 'Applied reward is no longer valid');
                   setAppliedReward(null);
@@ -1972,7 +1996,7 @@ const Cart = () => {
                 }
               }
               if (appliedCoupon && appliedCoupon.code) {
-                const result = await validateCoupon(appliedCoupon.code);
+                const result = await validateCoupon(appliedCoupon.code, verifiedId);
                 if (!result.valid) {
                   toast.error(result.reason || 'Applied coupon is no longer valid');
                   setAppliedCoupon(null);
@@ -1980,7 +2004,7 @@ const Cart = () => {
                   return;
                 }
               }
-              navigate("/checkout", { state: { appliedReward, appliedCoupon } });
+              navigate("/checkout", { state: { appliedReward, appliedCoupon, verifiedIdentifier: verifiedId } });
             } catch {
               toast.error('Unable to validate discounts. Please try again.');
             } finally {
@@ -1993,14 +2017,14 @@ const Cart = () => {
             padding: breakpoint === "mobile" ? "13px" : "15px",
             fontFamily: "'Inter', sans-serif",
             fontSize: breakpoint === "mobile" ? "14px" : "16px",
-            background: checkoutLoading ? "#9CA3AF" : "linear-gradient(135deg, #f59e0b 0%, #f97316 100%)",
-            color: checkoutLoading ? "#fff" : "#1f2937",
+            background: checkoutLoading ? "#9CA3AF" : (!lookupData ? "#D1D5DB" : "linear-gradient(135deg, #f59e0b 0%, #f97316 100%)"),
+            color: checkoutLoading || !lookupData ? "#fff" : "#1f2937",
             fontWeight: 700,
             border: "none",
             borderRadius: "8px",
             cursor: checkoutLoading ? "not-allowed" : "pointer",
             transition: "all 0.2s ease",
-            boxShadow: checkoutLoading ? "none" : "0 2px 8px rgba(245,158,11,0.25)",
+            boxShadow: checkoutLoading ? "none" : (!lookupData ? "none" : "0 2px 8px rgba(245,158,11,0.25)"),
             letterSpacing: "0.02em",
           }}
           onMouseEnter={(e) => {
@@ -2014,9 +2038,9 @@ const Cart = () => {
         >
           {checkoutLoading ? 'Validating...' : `Proceed to Checkout (${cartItems.reduce((s, i) => s + i.quantity, 0) + packItems.reduce((s, p) => s + p.quantity, 0)} items)`}
         </button>
-
-
+        </div>
       </div>
+    </div>
     </div>
   );
 };

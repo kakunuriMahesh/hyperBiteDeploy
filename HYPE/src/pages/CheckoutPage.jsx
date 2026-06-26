@@ -183,7 +183,7 @@ const CheckoutPage = () => {
             pincode: formData.pincode,
           },
           items,
-          customerIdentifier: formData.email || formData.phone || null,
+          customerIdentifier: routeState.verifiedIdentifier || formData.email || formData.phone || null,
           appliedReward: appliedReward || null,
           appliedCoupon: appliedCoupon || null,
           finalAmount: checkoutSummary.finalTotal,
