@@ -21,7 +21,9 @@ exports.createOrder = async (req, res) => {
 
     console.log("[PaymentController] createOrder payload", JSON.stringify(req.body));
 
-    const totalAmount = finalAmount || calculateTotal(items);
+    // #6: Store pre-discount total separately so discountAmount can be computed later
+    const itemTotal = calculateTotal(items);
+    const totalAmount = finalAmount || itemTotal;
 
     const razorpay = new Razorpay({
       key_id: process.env.RAZORPAY_KEY_ID,
@@ -49,36 +51,69 @@ exports.createOrder = async (req, res) => {
       },
       customerIdentifier: customerIdentifier || customer?.email || customer?.phone || null,
       items,
-      totalAmount,
+      // #6: totalAmount = pre-discount item total, finalAmount = what customer actually pays
+      totalAmount: itemTotal,
       finalAmount: totalAmount,
       razorpayOrderId: razorpayOrder.id,
       paymentStatus: "pending",
     };
 
-    // Attach applied reward snapshot
+    // #7: Server-side re-validation of applied reward
     if (appliedReward && appliedReward.id) {
-      orderData.appliedReward = {
-        rewardId: appliedReward.id,
-        type: appliedReward.type,
-        value: appliedReward.value,
-        label: appliedReward.label,
-      };
+      const reward = await Reward.findById(appliedReward.id);
+      if (!reward || reward.claimed || reward.expiresAt < new Date()) {
+        // Reward is invalid — silently strip it
+        console.log(`[PaymentController] Reward ${appliedReward.id} is no longer valid — stripping`);
+      } else {
+        orderData.appliedReward = {
+          rewardId: reward._id.toString(),
+          type: reward.type,
+          value: reward.value,
+          label: reward.label,
+        };
+      }
     }
 
-    // Attach applied coupon snapshot
+    // #7: Server-side re-validation of applied coupon
     if (appliedCoupon && appliedCoupon.code) {
       const coupon = await Coupon.findOne({ code: appliedCoupon.code.toUpperCase() });
-      orderData.appliedCoupon = {
-        couponId: coupon ? coupon._id : null,
-        code: appliedCoupon.code,
-        type: appliedCoupon.type || (coupon ? coupon.type : 'offer'),
-        discount: appliedCoupon.discount || 0,
-        freeShipping: appliedCoupon.freeShipping || false,
-      };
+      let couponValid = false;
 
-      // Record agent for referral usage
-      if (coupon && (coupon.type === 'referral' || coupon.type === 'collaborator') && coupon.agentId) {
-        orderData.referralAgentId = coupon.agentId;
+      if (coupon) {
+        // Check basic validity
+        const basicValid = coupon.isActive
+          && (!coupon.expiresAt || coupon.expiresAt > new Date())
+          && (coupon.maxUses === null || coupon.currentUses < coupon.maxUses)
+          && (coupon.minCartValue === 0 || totalAmount >= coupon.minCartValue);
+
+        // Check per-customer limit if identifier is available
+        let withinCustomerLimit = true;
+        if (basicValid && coupon.perCustomerLimit > 0 && customerIdentifier) {
+          const usageCount = await CouponUsage.countDocuments({
+            couponId: coupon._id,
+            customerIdentifier: customerIdentifier.toLowerCase().trim(),
+          });
+          withinCustomerLimit = usageCount < coupon.perCustomerLimit;
+        }
+
+        couponValid = basicValid && withinCustomerLimit;
+      }
+
+      if (!couponValid) {
+        console.log(`[PaymentController] Coupon ${appliedCoupon.code} is no longer valid — stripping`);
+      } else {
+        orderData.appliedCoupon = {
+          couponId: coupon._id,
+          code: coupon.code,
+          type: coupon.type,
+          discount: coupon.discount,
+          freeShipping: coupon.freeShipping,
+        };
+
+        // Record agent for referral / collaborator usage
+        if ((coupon.type === 'referral' || coupon.type === 'collaborator') && coupon.agentId) {
+          orderData.referralAgentId = coupon.agentId;
+        }
       }
     }
 
@@ -140,10 +175,12 @@ exports.verifyPayment = async (req, res) => {
         if (updated.appliedCoupon && updated.appliedCoupon.code) {
           const coupon = await Coupon.findOne({ code: updated.appliedCoupon.code.toUpperCase() });
           if (coupon) {
-            coupon.currentUses += 1;
-            await coupon.save();
+            // #8: Atomic increment — prevents race conditions on currentUses
+            await Coupon.updateOne({ _id: coupon._id }, { $inc: { currentUses: 1 } });
 
-            const discountAmount = updated.totalAmount - (updated.finalAmount || updated.totalAmount);
+            const couponOriginalTotal = updated.totalAmount || 0;
+            const couponFinalTotal = updated.finalAmount || couponOriginalTotal;
+            const discountAmount = couponOriginalTotal - couponFinalTotal;
 
             await CouponUsage.create({
               couponId: coupon._id,
@@ -165,25 +202,35 @@ exports.verifyPayment = async (req, res) => {
                   update.$inc.rewardPoints = agent.rewardPointsPerReferral || 100;
                 }
               }
+              // BONUS: track monthly pack usage for collaborator codes
+              if (coupon.type === 'collaborator') {
+                update.$inc.packsUsedThisMonth = 1;
+              }
               await Agent.findByIdAndUpdate(coupon.agentId, update);
             }
           }
         }
 
         // 3. Award purchase reward points (if customer identifier exists)
+        // #9: Idempotency — skip if points were already awarded for this order
         if (updated.customerIdentifier) {
-          const pointsEarned = Math.floor((updated.totalAmount || 0) / 10);
-          if (pointsEarned > 0) {
-            await Reward.create({
-              identifier: updated.customerIdentifier,
-              type: 'reward_points',
-              value: pointsEarned,
-              label: `Points from order #${updated._id.toString().slice(-6)}`,
-              source: 'purchase',
-              orderId: updated._id,
-              expiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
-            });
-            console.log(`[PaymentController] Awarded ${pointsEarned} points to ${updated.customerIdentifier}`);
+          const existingPoints = await Reward.findOne({ orderId: updated._id, source: 'purchase' });
+          if (!existingPoints) {
+            const pointsEarned = Math.floor((updated.totalAmount || 0) / 10);
+            if (pointsEarned > 0) {
+              await Reward.create({
+                identifier: updated.customerIdentifier,
+                type: 'reward_points',
+                value: pointsEarned,
+                label: `Points from order #${updated._id.toString().slice(-6)}`,
+                source: 'purchase',
+                orderId: updated._id,
+                expiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
+              });
+              console.log(`[PaymentController] Awarded ${pointsEarned} points to ${updated.customerIdentifier}`);
+            }
+          } else {
+            console.log(`[PaymentController] Points already awarded for order ${updated._id} — skipping`);
           }
         }
 
