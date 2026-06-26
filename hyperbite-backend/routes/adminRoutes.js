@@ -445,17 +445,60 @@ router.get("/rewards/stats", async (req, res) => {
 
 router.post("/rewards", async (req, res) => {
   try {
-    const { identifier, type, value, label, source, expiresInDays } = req.body;
-    if (!identifier || !type || value === undefined) {
-      return res.status(400).json({ error: 'identifier, type, and value are required' });
+    const { identifier, type, value, label, source, expiresInDays, target } = req.body;
+    if (!type || value === undefined) {
+      return res.status(400).json({ error: 'type and value are required' });
+    }
+
+    if (target === 'customers') {
+      const [rewardIds, couponUserIds, orderIds] = await Promise.all([
+        Reward.distinct('identifier'),
+        CouponUsage.distinct('customerIdentifier'),
+        Order.distinct('customerIdentifier'),
+      ]);
+
+      const ids = [...new Set([...rewardIds, ...couponUserIds, ...orderIds])]
+        .filter(id => id && id.trim());
+
+      if (ids.length === 0) return res.status(404).json({ error: 'No customers found' });
+
+      await Reward.insertMany(ids.map(id => ({
+        identifier: id.toLowerCase().trim(), type, value,
+        label: label || `${type} reward`, source: source || 'admin',
+        expiresAt: new Date(Date.now() + (expiresInDays || 365) * 24 * 60 * 60 * 1000),
+      })));
+
+      return res.status(201).json({ count: ids.length, message: `Reward created for ${ids.length} customers` });
+    }
+
+    if (target === 'collaborators') {
+      const [agentEmails, agentPhones] = await Promise.all([
+        Agent.distinct('email'),
+        Agent.distinct('phone'),
+      ]);
+
+      const ids = [...new Set([...agentEmails, ...agentPhones])]
+        .filter(id => id && id.trim());
+
+      if (ids.length === 0) return res.status(404).json({ error: 'No collaborators found' });
+
+      await Reward.insertMany(ids.map(id => ({
+        identifier: id.toLowerCase().trim(), type, value,
+        label: label || `${type} reward`, source: source || 'admin',
+        expiresAt: new Date(Date.now() + (expiresInDays || 365) * 24 * 60 * 60 * 1000),
+      })));
+
+      return res.status(201).json({ count: ids.length, message: `Reward created for ${ids.length} collaborators` });
+    }
+
+    if (!identifier) {
+      return res.status(400).json({ error: 'identifier is required for single customer' });
     }
 
     const reward = await Reward.create({
       identifier: identifier.toLowerCase().trim(),
-      type,
-      value,
-      label: label || `${type} reward`,
-      source: source || 'admin',
+      type, value,
+      label: label || `${type} reward`, source: source || 'admin',
       expiresAt: new Date(Date.now() + (expiresInDays || 365) * 24 * 60 * 60 * 1000),
     });
 
