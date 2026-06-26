@@ -3,6 +3,7 @@ const Order = require("../models/Order");
 const Agent = require("../models/Agent");
 const Coupon = require("../models/Coupon");
 const CouponUsage = require("../models/CouponUsage");
+const Reward = require("../models/Reward");
 const shipmentService = require("../services/shipmentService");
 
 const router = express.Router();
@@ -25,16 +26,33 @@ router.get("/orders", async (req, res) => {
   }
 });
 
+router.get("/order/:id", async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id);
+    if (!order) return res.status(404).json({ error: "Order not found" });
+    res.json(order);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 router.patch("/order/:id", async (req, res) => {
   try {
-    const { orderStatus } = req.body;
+    const allowedFields = ["orderStatus", "paymentStatus", "shipmentStatus"];
+    const updates = {};
+    for (const field of allowedFields) {
+      if (req.body[field] !== undefined) {
+        updates[field] = req.body[field];
+      }
+    }
 
     const updatedOrder = await Order.findByIdAndUpdate(
       req.params.id,
-      { orderStatus },
-      { new: true }
+      { $set: updates },
+      { new: true, runValidators: true }
     );
 
+    if (!updatedOrder) return res.status(404).json({ error: "Order not found" });
     res.json(updatedOrder);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -208,6 +226,81 @@ router.delete("/agents/:id", async (req, res) => {
     );
 
     res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ── Agent stats (orders + coupon usage summary) ──
+router.get("/agents/:id/stats", async (req, res) => {
+  try {
+    const agent = await Agent.findById(req.params.id);
+    if (!agent) return res.status(404).json({ error: "Agent not found" });
+
+    const [orders, couponUsage, coupons] = await Promise.all([
+      Order.find({ referralAgentId: req.params.id }).sort({ createdAt: -1 }).limit(50),
+      CouponUsage.find({ agentId: req.params.id }).sort({ usedAt: -1 }).limit(50),
+      Coupon.find({ agentId: req.params.id }),
+    ]);
+
+    const totalOrderRevenue = orders.reduce((s, o) => s + (o.finalAmount || o.totalAmount || 0), 0);
+    const totalCouponDiscount = couponUsage.reduce((s, u) => s + (u.discountAmount || 0), 0);
+
+    res.json({
+      agent,
+      orders,
+      couponUsage,
+      coupons,
+      summary: {
+        totalOrders: orders.length,
+        totalOrderRevenue,
+        totalCouponUsage: couponUsage.length,
+        totalCouponDiscount,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ── Dashboard stats ──
+router.get("/dashboard/stats", async (req, res) => {
+  try {
+    const [
+      totalOrders,
+      totalRevenue,
+      pendingShipments,
+      failedShipments,
+      totalCouponUsage,
+      totalAgents,
+      totalCoupons,
+      ordersByPayment,
+      recentOrders,
+    ] = await Promise.all([
+      Order.countDocuments(),
+      Order.aggregate([{ $group: { _id: null, total: { $sum: "$finalAmount" } } }]),
+      Order.countDocuments({ shipmentStatus: { $in: ["PENDING", "PROCESSING"] } }),
+      Order.countDocuments({ shipmentStatus: "FAILED" }),
+      CouponUsage.countDocuments(),
+      Agent.countDocuments({ isActive: true }),
+      Coupon.countDocuments({ isActive: true }),
+      Order.aggregate([
+        { $group: { _id: "$paymentStatus", count: { $sum: 1 } } },
+      ]),
+      Order.find().sort({ createdAt: -1 }).limit(5).lean(),
+    ]);
+
+    res.json({
+      totalOrders,
+      totalRevenue: totalRevenue[0]?.total || 0,
+      pendingShipments,
+      failedShipments,
+      totalCouponUsage,
+      totalAgents,
+      totalCoupons,
+      ordersByPayment,
+      recentOrders,
+    });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
