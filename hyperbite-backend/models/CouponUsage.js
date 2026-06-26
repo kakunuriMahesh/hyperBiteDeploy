@@ -46,5 +46,6 @@ couponUsageSchema.index({ couponId: 1 });
 couponUsageSchema.index({ agentId: 1 });
 couponUsageSchema.index({ customerIdentifier: 1 });
 couponUsageSchema.index({ orderId: 1 });
+couponUsageSchema.index({ usedAt: -1 }); // Supports collaborator monthly-limit queries
 
 module.exports = mongoose.model('CouponUsage', couponUsageSchema);

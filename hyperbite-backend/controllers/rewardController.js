@@ -221,31 +221,31 @@ exports.validateCoupon = async (req, res) => {
     }
 
     // ── Type-specific checks ──
-    if (coupon.type === 'referral') {
-      const agent = await Agent.findById(coupon.agentId);
+    let agent = null;
+    if ((coupon.type === 'referral' || coupon.type === 'collaborator') && coupon.agentId) {
+      // Single agent fetch reused across type checks and response building
+      agent = await Agent.findById(coupon.agentId);
+
       if (!agent || !agent.isActive) {
-        return res.json({ valid: false, reason: 'The associated agent account is inactive.' });
-      }
-    }
-
-    if (coupon.type === 'collaborator') {
-      const agent = await Agent.findById(coupon.agentId);
-      if (!agent || !agent.isActive) {
-        return res.json({ valid: false, reason: 'The associated collaborator account is inactive.' });
-      }
-
-      // Check monthly pack limit if the order contains packs
-      const monthlyUsage = await CouponUsage.countDocuments({
-        couponId: coupon._id,
-        agentId: coupon.agentId,
-        usedAt: { $gte: new Date(new Date().getFullYear(), new Date().getMonth(), 1) },
-      });
-
-      if (monthlyUsage >= agent.monthlyPackLimit) {
         return res.json({
           valid: false,
-          reason: `Monthly usage limit of ${agent.monthlyPackLimit} reached for this collaborator code.`,
+          reason: `The associated ${coupon.type === 'referral' ? 'agent' : 'collaborator'} account is inactive.`,
         });
+      }
+
+      if (coupon.type === 'collaborator') {
+        const monthlyUsage = await CouponUsage.countDocuments({
+          couponId: coupon._id,
+          agentId: coupon.agentId,
+          usedAt: { $gte: new Date(new Date().getFullYear(), new Date().getMonth(), 1) },
+        });
+
+        if (monthlyUsage >= agent.monthlyPackLimit) {
+          return res.json({
+            valid: false,
+            reason: `Monthly usage limit of ${agent.monthlyPackLimit} reached for this collaborator code.`,
+          });
+        }
       }
     }
 
@@ -261,14 +261,11 @@ exports.validateCoupon = async (req, res) => {
       },
     };
 
-    // Include agent info for referral / collaborator types
-    if ((coupon.type === 'referral' || coupon.type === 'collaborator') && coupon.agentId) {
-      const agent = await Agent.findById(coupon.agentId).select('name personalDiscountPercent');
+    if (agent) {
       response.coupon.agentId = coupon.agentId.toString();
-      response.coupon.agentName = agent ? agent.name : 'Unknown';
+      response.coupon.agentName = agent.name || 'Unknown';
 
-      // For collaborator, use the agent's personal discount percentage
-      if (coupon.type === 'collaborator' && agent) {
+      if (coupon.type === 'collaborator') {
         response.coupon.discount = agent.personalDiscountPercent;
       }
     }
@@ -416,11 +413,54 @@ exports.useCoupon = async (req, res) => {
       return res.status(404).json({ error: 'Coupon not found' });
     }
 
-    // Increment usage counter
-    coupon.currentUses += 1;
-    await coupon.save();
+    // ── Validation (same checks as validateCoupon) ──
+    if (!coupon.isActive) {
+      return res.status(400).json({ error: 'This coupon is no longer active.' });
+    }
+    if (coupon.expiresAt && coupon.expiresAt < new Date()) {
+      return res.status(400).json({ error: 'This coupon has expired.' });
+    }
+    if (coupon.maxUses !== null && coupon.currentUses >= coupon.maxUses) {
+      return res.status(400).json({ error: 'This coupon has reached its usage limit.' });
+    }
 
-    // Record detailed usage
+    if (customerIdentifier && coupon.perCustomerLimit > 0) {
+      const usageCount = await CouponUsage.countDocuments({
+        couponId: coupon._id,
+        customerIdentifier: customerIdentifier.toLowerCase().trim(),
+      });
+      if (usageCount >= coupon.perCustomerLimit) {
+        return res.status(400).json({ error: 'You have already used this coupon.' });
+      }
+    }
+
+    // ── Type-specific validation ──
+    if ((coupon.type === 'referral' || coupon.type === 'collaborator') && coupon.agentId) {
+      const agent = await Agent.findById(coupon.agentId);
+      if (!agent || !agent.isActive) {
+        return res.status(400).json({
+          error: `The associated ${coupon.type === 'referral' ? 'agent' : 'collaborator'} account is inactive.`,
+        });
+      }
+
+      if (coupon.type === 'collaborator' && agent.monthlyPackLimit > 0) {
+        const monthlyUsage = await CouponUsage.countDocuments({
+          couponId: coupon._id,
+          agentId: coupon.agentId,
+          usedAt: { $gte: new Date(new Date().getFullYear(), new Date().getMonth(), 1) },
+        });
+        if (monthlyUsage >= agent.monthlyPackLimit) {
+          return res.status(400).json({
+            error: `Monthly usage limit of ${agent.monthlyPackLimit} reached for this collaborator code.`,
+          });
+        }
+      }
+    }
+
+    // ── Atomic increment ──
+    await Coupon.updateOne({ _id: coupon._id }, { $inc: { currentUses: 1 } });
+
+    // ── Record detailed usage ──
     await CouponUsage.create({
       couponId: coupon._id,
       code: coupon.code,
@@ -431,16 +471,18 @@ exports.useCoupon = async (req, res) => {
       discountAmount: discountAmount || 0,
     });
 
-    // Update agent stats for referral usage
+    // ── Update agent stats for referral / collaborator ──
     if ((coupon.type === 'referral' || coupon.type === 'collaborator') && coupon.agentId) {
       const update = { $inc: { totalOrders: 1 } };
       if (coupon.type === 'referral') {
         update.$inc.totalReferrals = 1;
-        // Add reward points to agent for referral
         const agent = await Agent.findById(coupon.agentId);
         if (agent) {
           update.$inc.rewardPoints = agent.rewardPointsPerReferral || 100;
         }
+      }
+      if (coupon.type === 'collaborator') {
+        update.$inc.packsUsedThisMonth = 1;
       }
       await Agent.findByIdAndUpdate(coupon.agentId, update);
     }

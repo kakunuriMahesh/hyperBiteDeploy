@@ -96,7 +96,23 @@ exports.createOrder = async (req, res) => {
           withinCustomerLimit = usageCount < coupon.perCustomerLimit;
         }
 
-        couponValid = basicValid && withinCustomerLimit;
+        let withinMonthlyLimit = true;
+        if (basicValid && withinCustomerLimit && coupon.type === 'collaborator' && coupon.agentId) {
+          const agent = await Agent.findById(coupon.agentId);
+          if (!agent || !agent.isActive) {
+            withinMonthlyLimit = false;
+          } else if (agent.monthlyPackLimit > 0) {
+            // Count how many times this collaborator code has been used this month
+            const monthlyUsage = await CouponUsage.countDocuments({
+              couponId: coupon._id,
+              agentId: coupon.agentId,
+              usedAt: { $gte: new Date(new Date().getFullYear(), new Date().getMonth(), 1) },
+            });
+            withinMonthlyLimit = monthlyUsage < agent.monthlyPackLimit;
+          }
+        }
+
+        couponValid = basicValid && withinCustomerLimit && withinMonthlyLimit;
       }
 
       if (!couponValid) {
