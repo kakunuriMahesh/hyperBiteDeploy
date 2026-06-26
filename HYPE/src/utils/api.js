@@ -62,3 +62,7 @@ export function useCoupon(code, customerIdentifier, orderId, discountAmount) {
     body: JSON.stringify({ code, customerIdentifier, orderId, discountAmount }),
   });
 }
+
+export function fetchSpinConfig() {
+  return request('/api/rewards/spin-config');
+}

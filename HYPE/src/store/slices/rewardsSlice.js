@@ -1,6 +1,6 @@
 import { createSlice, createSelector } from '@reduxjs/toolkit'
 
-const EXPIRY_DAYS = 30
+const EXPIRY_DAYS = 1
 
 export const SPIN_FREQUENCY = {
   type: 'day',
@@ -15,7 +15,7 @@ const INTERVAL_MS = {
 
 export const SPIN_INTERVAL_MS = INTERVAL_MS[SPIN_FREQUENCY.type] * SPIN_FREQUENCY.value
 
-export const WHEEL_SEGMENTS = [
+const DEFAULT_SEGMENTS = [
   { label: '10% OFF', type: 'discount_percent', value: 10, color: '#FF6B6B', weight: 20 },
   { label: '50 PTS', type: 'reward_points', value: 50, color: '#4ECDC4', weight: 25 },
   { label: 'Free Ship', type: 'free_shipping', value: 1, color: '#45B7D1', weight: 20 },
@@ -42,6 +42,7 @@ const initialState = {
   showSpinWheel: false,
   showRewardsPanel: false,
   lastWonReward: null,
+  segments: null,
 }
 
 const rewardsSlice = createSlice({
@@ -91,6 +92,9 @@ const rewardsSlice = createSlice({
     closeRewardsPanel(state) {
       state.showRewardsPanel = false
     },
+    setSegments(state, action) {
+      state.segments = action.payload
+    },
   },
 })
 
@@ -102,6 +106,7 @@ export const {
   claimReward,
   toggleRewardsPanel,
   closeRewardsPanel,
+  setSegments,
 } = rewardsSlice.actions
 
 export const selectRewards = state => state.rewards.rewards
@@ -124,6 +129,8 @@ export const selectTotalRewardPoints = createSelector(
     .filter(r => r.type === 'reward_points' && !r.claimed && r.expiresAt > Date.now())
     .reduce((sum, r) => sum + r.value, 0)
 )
+
+export const selectSegments = state => state.rewards.segments || DEFAULT_SEGMENTS
 
 export const selectLastSpinDate = state => state.rewards.lastSpinDate
 

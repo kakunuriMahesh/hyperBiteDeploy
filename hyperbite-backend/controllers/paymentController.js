@@ -179,11 +179,12 @@ exports.verifyPayment = async (req, res) => {
 
       // ── Post-payment actions ──
       if (updated) {
-        // 1. Mark reward as claimed (if applied)
+        // 1. Mark reward as claimed (if applied) — track which order redeemed it
         if (updated.appliedReward && updated.appliedReward.rewardId) {
           await Reward.findByIdAndUpdate(updated.appliedReward.rewardId, {
             claimed: true,
             claimedAt: new Date(),
+            orderId: updated._id,
           });
         }
 

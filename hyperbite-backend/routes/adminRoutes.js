@@ -4,6 +4,7 @@ const Agent = require("../models/Agent");
 const Coupon = require("../models/Coupon");
 const CouponUsage = require("../models/CouponUsage");
 const Reward = require("../models/Reward");
+const SpinConfig = require("../models/SpinConfig");
 const shipmentService = require("../services/shipmentService");
 
 const router = express.Router();
@@ -395,6 +396,134 @@ router.get("/coupon-usage/stats", async (req, res) => {
     ]);
 
     res.json({ totalUsage, byType, recent });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ──────────────────────────────────────────────
+//  REWARDS
+// ──────────────────────────────────────────────
+
+router.get("/rewards", async (req, res) => {
+  try {
+    const filter = {};
+    if (req.query.source) filter.source = req.query.source;
+    if (req.query.claimed === 'true') filter.claimed = true;
+    if (req.query.claimed === 'false') filter.claimed = false;
+    if (req.query.identifier) {
+      filter.identifier = req.query.identifier.toLowerCase().trim();
+    }
+
+    const rewards = await Reward.find(filter)
+      .sort({ createdAt: -1 })
+      .limit(parseInt(req.query.limit) || 200);
+
+    res.json(rewards);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.get("/rewards/stats", async (req, res) => {
+  try {
+    const [totalIssued, totalClaimed, totalExpired, bySource, pointsStats] = await Promise.all([
+      Reward.countDocuments(),
+      Reward.countDocuments({ claimed: true }),
+      Reward.countDocuments({ claimed: false, expiresAt: { $lt: new Date() } }),
+      Reward.aggregate([{ $group: { _id: '$source', count: { $sum: 1 } } }]),
+      Reward.aggregate([
+        { $group: { _id: null, totalPoints: { $sum: { $cond: [{ $eq: ['$type', 'reward_points'] }, '$value', 0] } }, claimedPoints: { $sum: { $cond: [{ $and: [{ $eq: ['$type', 'reward_points'] }, { $eq: ['$claimed', true] }] }, '$value', 0] } } } },
+      ]),
+    ]);
+
+    res.json({ totalIssued, totalClaimed, totalExpired, bySource, pointsStats: pointsStats[0] || { totalPoints: 0, claimedPoints: 0 } });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.post("/rewards", async (req, res) => {
+  try {
+    const { identifier, type, value, label, source, expiresInDays } = req.body;
+    if (!identifier || !type || value === undefined) {
+      return res.status(400).json({ error: 'identifier, type, and value are required' });
+    }
+
+    const reward = await Reward.create({
+      identifier: identifier.toLowerCase().trim(),
+      type,
+      value,
+      label: label || `${type} reward`,
+      source: source || 'admin',
+      expiresAt: new Date(Date.now() + (expiresInDays || 365) * 24 * 60 * 60 * 1000),
+    });
+
+    res.status(201).json(reward);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.patch("/rewards/:id", async (req, res) => {
+  try {
+    const allowed = ['claimed', 'value', 'label', 'expiresAt'];
+    const updates = {};
+    for (const field of allowed) {
+      if (req.body[field] !== undefined) updates[field] = req.body[field];
+    }
+    if (req.body.claimed === true && !req.body.claimedAt) {
+      updates.claimedAt = new Date();
+    }
+
+    const reward = await Reward.findByIdAndUpdate(req.params.id, { $set: updates }, { new: true });
+    if (!reward) return res.status(404).json({ error: 'Reward not found' });
+    res.json(reward);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.delete("/rewards/:id", async (req, res) => {
+  try {
+    const reward = await Reward.findByIdAndDelete(req.params.id);
+    if (!reward) return res.status(404).json({ error: 'Reward not found' });
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ──────────────────────────────────────────────
+//  SPIN CONFIG
+// ──────────────────────────────────────────────
+
+router.get("/spin-config", async (req, res) => {
+  try {
+    let config = await SpinConfig.findOne().sort({ createdAt: -1 });
+    if (!config) {
+      config = await SpinConfig.create({
+        segments: [
+          { label: '10% OFF', type: 'discount_percent', value: 10, color: '#FF6B6B', weight: 20 },
+          { label: '50 PTS', type: 'reward_points', value: 50, color: '#4ECDC4', weight: 25 },
+          { label: 'Free Ship', type: 'free_shipping', value: 1, color: '#45B7D1', weight: 20 },
+          { label: '5% OFF', type: 'discount_percent', value: 5, color: '#96CEB4', weight: 20 },
+          { label: '100 PTS', type: 'reward_points', value: 100, color: '#FFEAA7', weight: 10 },
+          { label: 'Better Luck', type: 'none', value: 0, color: '#DDA0DD', weight: 5 },
+        ],
+      });
+    }
+    res.json(config);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.put("/spin-config/:id", async (req, res) => {
+  try {
+    const config = await SpinConfig.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
+    if (!config) return res.status(404).json({ error: 'Spin config not found' });
+    res.json(config);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

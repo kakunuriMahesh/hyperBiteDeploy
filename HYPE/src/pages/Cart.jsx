@@ -1552,18 +1552,18 @@ const Cart = () => {
                           ))}
                         </div>
                       </div>
+                    ) : lookupData ? (
+                      <div style={{ textAlign: "center", padding: "20px 12px" }}>
+                        <FaGift size={28} color="#D1D5DB" style={{ marginBottom: 8 }} />
+                        <p style={{ fontSize: "12px", color: "#9CA3AF", margin: 0, fontFamily: "'Inter', sans-serif" }}>
+                          No rewards available
+                        </p>
+                      </div>
                     ) : !rewardsIdentifier ? (
                       <div style={{ textAlign: "center", padding: "20px 12px" }}>
                         <FaGift size={28} color="#D1D5DB" style={{ marginBottom: 8 }} />
                         <p style={{ fontSize: "12px", color: "#9CA3AF", margin: 0, fontFamily: "'Inter', sans-serif" }}>
                           Go to Rewards page to earn rewards
-                        </p>
-                      </div>
-                    ) : unclaimedRewards.length === 0 ? (
-                      <div style={{ textAlign: "center", padding: "20px 12px" }}>
-                        <FaGift size={28} color="#D1D5DB" style={{ marginBottom: 8 }} />
-                        <p style={{ fontSize: "12px", color: "#9CA3AF", margin: 0, fontFamily: "'Inter', sans-serif" }}>
-                          No rewards available
                         </p>
                       </div>
                     ) : (

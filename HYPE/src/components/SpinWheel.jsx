@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useDispatch, useSelector } from 'react-redux'
 import {
   setIdentifier,
+  setSegments,
   completeSpin,
   closeSpinWheel,
   selectShowSpinWheel,
@@ -11,13 +12,13 @@ import {
   selectCanSpin,
   selectNextSpinDate,
   selectLastSpinDate,
+  selectSegments,
   SPIN_INTERVAL_MS,
-  WHEEL_SEGMENTS,
 } from '../store/slices/rewardsSlice'
+import { fetchSpinConfig, saveSpinReward } from '../utils/api'
 import { IoClose } from 'react-icons/io5'
 import { FaGift, FaStar, FaTruck, FaCoins, FaPercentage, FaRedo, FaClock } from 'react-icons/fa'
 
-const SEGMENT_ANGLE = 360 / WHEEL_SEGMENTS.length
 const WHEEL_SIZE = 240
 const NUM_FULL_SPINS = 6
 
@@ -28,21 +29,15 @@ const SEGMENT_ICONS = {
   none: <FaRedo />,
 }
 
-function getRandomSegment() {
-  const totalWeight = WHEEL_SEGMENTS.reduce((sum, s) => sum + s.weight, 0)
+function getRandomWeightedIndex(segments) {
+  const totalWeight = segments.reduce((sum, s) => sum + s.weight, 0)
   let r = Math.random() * totalWeight
-  for (let i = 0; i < WHEEL_SEGMENTS.length; i++) {
-    r -= WHEEL_SEGMENTS[i].weight
+  for (let i = 0; i < segments.length; i++) {
+    r -= segments[i].weight
     if (r <= 0) return i
   }
   return 0
 }
-
-const gradientStops = WHEEL_SEGMENTS.map((seg, i) => {
-  const start = i * SEGMENT_ANGLE
-  const end = (i + 1) * SEGMENT_ANGLE
-  return `${seg.color} ${start}deg ${end}deg`
-}).join(', ')
 
 const SpinWheel = () => {
   const dispatch = useDispatch()
@@ -52,6 +47,8 @@ const SpinWheel = () => {
   const canSpin = useSelector(selectCanSpin)
   const nextSpinDate = useSelector(selectNextSpinDate)
   const lastSpinDate = useSelector(selectLastSpinDate)
+  const segments = useSelector(selectSegments)
+  const segmentAngle = 360 / segments.length
 
   const [inputValue, setInputValue] = useState(savedIdentifier || '')
   const [isSpinning, setIsSpinning] = useState(false)
@@ -69,6 +66,12 @@ const SpinWheel = () => {
   }, [])
 
   useEffect(() => {
+    fetchSpinConfig().then((segments) => {
+      if (segments && segments.length > 0) dispatch(setSegments(segments))
+    }).catch(() => {})
+  }, [dispatch])
+
+  useEffect(() => {
     if (!show) return
     if (stage === 'spinning' || stage === 'result') return
     if (!savedIdentifier) {
@@ -83,6 +86,8 @@ const SpinWheel = () => {
     setShowResult(false)
     setWonSegmentIndex(null)
   }, [show, savedIdentifier, canSpin, stage])
+
+  const wheelSize = isMobile ? 200 : WHEEL_SIZE
 
   const isValid = useMemo(() => {
     if (!inputValue) return false
@@ -103,34 +108,57 @@ const SpinWheel = () => {
     return `${hours}h ${mins}m`
   }
 
-  const executeSpin = useCallback(() => {
+  const gradientStops = segments.map((seg, i) => {
+    const start = i * segmentAngle
+    const end = (i + 1) * segmentAngle
+    return `${seg.color} ${start}deg ${end}deg`
+  }).join(', ')
+
+  const segmentLabels = useMemo(() =>
+    segments.map((seg, i) => {
+      const angle = i * segmentAngle + segmentAngle / 2
+      const rad = (angle - 90) * (Math.PI / 180)
+      const radius = wheelSize * 0.37
+      const x = wheelSize / 2 + radius * Math.cos(rad)
+      const y = wheelSize / 2 + radius * Math.sin(rad)
+      return { ...seg, angle, x, y, index: i }
+    }),
+  [segments, segmentAngle, wheelSize])
+
+  const executeSpin = useCallback((identifier) => {
     setIsSpinning(true)
     setShowResult(false)
     setStage('spinning')
 
-    const winIndex = getRandomSegment()
+    const winIndex = getRandomWeightedIndex(segments)
     setWonSegmentIndex(winIndex)
 
-    const targetAngle = (winIndex + 0.5) * SEGMENT_ANGLE
+    const targetAngle = (winIndex + 0.5) * segmentAngle
     const totalRotation = NUM_FULL_SPINS * 360 + targetAngle
     const finalRotation = rotation + totalRotation
 
     setRotation(finalRotation)
+
+    const won = segments[winIndex]
+    if (won.type !== 'none') {
+      saveSpinReward(identifier, won.type, won.value, won.label, 1).catch(() => {})
+    }
 
     setTimeout(() => {
       setIsSpinning(false)
       setShowResult(true)
       setStage('result')
 
-      const won = WHEEL_SEGMENTS[winIndex]
       if (won.type !== 'none') {
         dispatch(completeSpin(won))
       }
     }, 4000)
-  }, [rotation, dispatch])
+  }, [rotation, dispatch, segments, segmentAngle])
 
   const handleSpin = useCallback(() => {
     if (!isValid || isSpinning) return
+
+    const identifier = savedIdentifier || inputValue
 
     if (!savedIdentifier) {
       dispatch(setIdentifier(inputValue))
@@ -141,7 +169,7 @@ const SpinWheel = () => {
       return
     }
 
-    executeSpin()
+    executeSpin(identifier)
   }, [inputValue, isSpinning, savedIdentifier, canSpin, isValid, executeSpin, dispatch])
 
   const handleClose = useCallback(() => {
@@ -152,20 +180,7 @@ const SpinWheel = () => {
 
   const inputRef = useRef(null)
 
-  const wheelSize = isMobile ? 200 : WHEEL_SIZE
-
-  const segmentLabels = useMemo(() =>
-    WHEEL_SEGMENTS.map((seg, i) => {
-      const angle = i * SEGMENT_ANGLE + SEGMENT_ANGLE / 2
-      const rad = (angle - 90) * (Math.PI / 180)
-      const radius = wheelSize * 0.37
-      const x = wheelSize / 2 + radius * Math.cos(rad)
-      const y = wheelSize / 2 + radius * Math.sin(rad)
-      return { ...seg, angle, x, y, index: i }
-    }),
-  [wheelSize])
-
-  const wonSegment = wonSegmentIndex !== null ? WHEEL_SEGMENTS[wonSegmentIndex] : null
+  const wonSegment = wonSegmentIndex !== null ? segments[wonSegmentIndex] : null
 
   const rewardDescription = (seg) => {
     switch (seg.type) {
