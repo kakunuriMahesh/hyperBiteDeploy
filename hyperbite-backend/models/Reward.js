@@ -9,7 +9,7 @@ const rewardSchema = new mongoose.Schema({
   },
   type: {
     type: String,
-    enum: ['discount_percent', 'reward_points', 'free_shipping'],
+    enum: ['discount_percent', 'discount_fixed', 'reward_points', 'free_shipping', 'none'],
     required: true,
   },
   value: {
@@ -22,8 +22,8 @@ const rewardSchema = new mongoose.Schema({
   },
   source: {
     type: String,
-    enum: ['spin', 'purchase'],
-    default: 'spin',
+    enum: ['spin', 'purchase', 'admin', 'manual'],
+    default: 'manual',
   },
   orderId: {
     type: mongoose.Schema.Types.ObjectId,

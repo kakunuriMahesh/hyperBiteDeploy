@@ -4,6 +4,7 @@ import { useDispatch, useSelector } from 'react-redux'
 import {
   setIdentifier,
   setSegments,
+  setSpinConfigActive,
   completeSpin,
   closeSpinWheel,
   selectShowSpinWheel,
@@ -15,7 +16,7 @@ import {
   selectSegments,
   SPIN_INTERVAL_MS,
 } from '../store/slices/rewardsSlice'
-import { fetchSpinConfig, saveSpinReward } from '../utils/api'
+import { fetchSpinConfig, saveSpinReward, checkCanSpin } from '../utils/api'
 import { IoClose } from 'react-icons/io5'
 import { FaGift, FaStar, FaTruck, FaCoins, FaPercentage, FaRedo, FaClock } from 'react-icons/fa'
 
@@ -57,6 +58,8 @@ const SpinWheel = () => {
   const [wonSegmentIndex, setWonSegmentIndex] = useState(null)
   const [stage, setStage] = useState('form')
   const [isMobile, setIsMobile] = useState(false)
+  const [canSpinFromApi, setCanSpinFromApi] = useState(null)
+  const [rewardExpiresAt, setRewardExpiresAt] = useState(null)
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768)
@@ -66,10 +69,25 @@ const SpinWheel = () => {
   }, [])
 
   useEffect(() => {
-    fetchSpinConfig().then((segments) => {
-      if (segments && segments.length > 0) dispatch(setSegments(segments))
+    fetchSpinConfig().then((data) => {
+      if (data) {
+        if (data.segments) dispatch(setSegments(data.segments))
+        if (data.isActive !== undefined) dispatch(setSpinConfigActive(data.isActive))
+      }
     }).catch(() => {})
   }, [dispatch])
+
+  useEffect(() => {
+    const id = savedIdentifier || (stage === 'form' && inputValue ? inputValue : null)
+    if (!id) return
+    setCanSpinFromApi(null)
+    checkCanSpin(id).then((data) => {
+      setCanSpinFromApi(data.canSpin)
+      setRewardExpiresAt(data.rewardExpiresAt || null)
+    }).catch(() => {
+      setCanSpinFromApi(true)
+    })
+  }, [savedIdentifier]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (!show) return
@@ -78,14 +96,15 @@ const SpinWheel = () => {
       setStage('form')
       return
     }
-    if (canSpin) {
+    if (canSpinFromApi === null) return
+    if (canSpin && canSpinFromApi) {
       setStage('ready')
     } else {
       setStage('cooldown')
     }
     setShowResult(false)
     setWonSegmentIndex(null)
-  }, [show, savedIdentifier, canSpin, stage])
+  }, [show, savedIdentifier, canSpin, canSpinFromApi, stage])
 
   const wheelSize = isMobile ? 200 : WHEEL_SIZE
 
@@ -133,7 +152,7 @@ const SpinWheel = () => {
     const winIndex = getRandomWeightedIndex(segments)
     setWonSegmentIndex(winIndex)
 
-    const targetAngle = (winIndex + 0.5) * segmentAngle
+    const targetAngle = (360 - (winIndex + 0.5) * segmentAngle) % 360
     const totalRotation = NUM_FULL_SPINS * 360 + targetAngle
     const finalRotation = rotation + totalRotation
 
@@ -155,13 +174,25 @@ const SpinWheel = () => {
     }, 4000)
   }, [rotation, dispatch, segments, segmentAngle])
 
-  const handleSpin = useCallback(() => {
+  const handleSpin = useCallback(async () => {
     if (!isValid || isSpinning) return
 
     const identifier = savedIdentifier || inputValue
 
     if (!savedIdentifier) {
       dispatch(setIdentifier(inputValue))
+    }
+
+    try {
+      const data = await checkCanSpin(identifier)
+      if (!data.canSpin) {
+        setCanSpinFromApi(false)
+        setRewardExpiresAt(data.rewardExpiresAt || null)
+        setStage('cooldown')
+        return
+      }
+    } catch {
+      // API unavailable — proceed with local check only
     }
 
     if (savedIdentifier && !canSpin) {
@@ -185,6 +216,7 @@ const SpinWheel = () => {
   const rewardDescription = (seg) => {
     switch (seg.type) {
       case 'discount_percent': return `${seg.value}% off on your order`
+      case 'discount_fixed': return `₹${seg.value} off on your order`
       case 'reward_points': return `${seg.value} reward points credited`
       case 'free_shipping': return 'Free shipping on next order'
       case 'none': return 'Try again next time!'
@@ -539,10 +571,10 @@ const SpinWheel = () => {
         fontFamily: "'Inter', sans-serif",
         letterSpacing: '-0.3px',
       }}>
-        Already Spun!
+        {canSpinFromApi === false ? 'Active Reward Exists' : 'Already Spun!'}
       </h2>
       <p style={{ fontSize: 13, color: '#6B7280', margin: '8px 0 4px', fontFamily: "'Inter', sans-serif" }}>
-        Next spin available in:
+        {canSpinFromApi === false ? 'Your reward is valid until:' : 'Next spin available in:'}
       </p>
       <p style={{
         fontSize: 22,
@@ -552,7 +584,9 @@ const SpinWheel = () => {
         fontFamily: "'Inter', sans-serif",
         letterSpacing: '-0.3px',
       }}>
-        {formatNextSpin()}
+        {canSpinFromApi === false && rewardExpiresAt
+          ? new Date(rewardExpiresAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+          : formatNextSpin()}
       </p>
       <p style={{
         fontSize: 11,

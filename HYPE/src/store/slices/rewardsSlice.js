@@ -43,6 +43,7 @@ const initialState = {
   showRewardsPanel: false,
   lastWonReward: null,
   segments: null,
+  spinConfigActive: true,
 }
 
 const rewardsSlice = createSlice({
@@ -53,6 +54,7 @@ const rewardsSlice = createSlice({
       state.identifier = action.payload
     },
     openSpinWheel(state) {
+      if (!state.spinConfigActive) return
       state.showSpinWheel = true
     },
     closeSpinWheel(state) {
@@ -95,6 +97,9 @@ const rewardsSlice = createSlice({
     setSegments(state, action) {
       state.segments = action.payload
     },
+    setSpinConfigActive(state, action) {
+      state.spinConfigActive = action.payload
+    },
   },
 })
 
@@ -107,6 +112,7 @@ export const {
   toggleRewardsPanel,
   closeRewardsPanel,
   setSegments,
+  setSpinConfigActive,
 } = rewardsSlice.actions
 
 export const selectRewards = state => state.rewards.rewards

@@ -64,6 +64,9 @@ const CheckoutPage = () => {
       if (appliedReward.type === 'discount_percent') {
         extraDiscount = sellingTotal * (appliedReward.value / 100);
       }
+      if (appliedReward.type === 'discount_fixed') {
+        extraDiscount = appliedReward.value;
+      }
       if (appliedReward.type === 'free_shipping') {
         freeShippingApplied = true;
       }

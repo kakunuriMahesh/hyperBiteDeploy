@@ -369,6 +369,9 @@ const Cart = () => {
       if (appliedReward.type === 'discount_percent') {
         extraDiscount = sellingTotal * (appliedReward.value / 100);
       }
+      if (appliedReward.type === 'discount_fixed') {
+        extraDiscount = appliedReward.value;
+      }
       if (appliedReward.type === 'free_shipping') {
         freeShippingApplied = true;
       }
@@ -1546,7 +1549,14 @@ const Cart = () => {
                               onMouseLeave={(e) => { e.currentTarget.style.borderColor = "#FDE68A"; e.currentTarget.style.backgroundColor = "#FFFBEB"; }}
                             >
                               <FaGift size={14} color="#F59E0B" />
-                              <span style={{ flex: 1, fontSize: "12px", fontWeight: 600, color: "#92400E" }}>{r.label}</span>
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <span style={{ fontSize: "12px", fontWeight: 600, color: "#92400E" }}>{r.label}</span>
+                                {r.expiresAt && (
+                                  <span style={{ display: "block", fontSize: "10px", color: "#A16207", marginTop: 1 }}>
+                                    Expires {new Date(r.expiresAt).toLocaleDateString("en-IN")}
+                                  </span>
+                                )}
+                              </div>
                               <span style={{ fontSize: "11px", padding: "3px 10px", background: "#FEF3C7", borderRadius: 4, color: "#D97706", fontWeight: 600 }}>Apply</span>
                             </button>
                           ))}
@@ -1616,9 +1626,15 @@ const Cart = () => {
                                 </p>
                                 <p style={{ margin: "2px 0 0", fontSize: "11px", color: "#9CA3AF" }}>
                                   {reward.type === 'discount_percent' ? `${reward.value}% off on your order` :
+                                   reward.type === 'discount_fixed' ? `₹${reward.value} off on your order` :
                                    reward.type === 'reward_points' ? `${reward.value} reward points` :
                                    reward.type === 'free_shipping' ? 'Free shipping on next order' : ''}
                                 </p>
+                                {reward.expiresAt && (
+                                  <p style={{ margin: "1px 0 0", fontSize: "10px", color: "#DC2626" }}>
+                                    Expires {new Date(reward.expiresAt).toLocaleDateString("en-IN")}
+                                  </p>
+                                )}
                               </div>
                               <span style={{
                                 padding: "5px 14px",

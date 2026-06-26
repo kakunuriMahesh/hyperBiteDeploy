@@ -66,3 +66,10 @@ export function useCoupon(code, customerIdentifier, orderId, discountAmount) {
 export function fetchSpinConfig() {
   return request('/api/rewards/spin-config');
 }
+
+export function checkCanSpin(identifier) {
+  return request('/api/rewards/can-spin', {
+    method: 'POST',
+    body: JSON.stringify({ identifier }),
+  });
+}

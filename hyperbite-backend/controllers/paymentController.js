@@ -1,3 +1,4 @@
+const mongoose = require("mongoose");
 const Razorpay = require("razorpay");
 const crypto = require("crypto");
 const Order = require("../models/Order");
@@ -60,7 +61,12 @@ exports.createOrder = async (req, res) => {
 
     // #7: Server-side re-validation of applied reward
     if (appliedReward && appliedReward.id) {
-      const reward = await Reward.findById(appliedReward.id);
+      let reward = null;
+      try {
+        reward = mongoose.Types.ObjectId.isValid(appliedReward.id)
+          ? await Reward.findById(appliedReward.id)
+          : null;
+      } catch { reward = null; }
       if (!reward || reward.claimed || reward.expiresAt < new Date()) {
         // Reward is invalid — silently strip it
         console.log(`[PaymentController] Reward ${appliedReward.id} is no longer valid — stripping`);
@@ -180,7 +186,7 @@ exports.verifyPayment = async (req, res) => {
       // ── Post-payment actions ──
       if (updated) {
         // 1. Mark reward as claimed (if applied) — track which order redeemed it
-        if (updated.appliedReward && updated.appliedReward.rewardId) {
+        if (updated.appliedReward && updated.appliedReward.rewardId && mongoose.Types.ObjectId.isValid(updated.appliedReward.rewardId)) {
           await Reward.findByIdAndUpdate(updated.appliedReward.rewardId, {
             claimed: true,
             claimedAt: new Date(),

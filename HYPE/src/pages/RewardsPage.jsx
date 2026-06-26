@@ -20,6 +20,7 @@ const FILTERS = ['unclaimed', 'claimed', 'expired', 'all']
 
 const rewardMeta = {
   discount_percent: { icon: <FaPercentage />, label: 'Discount', color: '#FF6B6B', bg: '#FFF0F0' },
+  discount_fixed: { icon: <FaPercentage />, label: 'Fixed Discount', color: '#FF6B6B', bg: '#FFF0F0' },
   reward_points: { icon: <FaCoins />, label: 'Reward Points', color: '#4ECDC4', bg: '#F0FFFD' },
   free_shipping: { icon: <FaTruck />, label: 'Free Shipping', color: '#45B7D1', bg: '#F0F8FF' },
   none: { icon: <FaRedo />, label: 'No Reward', color: '#DDA0DD', bg: '#FDF0FF' },
@@ -652,6 +653,7 @@ const RewardsPage = () => {
                               }}>
                                 {reward.type === 'reward_points' ? `${reward.value} Reward Points` :
                                  reward.type === 'discount_percent' ? `${reward.value}% Discount` :
+                                 reward.type === 'discount_fixed' ? `₹${reward.value} Discount` :
                                  reward.type === 'free_shipping' ? 'Free Shipping' : ''}
                               </p>
                               <p style={{
