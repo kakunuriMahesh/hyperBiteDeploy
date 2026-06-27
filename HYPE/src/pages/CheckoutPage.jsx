@@ -21,8 +21,9 @@ const CheckoutPage = () => {
   } = useCart();
 
   const routeState = location.state || {};
-  const [appliedReward] = useState(routeState.appliedReward || null);
-  const [appliedCoupon] = useState(routeState.appliedCoupon || null);
+  const savedCartLookup = (() => { try { return JSON.parse(localStorage.getItem('cart_lookup') || '{}'); } catch { return {}; } })();
+  const [appliedReward] = useState(routeState.appliedReward || savedCartLookup.appliedReward || null);
+  const [appliedCoupon] = useState(routeState.appliedCoupon || savedCartLookup.appliedCoupon || null);
 
   const [breakpoint, setBreakpoint] = useState("desktop");
   const isDesktop = breakpoint !== "mobile";
@@ -170,7 +171,8 @@ const CheckoutPage = () => {
         });
       });
 
-      const resp = await fetch("https://hyperbitedeploy.onrender.com/api/payment/create-order", {
+      // const resp = await fetch("https://hyperbitedeploy.onrender.com/api/payment/create-order", {
+      const resp = await fetch("http://localhost:5000/api/payment/create-order", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -212,7 +214,8 @@ const CheckoutPage = () => {
         order_id: data.razorpayOrder.id,
         handler: async function (response) {
           try {
-            const verifyRes = await fetch("https://hyperbitedeploy.onrender.com/api/payment/verify", {
+            // const verifyRes = await fetch("https://hyperbitedeploy.onrender.com/api/payment/verify", {
+            const verifyRes = await fetch("http://localhost:5000/api/payment/verify", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify(response),
@@ -267,7 +270,7 @@ const CheckoutPage = () => {
     setIsFormSubmitting(true);
 
     setTimeout(() => {
-      const message = formatCartMessage(cartItems, packItems, formData);
+      const message = formatCartMessage(cartItems, packItems, formData, appliedReward, appliedCoupon, checkoutSummary.finalTotal);
       const encodedMessage = encodeURIComponent(message);
       const whatsappUrl = `https://wa.me/919985944466?text=${encodedMessage}`;
       window.open(whatsappUrl, "_blank");

@@ -16,26 +16,67 @@ function calculateTotal(items = []) {
   return total;
 }
 
+function computeFinalTotal(sellingTotal, appliedReward, appliedCoupon) {
+  let discount = 0;
+  if (appliedReward && appliedReward.type) {
+    if (appliedReward.type === 'discount_percent') {
+      discount = sellingTotal * ((Number(appliedReward.value) || 0) / 100);
+    } else if (appliedReward.type === 'discount_fixed') {
+      discount = Number(appliedReward.value) || 0;
+    }
+  }
+  if (appliedCoupon && Number(appliedCoupon.discount) > 0) {
+    discount = sellingTotal * ((Number(appliedCoupon.discount) || 0) / 100);
+  }
+  return Math.round(Math.max(0, sellingTotal - discount) * 100) / 100;
+}
+
 exports.createOrder = async (req, res) => {
   try {
-    const { customer, items, appliedReward, appliedCoupon, customerIdentifier, finalAmount } = req.body;
+    const { customer, items, appliedReward, appliedCoupon, customerIdentifier, finalAmount: _ignored } = req.body;
 
-    console.log("[PaymentController] createOrder payload", JSON.stringify(req.body));
-
-    // #6: Store pre-discount total separately so discountAmount can be computed later
     const itemTotal = calculateTotal(items);
-    const totalAmount = finalAmount || itemTotal;
+
+    // Server-side total computation — ignores frontend's float-prone finalAmount
+    const computedFinal = computeFinalTotal(itemTotal, appliedReward, appliedCoupon);
+
+    console.log("[PaymentController] createOrder", JSON.stringify({
+      itemTotal,
+      computedFinal,
+      appliedReward: appliedReward ? { id: appliedReward.id, type: appliedReward.type, value: appliedReward.value } : null,
+      appliedCoupon: appliedCoupon ? { code: appliedCoupon.code, discount: appliedCoupon.discount } : null,
+    }));
 
     const razorpay = new Razorpay({
       key_id: process.env.RAZORPAY_KEY_ID,
       key_secret: process.env.RAZORPAY_KEY_SECRET
     });
 
-    const razorpayOrder = await razorpay.orders.create({
-      amount: Math.round(totalAmount * 100),
-      currency: "INR",
-      receipt: "receipt_" + Date.now()
-    });
+    const razorpayAmount = Math.round(computedFinal * 100);
+    console.log(`[PaymentController] Razorpay amount: ${razorpayAmount} paise (₹${(razorpayAmount / 100).toFixed(2)})`);
+
+    let razorpayOrder;
+    try {
+      razorpayOrder = await razorpay.orders.create({
+        amount: razorpayAmount,
+        currency: "INR",
+        receipt: "receipt_" + Date.now()
+      });
+    } catch (rpErr) {
+      const diagnostic = {
+        message: rpErr?.message || String(rpErr),
+        hasResponse: !!rpErr?.response,
+        statusCode: rpErr?.response?.status,
+        responseData: rpErr?.response?.data,
+        errorCode: rpErr?.error?.code,
+        errorDescription: rpErr?.error?.description,
+      };
+      console.error("[PaymentController] Razorpay API call failed", JSON.stringify(diagnostic));
+      return res.status(502).json({
+        error: "Payment gateway error. Please try again.",
+        diagnostic,
+      });
+    }
 
     // Build order document
     const orderData = {
@@ -52,14 +93,13 @@ exports.createOrder = async (req, res) => {
       },
       customerIdentifier: customerIdentifier || customer?.email || customer?.phone || null,
       items,
-      // #6: totalAmount = pre-discount item total, finalAmount = what customer actually pays
       totalAmount: itemTotal,
-      finalAmount: totalAmount,
+      finalAmount: computedFinal,
       razorpayOrderId: razorpayOrder.id,
       paymentStatus: "pending",
     };
 
-    // #7: Server-side re-validation of applied reward
+    // Server-side re-validation of applied reward
     if (appliedReward && appliedReward.id) {
       let reward = null;
       try {
@@ -68,7 +108,6 @@ exports.createOrder = async (req, res) => {
           : null;
       } catch { reward = null; }
       if (!reward || reward.claimed || reward.expiresAt < new Date()) {
-        // Reward is invalid — silently strip it
         console.log(`[PaymentController] Reward ${appliedReward.id} is no longer valid — stripping`);
       } else {
         orderData.appliedReward = {
@@ -80,19 +119,17 @@ exports.createOrder = async (req, res) => {
       }
     }
 
-    // #7: Server-side re-validation of applied coupon
+    // Server-side re-validation of applied coupon
     if (appliedCoupon && appliedCoupon.code) {
       const coupon = await Coupon.findOne({ code: appliedCoupon.code.toUpperCase() });
       let couponValid = false;
 
       if (coupon) {
-        // Check basic validity
         const basicValid = coupon.isActive
           && (!coupon.expiresAt || coupon.expiresAt > new Date())
           && (coupon.maxUses === null || coupon.currentUses < coupon.maxUses)
-          && (coupon.minCartValue === 0 || totalAmount >= coupon.minCartValue);
+          && (coupon.minCartValue === 0 || itemTotal >= coupon.minCartValue);
 
-        // Check per-customer limit if identifier is available
         let withinCustomerLimit = true;
         if (basicValid && coupon.perCustomerLimit > 0 && customerIdentifier) {
           const usageCount = await CouponUsage.countDocuments({
@@ -108,7 +145,6 @@ exports.createOrder = async (req, res) => {
           if (!agent || !agent.isActive) {
             withinMonthlyLimit = false;
           } else if (agent.monthlyPackLimit > 0) {
-            // Count how many times this collaborator code has been used this month
             const monthlyUsage = await CouponUsage.countDocuments({
               couponId: coupon._id,
               agentId: coupon.agentId,
@@ -132,7 +168,6 @@ exports.createOrder = async (req, res) => {
           freeShipping: coupon.freeShipping,
         };
 
-        // Record agent for referral / collaborator usage
         if ((coupon.type === 'referral' || coupon.type === 'collaborator') && coupon.agentId) {
           orderData.referralAgentId = coupon.agentId;
         }
@@ -141,7 +176,12 @@ exports.createOrder = async (req, res) => {
 
     const order = await Order.create(orderData);
 
-    console.log("[PaymentController] Order created", JSON.stringify(order));
+    console.log("[PaymentController] Order created", JSON.stringify({
+      orderId: order._id,
+      totalAmount: order.totalAmount,
+      finalAmount: order.finalAmount,
+      razorpayOrderId: order.razorpayOrderId,
+    }));
 
     res.json({
       razorpayOrder,
@@ -162,130 +202,146 @@ exports.verifyPayment = async (req, res) => {
       razorpay_signature
     } = req.body;
 
-    const body = razorpay_order_id + "|" + razorpay_payment_id;
-
-    const expectedSignature = crypto
+    const sign = razorpay_order_id + "|" + razorpay_payment_id;
+    const expectedSign = crypto
       .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
-      .update(body.toString())
+      .update(sign.toString())
       .digest("hex");
 
-    if (expectedSignature === razorpay_signature) {
-      console.log("[PaymentController] Payment verified for order:", razorpay_order_id);
+    if (razorpay_signature !== expectedSign) {
+      return res.status(400).json({
+        success: false,
+        message: "Payment verification failed — signature mismatch",
+      });
+    }
 
-      const updated = await Order.findOneAndUpdate(
-        { razorpayOrderId: razorpay_order_id },
-        {
+    const updated = await Order.findOneAndUpdate(
+      { razorpayOrderId: razorpay_order_id },
+      {
+        $set: {
           paymentStatus: "paid",
           razorpayPaymentId: razorpay_payment_id
-        },
-        { returnDocument: 'after' }
-      );
-
-      console.log("[PaymentController] Order updated - Payment Status: paid");
-
-      // ── Post-payment actions ──
-      if (updated) {
-        // 1. Mark reward as claimed (if applied) — track which order redeemed it
-        if (updated.appliedReward && updated.appliedReward.rewardId && mongoose.Types.ObjectId.isValid(updated.appliedReward.rewardId)) {
-          await Reward.findByIdAndUpdate(updated.appliedReward.rewardId, {
-            claimed: true,
-            claimedAt: new Date(),
-            orderId: updated._id,
-          });
         }
+      },
+      { returnDocument: 'after' }
+    );
 
-        // 2. Record coupon usage (if applied)
-        if (updated.appliedCoupon && updated.appliedCoupon.code) {
-          const coupon = await Coupon.findOne({ code: updated.appliedCoupon.code.toUpperCase() });
-          if (coupon) {
-            // #8: Atomic increment — prevents race conditions on currentUses
-            await Coupon.updateOne({ _id: coupon._id }, { $inc: { currentUses: 1 } });
+    console.log("[PaymentController] Order updated - Payment Status: paid");
 
-            const couponOriginalTotal = updated.totalAmount || 0;
-            const couponFinalTotal = updated.finalAmount || couponOriginalTotal;
-            const discountAmount = couponOriginalTotal - couponFinalTotal;
-
-            await CouponUsage.create({
-              couponId: coupon._id,
-              code: coupon.code,
-              type: coupon.type,
-              customerIdentifier: updated.customerIdentifier || 'unknown',
-              agentId: coupon.agentId || null,
-              orderId: updated._id,
-              discountAmount: Math.max(0, discountAmount),
-            });
-
-            // Update agent stats for referral / collaborator
-            if ((coupon.type === 'referral' || coupon.type === 'collaborator') && coupon.agentId) {
-              const update = { $inc: { totalOrders: 1 } };
-              if (coupon.type === 'referral') {
-                update.$inc.totalReferrals = 1;
-                const agent = await Agent.findById(coupon.agentId);
-                if (agent) {
-                  update.$inc.rewardPoints = agent.rewardPointsPerReferral || 100;
-                }
-              }
-              // BONUS: track monthly pack usage for collaborator codes
-              if (coupon.type === 'collaborator') {
-                update.$inc.packsUsedThisMonth = 1;
-              }
-              await Agent.findByIdAndUpdate(coupon.agentId, update);
-            }
-          }
-        }
-
-        // 3. Award purchase reward points (if customer identifier exists)
-        // #9: Idempotency — skip if points were already awarded for this order
-        if (updated.customerIdentifier) {
-          const existingPoints = await Reward.findOne({ orderId: updated._id, source: 'purchase' });
-          if (!existingPoints) {
-            const pointsEarned = Math.floor((updated.totalAmount || 0) / 10);
-            if (pointsEarned > 0) {
-              await Reward.create({
-                identifier: updated.customerIdentifier,
-                type: 'reward_points',
-                value: pointsEarned,
-                label: `Points from order #${updated._id.toString().slice(-6)}`,
-                source: 'purchase',
-                orderId: updated._id,
-                expiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
-              });
-              console.log(`[PaymentController] Awarded ${pointsEarned} points to ${updated.customerIdentifier}`);
-            }
-          } else {
-            console.log(`[PaymentController] Points already awarded for order ${updated._id} — skipping`);
-          }
-        }
-
-        // 4. Trigger Shiprocket
-        try {
-          console.log("[PaymentController] Triggering Shiprocket order creation...");
-          const result = await shiprocketController.createShiprocketOrder(updated);
-          console.log("[PaymentController] Shiprocket order created successfully");
-
-          await Order.findByIdAndUpdate(updated._id, {
-            $set: {
-              shipmentStatus: "CREATED",
-              shiprocketShipmentId: result.shipment_id || result.id,
-              courierName: result.courier_name,
-              awbCode: result.awb_code,
-              trackingUrl: result.tracking_url,
-              shiprocketCreatedAt: new Date()
-            }
-          });
-        } catch (err) {
-          console.error("[PaymentController] Shiprocket trigger failed:", err.message || err);
-        }
-      } else {
-        console.warn("[PaymentController] Order not found for update:", razorpay_order_id);
+    // ── Post-payment actions ──
+    if (updated) {
+      // 1. Mark reward as claimed (if applied)
+      if (updated.appliedReward && updated.appliedReward.rewardId && mongoose.Types.ObjectId.isValid(updated.appliedReward.rewardId)) {
+        await Reward.findByIdAndUpdate(updated.appliedReward.rewardId, {
+          claimed: true,
+          claimedAt: new Date(),
+          orderId: updated._id,
+        });
       }
 
-      return res.json({ success: true });
-    } else {
-      return res.status(400).json({ success: false });
+      // 2. Record coupon usage (if applied)
+      if (updated.appliedCoupon && updated.appliedCoupon.code) {
+        const coupon = await Coupon.findOne({ code: updated.appliedCoupon.code.toUpperCase() });
+        if (coupon) {
+          await Coupon.updateOne({ _id: coupon._id }, { $inc: { currentUses: 1 } });
+
+          const couponOriginalTotal = Number(updated.totalAmount) || 0;
+          const couponFinalTotal = updated.finalAmount !== undefined && updated.finalAmount !== null
+            ? Number(updated.finalAmount)
+            : couponOriginalTotal;
+          const discountAmount = couponOriginalTotal - couponFinalTotal;
+
+          await CouponUsage.create({
+            couponId: coupon._id,
+            code: coupon.code,
+            type: coupon.type,
+            customerIdentifier: updated.customerIdentifier || 'unknown',
+            agentId: coupon.agentId || null,
+            orderId: updated._id,
+            discountAmount: Math.max(0, discountAmount),
+          });
+
+          // Update agent stats for referral / collaborator
+          if ((coupon.type === 'referral' || coupon.type === 'collaborator') && coupon.agentId) {
+            const update = { $inc: { totalOrders: 1 } };
+            if (coupon.type === 'referral') {
+              update.$inc.totalReferrals = 1;
+              const agent = await Agent.findById(coupon.agentId);
+              if (agent) {
+                update.$inc.rewardPoints = agent.rewardPointsPerReferral || 100;
+              }
+            }
+            if (coupon.type === 'collaborator') {
+              update.$inc.packsUsedThisMonth = 1;
+            }
+            await Agent.findByIdAndUpdate(coupon.agentId, update);
+          }
+        }
+      }
+
+      // 3. Award purchase reward points (if customer identifier exists)
+      if (updated.customerIdentifier) {
+        const existingPoints = await Reward.findOne({ orderId: updated._id, source: 'purchase' });
+        if (!existingPoints) {
+          const pointsEarned = Math.floor((Number(updated.totalAmount) || 0) / 10);
+          if (pointsEarned > 0) {
+            await Reward.create({
+              identifier: updated.customerIdentifier,
+              type: 'reward_points',
+              value: pointsEarned,
+              label: `Points from order #${updated._id.toString().slice(-6)}`,
+              source: 'purchase',
+              orderId: updated._id,
+              expiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
+            });
+            console.log(`[PaymentController] Awarded ${pointsEarned} points to ${updated.customerIdentifier}`);
+          }
+        } else {
+          console.log(`[PaymentController] Points already awarded for order ${updated._id} — skipping`);
+        }
+      }
+
+      // 4. Register shipment in Shiprocket
+      if (updated.customer?.pincode) {
+        try {
+          await shiprocketController.createShipment(updated);
+          console.log(`[PaymentController] Shipment registered for order ${updated._id}`);
+        } catch (shipErr) {
+          console.error(`[PaymentController] Shipment registration failed for order ${updated._id}:`, shipErr.message);
+        }
+      }
     }
+
+    res.json({ success: true });
   } catch (error) {
     console.error("verifyPayment error", error);
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
+exports.updateDeliveryStatus = async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const { deliveryStatus } = req.body;
+
+    const validStatuses = ['pending', 'shipped', 'delivered', 'cancelled'];
+    if (!validStatuses.includes(deliveryStatus)) {
+      return res.status(400).json({ error: 'Invalid delivery status' });
+    }
+
+    const order = await Order.findByIdAndUpdate(
+      orderId,
+      { deliveryStatus },
+      { new: true }
+    );
+
+    if (!order) {
+      return res.status(404).json({ error: 'Order not found' });
+    }
+
+    res.json({ success: true, order });
+  } catch (err) {
+    console.error('updateDeliveryStatus error:', err);
+    res.status(500).json({ error: err.message });
   }
 };

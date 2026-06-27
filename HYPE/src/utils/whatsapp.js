@@ -30,7 +30,7 @@ export const formatProductMessage = (product) => {
   return message;
 };
 
-export const formatCartMessage = (cartItems, packItems, userDetails) => {
+export const formatCartMessage = (cartItems, packItems, userDetails, appliedReward = null, appliedCoupon = null, finalTotal = null) => {
   let message = 'Hi!\n\n';
   message += `I would like to place an order:\n\n`;
   message += `*Order Details:*\n`;
@@ -58,12 +58,6 @@ export const formatCartMessage = (cartItems, packItems, userDetails) => {
         
         // Format quantity logic
         let qtyDisplay = `${item.quantity} unit(s)`;
-        // If it's a decimal less than 1, assume it's kg -> g conversion or similar if needed.
-        // User requested: "sending the items value in decimals" -> "fix this".
-        // Use case: 0.5 quantity usually means 500g if base unit is 1kg.
-        // If the item quantity in the pack is an integer (which it seems to be for packs), then just show integer.
-        // But if the user means the 250rs pack which had: { id: 'nuts', quantity: 0.5 },
-        // then we should format it.
         if (item.quantity < 1 && item.quantity > 0) {
             qtyDisplay = `${item.quantity * 1000}g`;
         }
@@ -86,7 +80,18 @@ export const formatCartMessage = (cartItems, packItems, userDetails) => {
   
   const total = itemsTotal + packsTotal;
   
-  message += `\n*Total: ₹${total.toFixed(2)}*\n\n`;
+  if (finalTotal !== null && finalTotal < total) {
+    message += `\n*Subtotal: ₹${total.toFixed(2)}*`;
+    if (appliedReward) {
+      message += `\nReward discount applied`;
+    }
+    if (appliedCoupon) {
+      message += `\nCoupon discount applied`;
+    }
+    message += `\n*Total: ₹${Number(finalTotal).toFixed(2)}*\n\n`;
+  } else {
+    message += `\n*Total: ₹${total.toFixed(2)}*\n\n`;
+  }
   
   if (userDetails) {
     message += `*Customer Details:*\n`;

@@ -41,20 +41,8 @@ const orderSchema = new mongoose.Schema({
   totalAmount: Number,
   finalAmount: Number,
 
-  appliedReward: {
-    rewardId: { type: mongoose.Schema.Types.ObjectId, ref: 'Reward', default: null },
-    type: String,
-    value: Number,
-    label: String,
-  },
-
-  appliedCoupon: {
-    couponId: { type: mongoose.Schema.Types.ObjectId, ref: 'Coupon', default: null },
-    code: String,
-    type: String,
-    discount: Number,
-    freeShipping: Boolean,
-  },
+  appliedReward: mongoose.Schema.Types.Mixed,
+  appliedCoupon: mongoose.Schema.Types.Mixed,
 
   referralAgentId: {
     type: mongoose.Schema.Types.ObjectId,
