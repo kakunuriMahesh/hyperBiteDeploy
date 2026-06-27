@@ -414,16 +414,10 @@ const Cart = () => {
   const handleApplyCoupon = async () => {
     if (!couponCode.trim()) return;
     const code = couponCode.trim().toUpperCase();
-    // Check minCartValue from lookup data for offer coupons
-    const matchedOffer = lookupData?.offerCoupons?.find(o => o.code === code);
-    if (matchedOffer && matchedOffer.minCartValue > 0 && checkoutSummary.sellingTotal < matchedOffer.minCartValue) {
-      setCouponError(`Minimum cart value of ₹${matchedOffer.minCartValue} required to use this coupon`);
-      return;
-    }
     setCouponLoading(true);
     setCouponError('');
     try {
-      const result = await validateCoupon(code, lookupValue || rewardsIdentifier);
+      const result = await validateCoupon(code, lookupValue || rewardsIdentifier, checkoutSummary.sellingTotal);
       if (!result.valid) {
         setCouponError(result.reason || 'Invalid coupon code');
         return;
@@ -455,15 +449,11 @@ const Cart = () => {
     }
   };
 
-  const handleApplyOfferCoupon = async (offerCode, minCartValue) => {
-    if (minCartValue > 0 && checkoutSummary.sellingTotal < minCartValue) {
-      setCouponError(`Minimum cart value of ₹${minCartValue} required to use this coupon`);
-      return;
-    }
+  const handleApplyOfferCoupon = async (offerCode) => {
     setCouponLoading(true);
     setCouponError('');
     try {
-      const result = await validateCoupon(offerCode, lookupValue || rewardsIdentifier);
+      const result = await validateCoupon(offerCode, lookupValue || rewardsIdentifier, checkoutSummary.sellingTotal);
       if (!result.valid) {
         setCouponError(result.reason || 'Cannot apply this coupon');
         return;
@@ -1742,7 +1732,7 @@ const Cart = () => {
                             return (
                               <button
                                 key={o.id}
-                                onClick={() => eligible && handleApplyOfferCoupon(o.code, o.minCartValue)}
+                                onClick={() => eligible && handleApplyOfferCoupon(o.code)}
                                 disabled={!eligible}
                                 style={{
                                   display: "flex",
@@ -1792,7 +1782,7 @@ const Cart = () => {
                             const eligible = sellingTotal >= minCart;
                             return (
                               <button
-                                onClick={() => eligible && handleApplyOfferCoupon(lookupData.agent.personalCode, minCart)}
+                                onClick={() => eligible && handleApplyOfferCoupon(lookupData.agent.personalCode)}
                                 style={{
                                   display: "flex",
                                   alignItems: "center",
@@ -1828,7 +1818,7 @@ const Cart = () => {
                             const eligible = sellingTotal >= minCart;
                             return (
                               <button
-                                onClick={() => eligible && handleApplyOfferCoupon(lookupData.referralAgent.referralCode, minCart)}
+                                onClick={() => eligible && handleApplyOfferCoupon(lookupData.referralAgent.referralCode)}
                                 style={{
                                   display: "flex",
                                   alignItems: "center",
@@ -2012,7 +2002,7 @@ const Cart = () => {
                 }
               }
               if (appliedCoupon && appliedCoupon.code) {
-                const result = await validateCoupon(appliedCoupon.code, verifiedId);
+                const result = await validateCoupon(appliedCoupon.code, verifiedId, checkoutSummary.sellingTotal);
                 if (!result.valid) {
                   toast.error(result.reason || 'Applied coupon is no longer valid');
                   setAppliedCoupon(null);

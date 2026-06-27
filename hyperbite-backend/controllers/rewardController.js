@@ -186,7 +186,7 @@ exports.validateReward = async (req, res) => {
 
 exports.validateCoupon = async (req, res) => {
   try {
-    const { code, customerIdentifier } = req.body;
+    const { code, customerIdentifier, cartTotal } = req.body;
     if (!code || typeof code !== 'string') {
       return res.status(400).json({ error: 'Coupon code is required' });
     }
@@ -207,6 +207,17 @@ exports.validateCoupon = async (req, res) => {
     }
     if (coupon.maxUses !== null && coupon.currentUses >= coupon.maxUses) {
       return res.json({ valid: false, reason: 'This coupon has reached its usage limit.' });
+    }
+
+    // ── Minimum cart value check ──
+    if (coupon.minCartValue > 0) {
+      const total = Number(cartTotal) || 0;
+      if (total < coupon.minCartValue) {
+        return res.json({
+          valid: false,
+          reason: `Minimum cart value of ₹${coupon.minCartValue} required to use this coupon.`,
+        });
+      }
     }
 
     // ── Per-customer limit (offer coupons: once per email/phone) ──
@@ -231,6 +242,37 @@ exports.validateCoupon = async (req, res) => {
           valid: false,
           reason: `The associated ${coupon.type === 'referral' ? 'agent' : 'collaborator'} account is inactive.`,
         });
+      }
+
+      // ── Identifier eligibility check ──
+      // Collaborator personal codes are for the agent's own use only.
+      // Referral codes may only be used if the customer identifier matches the agent's referral scheme.
+      if (customerIdentifier) {
+        const normalizedId = customerIdentifier.toLowerCase().trim();
+
+        if (coupon.type === 'collaborator') {
+          // personalCode belongs exclusively to the collaborator (agent)
+          const agentEmail = (agent.email || '').toLowerCase().trim();
+          const agentPhone = (agent.phone || '').toLowerCase().trim();
+          if (normalizedId !== agentEmail && normalizedId !== agentPhone) {
+            return res.json({
+              valid: false,
+              reason: 'This collaborator code is not eligible for your account.',
+            });
+          }
+        }
+
+        if (coupon.type === 'referral') {
+          // Referral codes cannot be used by the agent themselves
+          const agentEmail = (agent.email || '').toLowerCase().trim();
+          const agentPhone = (agent.phone || '').toLowerCase().trim();
+          if (normalizedId === agentEmail || normalizedId === agentPhone) {
+            return res.json({
+              valid: false,
+              reason: 'You cannot use your own referral code.',
+            });
+          }
+        }
       }
 
       if (coupon.type === 'collaborator') {

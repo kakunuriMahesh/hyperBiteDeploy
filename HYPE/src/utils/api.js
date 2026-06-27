@@ -49,10 +49,10 @@ export function checkIdentifier(identifier) {
 }
 
 // ── Coupons ──
-export function validateCoupon(code, customerIdentifier) {
+export function validateCoupon(code, customerIdentifier, cartTotal) {
   return request('/api/rewards/validate-coupon', {
     method: 'POST',
-    body: JSON.stringify({ code, customerIdentifier }),
+    body: JSON.stringify({ code, customerIdentifier, cartTotal }),
   });
 }
 
