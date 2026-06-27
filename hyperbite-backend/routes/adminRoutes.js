@@ -367,6 +367,119 @@ router.delete("/coupons/:id", async (req, res) => {
 });
 
 // ──────────────────────────────────────────────
+//  RETAIL COUPON GENERATION & EXPORT
+// ──────────────────────────────────────────────
+
+function generateRandomString(length) {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let result = '';
+  for (let i = 0; i < length; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return result;
+}
+
+router.post("/coupons/generate-retail", async (req, res) => {
+  try {
+    const { codePrefix, count, discount, maxUses, expiresAt, minCartValue, randomLength } = req.body;
+
+    if (!codePrefix || !count || count < 1) {
+      return res.status(400).json({ error: "codePrefix and count (>= 1) are required" });
+    }
+
+    const prefix = codePrefix.trim().toUpperCase();
+    const len = randomLength || 6;
+    const existingCodes = await Coupon.find({ code: { $regex: `^${prefix}` } }).select('code');
+    const existingSet = new Set(existingCodes.map(c => c.code));
+
+    const generated = [];
+    const batch = [];
+    let attempts = 0;
+    const maxAttempts = count * 10;
+
+    while (batch.length < count && attempts < maxAttempts) {
+      attempts++;
+      const code = prefix + generateRandomString(len);
+      if (!existingSet.has(code)) {
+        existingSet.add(code);
+        batch.push({
+          code,
+          type: 'retail',
+          discount: discount || 0,
+          maxUses: maxUses || null,
+          expiresAt: expiresAt || null,
+          minCartValue: minCartValue || 0,
+          isActive: true,
+          perCustomerLimit: 1,
+        });
+      }
+    }
+
+    if (batch.length === 0) {
+      return res.status(400).json({ error: "Could not generate any unique coupon codes. Try a different prefix or longer random length." });
+    }
+
+    const inserted = await Coupon.insertMany(batch);
+    generated.push(...inserted);
+
+    res.status(201).json({ count: generated.length, coupons: generated });
+  } catch (error) {
+    if (error.code === 11000) {
+      return res.status(400).json({ error: "Duplicate code collision. Try again with a different prefix or longer random length." });
+    }
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.get("/coupons/export", async (req, res) => {
+  try {
+    const filter = { type: 'retail' };
+    if (req.query.code) filter.code = { $regex: req.query.code, $options: 'i' };
+
+    const coupons = await Coupon.find(filter).sort({ createdAt: -1 }).lean();
+
+    const ExcelJS = require('exceljs');
+    const workbook = new ExcelJS.Workbook();
+    const sheet = workbook.addWorksheet('Retail Coupons');
+
+    sheet.columns = [
+      { header: 'Code', key: 'code', width: 25 },
+      { header: 'Discount (%)', key: 'discount', width: 15 },
+      { header: 'Max Uses', key: 'maxUses', width: 12 },
+      { header: 'Used', key: 'currentUses', width: 10 },
+      { header: 'Min Cart Value', key: 'minCartValue', width: 18 },
+      { header: 'Expires At', key: 'expiresAt', width: 20 },
+      { header: 'Active', key: 'isActive', width: 10 },
+      { header: 'Created At', key: 'createdAt', width: 20 },
+    ];
+
+    coupons.forEach(c => {
+      sheet.addRow({
+        code: c.code,
+        discount: c.discount,
+        maxUses: c.maxUses ?? 'Unlimited',
+        currentUses: c.currentUses,
+        minCartValue: c.minCartValue,
+        expiresAt: c.expiresAt ? new Date(c.expiresAt).toISOString().split('T')[0] : 'Never',
+        isActive: c.isActive ? 'Yes' : 'No',
+        createdAt: new Date(c.createdAt).toISOString().split('T')[0],
+      });
+    });
+
+    const headerRow = sheet.getRow(1);
+    headerRow.font = { bold: true };
+
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename=retail-coupons-${Date.now()}.xlsx`);
+
+    await workbook.xlsx.write(res);
+    res.end();
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ──────────────────────────────────────────────
 //  COUPON USAGE (read-only analytics)
 // ──────────────────────────────────────────────
 

@@ -13,7 +13,7 @@ const couponUsageSchema = new mongoose.Schema({
   },
   type: {
     type: String,
-    enum: ['offer', 'referral', 'collaborator'],
+    enum: ['offer', 'referral', 'collaborator', 'retail'],
     required: true,
   },
   customerIdentifier: {
