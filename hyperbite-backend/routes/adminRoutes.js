@@ -324,7 +324,48 @@ router.get("/coupons", async (req, res) => {
     if (req.query.type) filter.type = req.query.type;
     if (req.query.isActive !== undefined) filter.isActive = req.query.isActive === 'true';
 
-    const coupons = await Coupon.find(filter).sort({ createdAt: -1 }).populate('agentId', 'name email');
+    let coupons = await Coupon.find(filter).sort({ createdAt: -1 }).populate('agentId', 'name email').lean();
+
+    // Auto-backfill prefix for retail coupons that are missing it.
+    // Strategy: for each code try all possible random-length splits [4,6,8,10,12],
+    // pick the prefix that occurs most frequently across all codes (consensus approach).
+    const missingPrefix = coupons.filter(c => c.type === 'retail' && !c.prefix);
+    if (missingPrefix.length > 0) {
+      const RANDOM_LENS = [4, 6, 8, 10, 12];
+      const freq = {};
+      for (const c of missingPrefix) {
+        for (const len of RANDOM_LENS) {
+          if (c.code.length > len) {
+            const p = c.code.slice(0, c.code.length - len);
+            freq[p] = (freq[p] || 0) + 1;
+          }
+        }
+      }
+      const toUpdate = [];
+      for (const c of missingPrefix) {
+        let bestPrefix = c.code.slice(0, -4);
+        let bestScore = 0;
+        for (const len of RANDOM_LENS) {
+          if (c.code.length > len) {
+            const p = c.code.slice(0, c.code.length - len);
+            const score = freq[p] || 0;
+            if (score > bestScore) {
+              bestScore = score;
+              bestPrefix = p;
+            }
+          }
+        }
+        c.prefix = bestPrefix;
+        toUpdate.push({ _id: c._id, prefix: bestPrefix });
+      }
+      if (toUpdate.length > 0) {
+        const ops = toUpdate.map(u => ({
+          updateOne: { filter: { _id: u._id }, update: { $set: { prefix: u.prefix } } }
+        }));
+        await Coupon.bulkWrite(ops).catch(() => {});
+      }
+    }
+
     res.json(coupons);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -361,6 +402,16 @@ router.delete("/coupons/:id", async (req, res) => {
     const coupon = await Coupon.findByIdAndDelete(req.params.id);
     if (!coupon) return res.status(404).json({ error: "Coupon not found" });
     res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.delete("/coupons/batch/:prefix", async (req, res) => {
+  try {
+    const prefix = req.params.prefix.toUpperCase();
+    const result = await Coupon.deleteMany({ type: 'retail', prefix });
+    res.json({ success: true, deletedCount: result.deletedCount });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -404,6 +455,7 @@ router.post("/coupons/generate-retail", async (req, res) => {
         existingSet.add(code);
         batch.push({
           code,
+          prefix,
           type: 'retail',
           discount: discount || 0,
           maxUses: maxUses || null,
