@@ -301,27 +301,18 @@ exports.verifyPayment = async (req, res) => {
         }
       }
 
-      // 4. Register shipment in Shiprocket
+      // 4. Register shipment in Shiprocket (via cron)
+      // Mark as PENDING so the cron job picks it up and calls Shiprocket.
+      // Do NOT call shiprocket directly here — the cron handles retries
+      // and respects MAX_RETRIES.
       if (updated.customer?.pincode) {
         try {
-          const shipResult = await shiprocketController.createShiprocketOrder(updated);
-          if (shipResult && shipResult.shipment_id) {
-            await Order.findByIdAndUpdate(updated._id, {
-              $set: {
-                shipmentStatus: 'CREATED',
-                shiprocketShipmentId: shipResult.shipment_id,
-                courierName: shipResult.courier_name || '',
-                awbCode: shipResult.awb_code || '',
-                trackingUrl: shipResult.tracking_url || '',
-              }
-            });
-            console.log(`[PaymentController] Shipment created for order ${updated._id}, ID: ${shipResult.shipment_id}`);
-          }
-        } catch (shipErr) {
-          console.error(`[PaymentController] Shipment registration failed for order ${updated._id}:`, shipErr.message);
           await Order.findByIdAndUpdate(updated._id, {
-            $set: { shipmentStatus: 'FAILED', shiprocketError: shipErr.message }
+            $set: { shipmentStatus: 'PENDING' }
           });
+          console.log(`[PaymentController] Order ${updated._id} queued for shipment (PENDING)`);
+        } catch (updateErr) {
+          console.error(`[PaymentController] Failed to set shipmentStatus=PENDING for order ${updated._id}:`, updateErr.message);
         }
       }
     }

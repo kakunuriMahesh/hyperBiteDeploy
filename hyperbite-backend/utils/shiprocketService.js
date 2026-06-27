@@ -12,29 +12,43 @@ async function generateToken() {
   return response.data.token;
 }
 
+function sanitizePhone(phone) {
+  // Strip everything except digits, then take the last 10
+  const digits = (phone || '').replace(/\D/g, '');
+  return digits.slice(-10);
+}
+
+function sanitizePincode(pincode) {
+  const digits = (pincode || '').replace(/\D/g, '');
+  return digits.slice(0, 6);
+}
+
+function splitName(fullName) {
+  // Shiprocket expects first name (billing_customer_name) and last name (billing_last_name)
+  const parts = (fullName || '').trim().split(/\s+/);
+  const first = parts[0] || '';
+  const last = parts.length > 1 ? parts.slice(1).join(' ') : '.';
+  return { first, last };
+}
+
 exports.createShiprocketOrder = async (order) => {
   try {
     console.log("[Shiprocket] Generating token...");
     const token = await generateToken();
     console.log("[Shiprocket] Token generated successfully");
-    console.log('[Shiprocket] Order customer details:', {
-      name: order.customer.name,
-      email: order.customer.email,
-      phone: order.customer.phone,
-      whatsapp: order.customer.whatsapp,
-      address: order.customer.address,
-      city: order.customer.city,
-      state: order.customer.state,
-      country: order.customer.country,
-      pincode: order.customer.pincode
-    });
+
+    // Sanitize customer fields for Shiprocket API requirements
+    const phone = sanitizePhone(order.customer.phone);
+    const pincode = sanitizePincode(order.customer.pincode);
+    const { first: firstName, last: lastName } = splitName(order.customer.name);
+
+    console.log('[Shiprocket] Sanitized customer:', { name: firstName, lastName, phone, pincode });
 
     // Build detailed order_items: expand packs into individual sub-items
     let orderItems = [];
     if (order.items && Array.isArray(order.items) && order.items.length > 0) {
       order.items.forEach((item) => {
         if (item.type === "pack" && item.subItems && item.subItems.length > 0) {
-          // Group pack as a single line item with ingredients listed in the name
           const ingredientsList = item.subItems
             .map((sub) => `${sub.name} ×${(sub.quantity || 1) * (item.quantity || 1)}`)
             .join(", ");
@@ -46,7 +60,6 @@ exports.createShiprocketOrder = async (order) => {
             selling_price: item.price || 0,
           });
         } else {
-          // Regular product item
           orderItems.push({
             name: item.name || "Product",
             sku: item.productId || item.id || `SKU-${item.name}`,
@@ -56,42 +69,39 @@ exports.createShiprocketOrder = async (order) => {
         }
       });
     } else {
-      // Fallback if items not available
       orderItems = [
         {
           name: "Order Items",
           sku: "GENERAL",
           units: 1,
-          selling_price: order.totalAmount || 0
+          selling_price: Number(order.totalAmount || order.amount || 0),
         }
       ];
     }
 
-    // Calculate weight based on total units (approx 50g per unit)
     const totalUnits = orderItems.reduce((sum, oi) => sum + (oi.units || 1), 0);
-    const estimatedWeight = Math.max(0.5, Math.round(totalUnits * 0.05 * 10) / 10); // min 0.5 KG
+    const estimatedWeight = Math.max(0.5, Math.round(totalUnits * 0.05 * 10) / 10);
 
     const payload = {
       order_id: order._id.toString(),
       order_date: new Date(),
-      billing_customer_name: order.customer.name,
-      billing_last_name: ".", // required field
-      billing_address: order.customer.address,
-      billing_city: order.customer.city,
-      billing_pincode: order.customer.pincode,
-      billing_state: order.customer.state,
-      billing_country: order.customer.country,
-      billing_email: order.customer.email,
-      billing_phone: order.customer.phone,
+      billing_customer_name: firstName,
+      billing_last_name: lastName,
+      billing_address: order.customer.address || '',
+      billing_city: order.customer.city || '',
+      billing_pincode: pincode,
+      billing_state: order.customer.state || '',
+      billing_country: order.customer.country || '',
+      billing_email: order.customer.email || '',
+      billing_phone: phone,
       shipping_is_billing: true,
       payment_method: "Prepaid",
       order_items: orderItems,
-      // some payloads come with totalAmount, others with amount
-      sub_total: order.totalAmount || order.amount || 0,
-      weight: estimatedWeight,  // in KG (dynamic based on items)
-      length: 20,               // in CM
-      breadth: 15,              // in CM
-      height: 10                // in CM
+      sub_total: Number(order.totalAmount || order.amount || 0),
+      weight: estimatedWeight,
+      length: 20,
+      breadth: 15,
+      height: 10
     };
 
     console.log("[Shiprocket] Creating order with payload:", JSON.stringify(payload, null, 2));
@@ -109,7 +119,17 @@ exports.createShiprocketOrder = async (order) => {
     console.log("[Shiprocket] Order created successfully:", response.data);
     return response.data;
   } catch (error) {
-    console.error("[Shiprocket] Error creating order:", error.response?.data || error.message);
-    throw error;
+    const errorBody = error.response?.data || {};
+    const statusCode = error.response?.status || 0;
+    console.error("[Shiprocket] Error creating order:", JSON.stringify({
+      statusCode,
+      message: errorBody.message || error.message,
+      errors: errorBody.errors || errorBody,
+    }));
+    // Throw with the Shiprocket error detail so upstream catches can store it
+    const enhanced = new Error(errorBody.message || error.message);
+    enhanced.statusCode = statusCode;
+    enhanced.shiprocketResponse = errorBody;
+    throw enhanced;
   }
 };

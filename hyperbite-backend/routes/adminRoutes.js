@@ -88,11 +88,18 @@ router.patch("/order/:id/retry-shipment", async (req, res) => {
 
     console.log(`[Admin] Order ${order._id} reset to PENDING for retry`);
 
-    shipmentService.processOrderShipment(order._id).catch((err) => {
-      console.error(`[Admin] Immediate retry failed for order ${order._id}:`, err.message);
-    });
+    // Wait for the shipment to process and return the actual result
+    await shipmentService.processOrderShipment(order._id);
 
-    res.json({ success: true, shipmentStatus: "PENDING" });
+    // Re-fetch the order to see the final status
+    const updated = await Order.findById(order._id).select('shipmentStatus shiprocketShipmentId courierName awbCode trackingUrl shiprocketError');
+    console.log(`[Admin] Retry result for order ${order._id}:`, updated?.shipmentStatus);
+
+    if (updated?.shipmentStatus === 'CREATED') {
+      res.json({ success: true, shipmentStatus: 'CREATED', shipmentId: updated.shiprocketShipmentId, awb: updated.awbCode });
+    } else {
+      res.json({ success: true, shipmentStatus: updated?.shipmentStatus || 'FAILED', error: updated?.shiprocketError || null });
+    }
   } catch (error) {
     console.error("[Admin] Retry shipment error:", error.message);
     res.status(500).json({ error: error.message });

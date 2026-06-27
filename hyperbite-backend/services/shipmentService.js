@@ -27,6 +27,25 @@ exports.processOrderShipment = async (orderId) => {
 
   console.log(`[ShipmentService] Order ${orderId} claimed → PROCESSING`);
 
+  // Validate required fields before calling ShipRocket
+  const shipErrors = {};
+  if (!(order.customer?.address || order.address)) {
+    shipErrors.billing_address = "The billing address field is required";
+  }
+  if (!(order.customer?.phone || order.phone)) {
+    shipErrors.phone = "The billing phone field is required";
+  }
+  if (!(order.customer?.name || order.name)) {
+    shipErrors.name = "The billing name field is required";
+  }
+  if (Object.keys(shipErrors).length > 0) {
+    throw {
+      statusCode: 422,
+      message: "Validation failed - order missing required fields",
+      shiprocketResponse: { errors: shipErrors }
+    };
+  }
+
   // Step 2: Call ShipRocket
   try {
     const result = await shiprocketController.createShiprocketOrder(order);
@@ -47,9 +66,12 @@ exports.processOrderShipment = async (orderId) => {
 
     console.log(`[ShipmentService] Order ${orderId} → CREATED (${Date.now() - start}ms)`);
   } catch (err) {
-    console.error(`[ShipmentService] ShipRocket failed for order ${orderId}:`, err.message);
+    // Capture enhanced Shiprocket error detail from shiprocketService
+    const errorMessage = err.shiprocketResponse?.message || err.message || String(err);
+    const errorDetail = err.shiprocketResponse?.errors || {};
+    const combined = errorMessage + (Object.keys(errorDetail).length ? ' | ' + JSON.stringify(errorDetail) : '');
 
-    const errorMessage = err.response?.data?.message || err.response?.data || err.message;
+    console.error(`[ShipmentService] ShipRocket failed for order ${orderId}:`, combined);
 
     // Step 3b: Handle failure with retry count
     const retryCount = (order.retryCount || 0) + 1;
@@ -58,7 +80,7 @@ exports.processOrderShipment = async (orderId) => {
       await Order.findByIdAndUpdate(orderId, {
         $set: {
           shipmentStatus: "FAILED",
-          shiprocketError: typeof errorMessage === "string" ? errorMessage : JSON.stringify(errorMessage),
+          shiprocketError: combined,
           retryCount
         }
       });
@@ -67,7 +89,7 @@ exports.processOrderShipment = async (orderId) => {
       await Order.findByIdAndUpdate(orderId, {
         $set: {
           shipmentStatus: "PENDING",
-          shiprocketError: typeof errorMessage === "string" ? errorMessage : JSON.stringify(errorMessage),
+          shiprocketError: combined,
           retryCount
         }
       });
