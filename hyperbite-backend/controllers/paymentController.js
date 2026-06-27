@@ -304,10 +304,24 @@ exports.verifyPayment = async (req, res) => {
       // 4. Register shipment in Shiprocket
       if (updated.customer?.pincode) {
         try {
-          await shiprocketController.createShipment(updated);
-          console.log(`[PaymentController] Shipment registered for order ${updated._id}`);
+          const shipResult = await shiprocketController.createShiprocketOrder(updated);
+          if (shipResult && shipResult.shipment_id) {
+            await Order.findByIdAndUpdate(updated._id, {
+              $set: {
+                shipmentStatus: 'CREATED',
+                shiprocketShipmentId: shipResult.shipment_id,
+                courierName: shipResult.courier_name || '',
+                awbCode: shipResult.awb_code || '',
+                trackingUrl: shipResult.tracking_url || '',
+              }
+            });
+            console.log(`[PaymentController] Shipment created for order ${updated._id}, ID: ${shipResult.shipment_id}`);
+          }
         } catch (shipErr) {
           console.error(`[PaymentController] Shipment registration failed for order ${updated._id}:`, shipErr.message);
+          await Order.findByIdAndUpdate(updated._id, {
+            $set: { shipmentStatus: 'FAILED', shiprocketError: shipErr.message }
+          });
         }
       }
     }
