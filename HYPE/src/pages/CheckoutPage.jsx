@@ -8,6 +8,9 @@ import { toast } from "react-toastify";
 import { allowedPincodes } from "../config/allowedPincodes";
 import { productDetails } from "../config/productDetails";
 import Navbar from "../components/Navbar";
+import PhoneInput from "react-phone-number-input";
+import { isValidPhoneNumber } from "react-phone-number-input";
+import "react-phone-number-input/style.css";
 
 const CheckoutPage = () => {
   const navigate = useNavigate();
@@ -28,11 +31,10 @@ const CheckoutPage = () => {
   const [breakpoint, setBreakpoint] = useState("desktop");
   const isDesktop = breakpoint !== "mobile";
   const [orderExpanded, setOrderExpanded] = useState(window.innerWidth >= 768);
+  const [phoneValue, setPhoneValue] = useState();
   const [formData, setFormData] = useState({
     name: "",
     phone: "",
-    email: "",
-    whatsapp: "",
     address: "",
     city: "",
     state: "",
@@ -40,6 +42,7 @@ const CheckoutPage = () => {
     pincode: "",
   });
   const [pincodeError, setPincodeError] = useState("");
+  const [formErrors, setFormErrors] = useState({});
   const [isPaymentLoading, setIsPaymentLoading] = useState(false);
   const [isFormSubmitting, setIsFormSubmitting] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
@@ -101,6 +104,7 @@ const CheckoutPage = () => {
   useEffect(() => {
     const savedDetails = getCookie("userDetails");
     if (savedDetails) {
+      delete savedDetails.phone;
       setFormData(savedDetails);
     }
     if (pincode) {
@@ -110,15 +114,55 @@ const CheckoutPage = () => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    if (name === "pincode") {
+      const digitsOnly = value.replace(/\D/g, "");
+      setFormData((prev) => ({ ...prev, pincode: digitsOnly }));
+    } else if (name === "city" || name === "state" || name === "country") {
+      const noDigits = value.replace(/\d/g, "");
+      setFormData((prev) => ({ ...prev, [name]: noDigits }));
+    } else {
+      setFormData((prev) => ({ ...prev, [name]: value }));
+    }
     if (name === "pincode") setPincodeError("");
   };
 
-  const handlePayNow = () => {
-    if (!formData.pincode.trim()) {
-      setPincodeError("Please enter a pincode");
-      return;
+  const validateForm = () => {
+    const errors = {};
+    if (!formData.name?.trim()) errors.name = "Full Name is required";
+    if (!phoneValue) {
+      errors.phone = "Phone Number is required";
+    } else if (!isValidPhoneNumber(phoneValue)) {
+      errors.phone = "Enter a valid phone number";
     }
+    if (!formData.pincode?.trim()) {
+      errors.pincode = "Pincode is required";
+    } else if (formData.pincode.length !== 6) {
+      errors.pincode = "Pincode must be exactly 6 digits";
+    }
+    if (!formData.city?.trim()) {
+      errors.city = "City is required";
+    } else if (/\d/.test(formData.city)) {
+      errors.city = "City should not contain numbers";
+    }
+    if (!formData.state?.trim()) {
+      errors.state = "State is required";
+    } else if (/\d/.test(formData.state)) {
+      errors.state = "State should not contain numbers";
+    }
+    if (!formData.country?.trim()) {
+      errors.country = "Country is required";
+    } else if (/\d/.test(formData.country)) {
+      errors.country = "Country should not contain numbers";
+    }
+    if (!formData.address?.trim()) {
+      errors.address = "Address is required";
+    }
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const handlePayNow = () => {
+    if (!validateForm()) return;
     initiateRazorpay();
   };
 
@@ -178,9 +222,8 @@ const CheckoutPage = () => {
         body: JSON.stringify({
           customer: {
             name: formData.name,
-            email: formData.email,
-            phone: formData.phone,
-            whatsapp: formData.whatsapp,
+            email: "",
+            phone: phoneValue,
             address: formData.address,
             city: formData.city,
             state: formData.state,
@@ -188,7 +231,7 @@ const CheckoutPage = () => {
             pincode: formData.pincode,
           },
           items,
-          customerIdentifier: routeState.verifiedIdentifier || formData.email || formData.phone || null,
+          customerIdentifier: routeState.verifiedIdentifier || phoneValue || null,
           appliedReward: appliedReward || null,
           appliedCoupon: appliedCoupon || null,
           finalAmount: checkoutSummary.finalTotal,
@@ -239,8 +282,7 @@ const CheckoutPage = () => {
         },
         prefill: {
           name: formData.name,
-          email: formData.email,
-          contact: formData.phone,
+          contact: phoneValue,
         },
         theme: { color: "#1e3a8a" },
       };
@@ -260,17 +302,15 @@ const CheckoutPage = () => {
 
   const handlePlaceOrder = (e) => {
     e.preventDefault();
+    if (!validateForm()) return;
 
-    if (!formData.pincode.trim()) {
-      setPincodeError("Please enter a pincode");
-      return;
-    }
+    const dataForMsg = { ...formData, phone: phoneValue };
 
-    setCookie("userDetails", formData, 30);
+    setCookie("userDetails", dataForMsg, 30);
     setIsFormSubmitting(true);
 
     setTimeout(() => {
-      const message = formatCartMessage(cartItems, packItems, formData, appliedReward, appliedCoupon, checkoutSummary.finalTotal);
+      const message = formatCartMessage(cartItems, packItems, dataForMsg, appliedReward, appliedCoupon, checkoutSummary.finalTotal);
       const encodedMessage = encodeURIComponent(message);
       const whatsappUrl = `https://wa.me/919985944466?text=${encodedMessage}`;
       window.open(whatsappUrl, "_blank");
@@ -472,20 +512,60 @@ const CheckoutPage = () => {
         Delivery Details
       </h2>
 
+      <style>{`
+        .custom-phone-input.PhoneInput {
+          font-family: 'Inter', sans-serif;
+          font-size: 14px;
+        }
+        .custom-phone-input .PhoneInputInput {
+          width: 100%;
+          padding: 10px 12px;
+          border: none;
+          outline: none;
+          font-family: 'Inter', sans-serif;
+          font-size: 14px;
+          background: #fff;
+          box-sizing: border-box;
+        }
+        .custom-phone-input .PhoneInputCountry {
+          padding-left: 10px;
+          background: #fff;
+        }
+      `}</style>
+
       <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(2, 1fr)", gap: "16px", marginBottom: "24px" }}>
+        <div style={{ gridColumn: isMobile ? "1" : "1 / -1" }}>
+          <label style={{ fontFamily: "'Inter', sans-serif", fontSize: "13px", marginBottom: "6px", color: "#4b5563", fontWeight: 500, display: "flex", alignItems: "center", gap: "4px" }}>
+            Phone Number <span style={{ color: "#ef4444" }}>*</span>
+          </label>
+          <div style={{
+            border: formErrors.phone ? "1px solid #ef4444" : "1px solid #d1d5db",
+            borderRadius: "8px", overflow: "hidden",
+          }}>
+            <PhoneInput
+              international
+              defaultCountry="IN"
+              limitMaxLength
+              value={phoneValue}
+              onChange={(v) => { setPhoneValue(v); if (formErrors.phone) setFormErrors((prev) => ({ ...prev, phone: "" })); }}
+              className="custom-phone-input"
+            />
+          </div>
+          {formErrors.phone && (
+            <p style={{ color: "#ef4444", fontSize: "12px", marginTop: "4px", fontFamily: "'Inter', sans-serif" }}>{formErrors.phone}</p>
+          )}
+        </div>
+
         {[
-          { name: "name", label: "Full Name", type: "text", required: true },
-          { name: "phone", label: "Phone Number", type: "tel", required: true },
-          { name: "email", label: "Email Address", type: "email", required: true },
-          { name: "whatsapp", label: "WhatsApp Number", type: "tel", required: true },
-          { name: "pincode", label: "Pincode", type: "text", required: true },
-          { name: "city", label: "City / Town", type: "text", required: true },
-          { name: "state", label: "State", type: "text", required: true },
-          { name: "country", label: "Country", type: "text", required: true },
+          { name: "name", label: "Full Name", type: "text" },
+          { name: "pincode", label: "Pincode", type: "text", inputMode: "numeric" },
+          { name: "city", label: "City / Town", type: "text" },
+          { name: "state", label: "State", type: "text" },
+          { name: "country", label: "Country", type: "text" },
         ].map((field) => (
           <div key={field.name}>
             <label style={{ fontFamily: "'Inter', sans-serif", fontSize: "13px", marginBottom: "6px", color: "#4b5563", fontWeight: 500, display: "flex", alignItems: "center", gap: "4px" }}>
-              {field.label} {field.required && <span style={{ color: "#ef4444" }}>*</span>}
+              {field.label} <span style={{ color: "#ef4444" }}>*</span>
               {field.name === "pincode" && pincode && (
                 <span style={{ background: "linear-gradient(135deg, #22c55e 0%, #16a34a 100%)", color: "#fff", padding: "2px 8px", borderRadius: "12px", fontSize: "11px", fontWeight: 500 }}>
                   Verified
@@ -494,21 +574,27 @@ const CheckoutPage = () => {
             </label>
             <input
               type={field.type} name={field.name} value={formData[field.name]}
-              onChange={handleInputChange} required={field.required}
+              onChange={(e) => { handleInputChange(e); if (formErrors[field.name]) setFormErrors((prev) => ({ ...prev, [field.name]: "" })); }}
+              inputMode={field.inputMode || "text"}
               style={{
                 width: "100%", padding: "10px 12px",
-                border: pincodeError && field.name === "pincode" ? "1px solid #ef4444"
+                border: formErrors[field.name] ? "1px solid #ef4444"
+                  : pincodeError && field.name === "pincode" ? "1px solid #ef4444"
                   : pincode && field.name === "pincode" ? "1px solid #22c55e" : "1px solid #d1d5db",
                 borderRadius: "8px", fontFamily: "'Inter', sans-serif", fontSize: "14px",
                 backgroundColor: "#fff", transition: "border-color 0.2s ease", boxSizing: "border-box",
               }}
               onFocus={(e) => { e.target.style.borderColor = "#3b82f6"; }}
               onBlur={(e) => {
-                e.target.style.borderColor = pincodeError && field.name === "pincode"
-                  ? "#ef4444" : pincode && field.name === "pincode" ? "#22c55e" : "#d1d5db";
+                e.target.style.borderColor = formErrors[field.name] ? "#ef4444"
+                  : pincodeError && field.name === "pincode" ? "#ef4444"
+                  : pincode && field.name === "pincode" ? "#22c55e" : "#d1d5db";
               }}
             />
-            {pincodeError && field.name === "pincode" && (
+            {formErrors[field.name] && (
+              <p style={{ color: "#ef4444", fontSize: "12px", marginTop: "4px", fontFamily: "'Inter', sans-serif" }}>{formErrors[field.name]}</p>
+            )}
+            {pincodeError && field.name === "pincode" && !formErrors[field.name] && (
               <p style={{ color: "#ef4444", fontSize: "12px", marginTop: "4px", fontFamily: "'Inter', sans-serif" }}>{pincodeError}</p>
             )}
           </div>
@@ -520,16 +606,21 @@ const CheckoutPage = () => {
           Full Address / Landmark Details <span style={{ color: "#ef4444" }}>*</span>
         </label>
         <textarea
-          name="address" value={formData.address} onChange={handleInputChange} required
+          name="address" value={formData.address}
+          onChange={(e) => { handleInputChange(e); if (formErrors.address) setFormErrors((prev) => ({ ...prev, address: "" })); }}
           placeholder="Enter your complete address with landmark details"
           style={{
-            width: "100%", padding: "10px 12px", border: "1px solid #d1d5db",
+            width: "100%", padding: "10px 12px",
+            border: formErrors.address ? "1px solid #ef4444" : "1px solid #d1d5db",
             borderRadius: "8px", fontFamily: "'Inter', sans-serif", fontSize: "14px",
             backgroundColor: "#fff", minHeight: "80px", transition: "border-color 0.2s ease", boxSizing: "border-box",
           }}
           onFocus={(e) => { e.target.style.borderColor = "#3b82f6"; }}
-          onBlur={(e) => { e.target.style.borderColor = "#d1d5db"; }}
+          onBlur={(e) => { e.target.style.borderColor = formErrors.address ? "#ef4444" : "#d1d5db"; }}
         />
+        {formErrors.address && (
+          <p style={{ color: "#ef4444", fontSize: "12px", marginTop: "4px", fontFamily: "'Inter', sans-serif" }}>{formErrors.address}</p>
+        )}
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(2, 1fr)", gap: "12px", marginBottom: "12px" }}>

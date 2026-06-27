@@ -97,11 +97,8 @@ export const formatCartMessage = (cartItems, packItems, userDetails, appliedRewa
     message += `*Customer Details:*\n`;
     message += `Name: ${userDetails.name}\n`;
     message += `Phone: ${userDetails.phone}\n`;
-    message += `Email: ${userDetails.email}\n`;
-    message += `WhatsApp: ${userDetails.whatsapp}\n`;
     message += `Pincode: ${userDetails.pincode}\n`;
     message += `Country: ${userDetails.country}\n`;
-    message += `Landmark: ${userDetails.landmark}\n`;
   }
   
   message += `\nPlease confirm the order and provide delivery timeline.`;

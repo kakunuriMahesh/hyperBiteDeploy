@@ -82,16 +82,14 @@ exports.createOrder = async (req, res) => {
     const orderData = {
       customer: {
         name: customer?.name || "",
-        email: customer?.email || "",
         phone: customer?.phone || "",
-        whatsapp: customer?.whatsapp || "",
         address: customer?.address || "",
         city: customer?.city || "",
         state: customer?.state || "",
         country: customer?.country || "",
         pincode: customer?.pincode || "",
       },
-      customerIdentifier: customerIdentifier || customer?.email || customer?.phone || null,
+      customerIdentifier: customerIdentifier || customer?.phone || null,
       items,
       totalAmount: itemTotal,
       finalAmount: computedFinal,

@@ -92,7 +92,6 @@ exports.createShiprocketOrder = async (order) => {
       billing_pincode: pincode,
       billing_state: order.customer.state || '',
       billing_country: order.customer.country || '',
-      billing_email: order.customer.email || '',
       billing_phone: phone,
       shipping_is_billing: true,
       payment_method: "Prepaid",
