@@ -71,6 +71,7 @@ function applyProductPalette(svg, product) {
 
 export default function OrbitSlider() {
   const [active, setActive] = useState(0)
+  const sectionRef = useRef(null)
   const visualRef = useRef(null)
   const orbitRingRef = useRef(null)
   const orbitSvgRef = useRef(null)
@@ -102,15 +103,16 @@ export default function OrbitSlider() {
     if (!visualRef.current) return { cx: 0, cy: 0, r: 0 }
     const w = visualRef.current.clientWidth
     const h = visualRef.current.clientHeight
+    if (!w || !h) return { cx: 0, cy: 0, r: 0 }
     return { cx: w / 1.4, cy: h / 1.5, r: Math.min(w, h) * 0.55 }
   }, [])
 
   const createSprinkle = useCallback((productIdx) => {
-    ingredientRef.current.forEach(el => { try { el.remove() } catch {} })
+    ingredientRef.current.forEach(el => { gsap.killTweensOf(el); try { el.remove() } catch {} })
     ingredientRef.current = []
 
     const seedPool = products[productIdx].seedImages
-    if (!seedPool) return
+    if (!seedPool || !sectionRef.current) return
 
     const vw = window.innerWidth
     const vh = window.innerHeight
@@ -119,11 +121,13 @@ export default function OrbitSlider() {
     const cx = pRect ? pRect.left + pRect.width / 2 : vw / 2
     const cy = pRect ? pRect.top + pRect.height / 2 : vh / 2
 
+    const sRect = sectionRef.current.getBoundingClientRect()
+
     for (let i = 0; i < 20; i++) {
       const img = document.createElement('img')
       img.src = seedPool[Math.floor(Math.random() * seedPool.length)]
-      img.style.cssText = `position:fixed;pointer-events:none;user-select:none;z-index:10;width:${24 + Math.random() * 12}px;height:auto;left:${cx}px;top:${cy}px;transform:translate(-50%,-50%);opacity:0.9;`
-      document.body.appendChild(img)
+      img.style.cssText = `position:absolute;pointer-events:none;user-select:none;width:${24 + Math.random() * 12}px;height:auto;left:${cx - sRect.left}px;top:${cy - sRect.top}px;transform:translate(-50%,-50%);opacity:0.9;`
+      sectionRef.current.appendChild(img)
       ingredientRef.current.push(img)
       gsap.to(img, {
         x: (Math.random() * vw * 1.5) - vw * 0.75,
@@ -132,6 +136,11 @@ export default function OrbitSlider() {
         scale: 0.3 + Math.random() * 0.7,
         duration: 1.5 + Math.random() * 0.5,
         ease: 'power2.out',
+        onComplete: () => {
+          try { img.remove() } catch {}
+          const idx = ingredientRef.current.indexOf(img)
+          if (idx > -1) ingredientRef.current.splice(idx, 1)
+        },
       })
     }
   }, [])
@@ -176,6 +185,7 @@ export default function OrbitSlider() {
 
   const positionItems = useCallback(() => {
     const { cx, cy, r } = getLayout()
+    if (!r) return
     const active = activeRef.current
     const targetRot = rotationRef.current
     const fromRot = prevRotRef.current
@@ -353,8 +363,20 @@ export default function OrbitSlider() {
   }, [updateUI, positionItems])
 
   useEffect(() => {
-    updateUI(0)
-    positionItems()
+    const tryPosition = () => {
+      const { r } = getLayout()
+      if (r) {
+        updateUI(0)
+        positionItems()
+      } else {
+        requestAnimationFrame(tryPosition)
+      }
+    }
+    tryPosition()
+
+    const ro = new ResizeObserver(() => { positionItems() })
+    if (visualRef.current) ro.observe(visualRef.current)
+
     autoRef.current = setInterval(() => {
       prevRotRef.current = rotationRef.current
       totalActiveRef.current += 1
@@ -367,16 +389,17 @@ export default function OrbitSlider() {
     const onResize = () => positionItems()
     window.addEventListener('resize', onResize)
     return () => {
+      ro.disconnect()
       if (autoRef.current) clearInterval(autoRef.current)
       window.removeEventListener('resize', onResize)
-      ingredientRef.current.forEach(el => { try { el.remove() } catch {} })
+      ingredientRef.current.forEach(el => { gsap.killTweensOf(el); try { el.remove() } catch {} })
     }
   }, [updateUI, positionItems])
 
   const navbarH = isMobile ? 80 : 70
 
   return (
-    <div style={{
+    <div ref={sectionRef} style={{
       width: '100%',
       height: `calc(100vh)`,
       paddingTop: `${navbarH}px`,
@@ -391,12 +414,13 @@ export default function OrbitSlider() {
         width: isMobile ? '100%' : '45%',
         maxHeight: isMobile ? '30vh' : '100%',
         padding: isMobile ? '12px 16px' : '90px 70px',
+        paddingTop: isMobile ? '32px' : '0px',
         textAlign: isMobile ? 'center' : 'left',
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'center',
       }}>
-        <h1 style={{ fontSize: isMobile ? '32px' : '90px', lineHeight: 1, margin: 0, fontFamily: "'Istok Web', sans-serif" }}>
+        <h1 style={{ fontSize: isMobile ? '42px' : '90px', lineHeight: 1, margin: 0, fontFamily: "'Istok Web', sans-serif" }}>
           <span className="font-bold" ref={mainWordRef} style={{ color: products[0].accentColor, fontFamily: "'Istok Web', sans-serif" }}>{products[0].word}</span><br />
           With Hyper Bite
         </h1>
@@ -440,7 +464,7 @@ export default function OrbitSlider() {
         {allOrbitItems.map((item, i) => (
           <div key={i} ref={el => itemsRef.current[i] = el} style={{
             position: 'absolute', top: 0, left: 0, borderRadius: '50%', overflow: 'hidden',
-            boxShadow: '0 4px 12px rgba(0,0,0,.1)',
+            boxShadow: '0 4px 12px rgba(0,0,0,.1)', opacity: 0,
           }}>
             <img src={item.img} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
           </div>
