@@ -110,7 +110,7 @@ const PackItemCard = ({
                 fontWeight: 700,
               }}
             >
-              ₹{pack.packPrice.toFixed(0)}
+              ₹{(pack.packPrice || 0).toFixed(0)}
             </span>
             {pack.packOffPrice > 0 && pack.packOffPrice !== pack.packPrice && (
               <>

@@ -71,7 +71,7 @@ function HomePage() {
         // Normal landing → ready to deliver products
         <LandingView
           onEnterPremiumMode={() => setShowPremiumMode(true)}
-          onOpenDetails={(id) => navigate(`/product/${id}`)}
+          onOpenDetails={(productId) => navigate(`/product/${productId}`)}
           breakpoint={breakpoint}
         />
       ) : (
@@ -194,7 +194,7 @@ export default function App() {
               <Route path="/" element={<HomePage />} />
               <Route path="/products" element={<Products />} />
               <Route path="/customize-pack/:packId" element={<CustomizePackPage />} />
-              <Route path="/product/:productId" element={<ProductDetails />} />
+              <Route path="/product/:slug" element={<ProductDetails />} />
               <Route path="/cart" element={<Cart />} />
               <Route path="/blog" element={<Blog />} />
               <Route path="/about" element={<About />} />

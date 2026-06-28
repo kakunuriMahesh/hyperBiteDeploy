@@ -67,6 +67,7 @@ const rewardSchema = new mongoose.Schema({
 rewardSchema.index({ identifier: 1 });
 rewardSchema.index({ claimed: 1, expiresAt: 1 });
 rewardSchema.index({ source: 1 });
-rewardSchema.index({ orderId: 1 }); // Supports idempotency check on purchase points award
+rewardSchema.index({ orderId: 1 });
+rewardSchema.index({ currentUses: 1, maxUses: 1 }); // Supports $expr query in lookupRewards
 
 module.exports = mongoose.model('Reward', rewardSchema);

@@ -70,7 +70,7 @@
 // export default HeroBanner;
 
 import React, { forwardRef, useEffect, useState } from "react";
-import { productDetails } from "../config/productDetails";
+import { fetchProductsFromAPI } from "../config/productDetails";
 import { productConfigs } from "../config/productConfig";
 
 // Import your special layouts
@@ -81,6 +81,11 @@ import SeedsLayout from "./SeedsLayout";
 const HeroBanner = forwardRef(
   ({ productType, onOpenDetails }, ref) => {
     const [breakpoint, setBreakpoint] = useState("desktop");
+    const [products, setProducts] = useState([]);
+
+    useEffect(() => {
+      fetchProductsFromAPI().then((map) => setProducts(Array.from(new Set(Object.values(map))))).catch(() => {});
+    }, []);
 
     useEffect(() => {
       const updateBreakpoint = () => {
@@ -129,8 +134,6 @@ const HeroBanner = forwardRef(
     }
 
     // Default: Landing view with ready-to-deliver products
-    const products = Object.values(productDetails);
-
     return (
       <div
         ref={ref}

@@ -42,7 +42,7 @@ const CustomizePackPage = () => {
   useEffect(() => {
     fetchProductsFromAPI().then((merged) => {
       setProductMap(merged);
-      setProducts(Object.values(merged));
+      setProducts(Array.from(new Set(Object.values(merged))));
     });
   }, []);
 
@@ -101,7 +101,7 @@ const CustomizePackPage = () => {
   const calculateTotals = () => {
     return products.reduce(
       (acc, product) => {
-        const priceValue = parseFloat(product.price.replace(/[^0-9.]/g, '')) || 0;
+        const priceValue = typeof product.price === 'number' ? product.price : (parseFloat(String(product.price).replace(/[^0-9.]/g, '')) || 0);
         const quantity = quantities[product.id] || 0;
         acc.price += priceValue * quantity;
         acc.items += quantity;
@@ -123,7 +123,7 @@ const CustomizePackPage = () => {
     const currentQty = quantities[productId] || 0;
     const newQty = Math.max(0, currentQty + change);
     const product = p;
-    const priceValue = parseFloat(product.price.replace(/[^0-9.]/g, '')) || 0;
+    const priceValue = typeof product.price === 'number' ? product.price : (parseFloat(String(product.price || '').replace(/[^0-9.]/g, '')) || 0);
 
     if (change > 0) {
       if (totalItems >= pack.maxItems) {
@@ -149,7 +149,7 @@ const CustomizePackPage = () => {
     if (numValue > currentQty) {
         const diff = numValue - currentQty;
         const product = productMap[productId];
-        const priceValue = parseFloat(product.price.replace(/[^0-9.]/g, '')) || 0;
+        const priceValue = typeof product?.price === 'number' ? product.price : (parseFloat(String(product?.price || '').replace(/[^0-9.]/g, '')) || 0);
 
         if (totalItems + diff > pack.maxItems) {
             toast.warning(`Pack Limit Reached: Maximum ${pack.maxItems} items allowed.`);
@@ -674,7 +674,7 @@ const CustomizePackPage = () => {
               >
                 {products.map((product) => {
                   const quantity = quantities[product.id] || 0;
-                  const price = parseFloat(product.price.replace(/[^0-9.]/g, '')) || 0;
+                  const price = typeof product.price === 'number' ? product.price : (parseFloat(product.price.replace(/[^0-9.]/g, '')) || 0);
                   const itemTotal = price * quantity;
                   const isActive = quantity > 0;
 
@@ -792,7 +792,7 @@ const CustomizePackPage = () => {
       </div>
                       <div className='flex justify-between'>
                         <button
-                          onClick={() => navigate(`/product/${product.id}`)}
+                          onClick={() => navigate(`/product/${product.slug || product.id}`)}
                           style={{
                             padding: '2px 8px',
                             fontFamily: "'Inter', sans-serif",

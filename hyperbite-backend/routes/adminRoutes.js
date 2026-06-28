@@ -20,8 +20,22 @@ router.get("/orders", async (req, res) => {
       filter.shipmentStatus = req.query.shipmentStatus;
     }
 
-    const orders = await Order.find(filter).sort({ createdAt: -1 });
-    res.json(orders);
+    // If no page param, return flat array (backward compat for Dashboard)
+    if (!req.query.page) {
+      const orders = await Order.find(filter).sort({ createdAt: -1 });
+      return res.json(orders);
+    }
+
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 50));
+    const skip = (page - 1) * limit;
+
+    const [orders, total] = await Promise.all([
+      Order.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit),
+      Order.countDocuments(filter),
+    ]);
+
+    res.json({ orders, total, page, totalPages: Math.ceil(total / limit) });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import ProductSelector from "../components/ProductSelector";
 import HeroBanner from "../components/HeroBanner";
 import { scrollTo } from "../utils/SmoothScroll";
+import { fetchProductsFromAPI } from "../config/productDetails";
 
 const ExplorePage = () => {
   const navigate = useNavigate();
@@ -26,8 +27,12 @@ const ExplorePage = () => {
     scrollTo(0);
   };
 
-  const handleOpenDetails = () => {
-    navigate(`/product/${selectedProduct}`);
+  const handleOpenDetails = async () => {
+    const products = await fetchProductsFromAPI();
+    const product = Object.values(products).find(
+      (p) => p.slug === selectedProduct || p.name?.toLowerCase().replace(/\s+/g, '') === selectedProduct.toLowerCase()
+    );
+    navigate(`/product/${product?.slug || selectedProduct}`);
   };
 
   return (

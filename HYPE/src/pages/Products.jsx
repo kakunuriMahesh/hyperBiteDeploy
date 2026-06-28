@@ -35,8 +35,8 @@ const Products = () => {
   const [packs, setPacks] = useState([]);
 
   useEffect(() => {
-    fetchProductsFromAPI().then((merged) => setProducts(Object.values(merged)));
-    fetchPacksFromAPI().then(setPacks);
+    fetchProductsFromAPI().then((merged) => setProducts(Array.from(new Set(Object.values(merged))))).catch(() => {});
+    fetchPacksFromAPI().then(setPacks).catch(() => {});
   }, []);
 
   const handleAddDefaultPack = (pack) => {
@@ -212,7 +212,7 @@ const Products = () => {
             {products.map((product) => (
               <div
                 key={product.id}
-                onClick={() => navigate(`/product/${product.id}`)}
+                onClick={() => navigate(`/product/${product.slug || product.id}`)}
                 style={{
                   backgroundColor: '#f9f9f9',
                   borderRadius: '12px',
