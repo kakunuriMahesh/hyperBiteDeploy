@@ -29,7 +29,16 @@ router.get("/process-shipments", async (req, res) => {
   console.log("[Cron] Authentication passed");
 
   try {
-    // Find unprocessed paid orders (PENDING, not yet PROCESSING/CREATED/FAILED)
+    // 1. First reset FAILED orders back to PENDING so they get retried
+    const resetResult = await Order.updateMany(
+      { paymentStatus: "paid", shipmentStatus: "FAILED", retryCount: { $lt: 3 } },
+      { $set: { shipmentStatus: "PENDING" } }
+    );
+    if (resetResult.modifiedCount > 0) {
+      console.log(`[Cron] Reset ${resetResult.modifiedCount} FAILED orders back to PENDING for retry`);
+    }
+
+    // 2. Find unprocessed paid orders (PENDING, not yet PROCESSING/CREATED)
     const pendingOrders = await Order.find({
       paymentStatus: "paid",
       shipmentStatus: "PENDING"

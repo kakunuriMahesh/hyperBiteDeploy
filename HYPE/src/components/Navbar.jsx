@@ -4,9 +4,23 @@ import { IoMenu } from "react-icons/io5";
 import { IoClose } from "react-icons/io5";
 import { scrollTo } from "../utils/SmoothScroll";
 import { BsBag } from "react-icons/bs";
+import { FaGift } from "react-icons/fa";
 import { useCart } from "../store/hooks/useCart";
 import { useLanguage } from "../store/hooks/useLanguage";
 import { FaChevronDown, FaChevronRight } from "react-icons/fa";
+import { useDispatch, useSelector } from "react-redux";
+import {
+  openSpinWheel,
+  closeRewardsPanel,
+  selectIdentifier,
+  selectUnclaimedCount,
+  selectShowRewardsPanel,
+  selectRewards,
+  claimReward,
+  selectCanSpin,
+  selectNextSpinDate,
+  SPIN_INTERVAL_MS,
+} from "../store/slices/rewardsSlice";
 
 const Navbar = () => {
   const navigate = useNavigate();
@@ -17,16 +31,63 @@ const Navbar = () => {
   const [isNavbarVisible, setIsNavbarVisible] = useState(true);
   const lastScrollY = useRef(0);
   const { currentLang, changeLanguage, languages: availableLanguages, t } = useLanguage();
+  const dispatch = useDispatch();
+  const rewardsIdentifier = useSelector(selectIdentifier);
+  const unclaimedRewardsCount = useSelector(selectUnclaimedCount);
+  const showRewardsPanel = useSelector(selectShowRewardsPanel);
+  const rewardsList = useSelector(selectRewards);
+  const canSpin = useSelector(selectCanSpin);
+  const nextSpinDate = useSelector(selectNextSpinDate);
+  const [countdown, setCountdown] = useState('');
+
+  useEffect(() => {
+    if (!nextSpinDate || canSpin) {
+      setCountdown('');
+      return;
+    }
+    const tick = () => {
+      const diff = new Date(nextSpinDate) - Date.now();
+      if (diff <= 0) { setCountdown(''); return; }
+      const h = Math.floor(diff / 3600000);
+      const m = Math.floor((diff % 3600000) / 60000);
+      setCountdown(h > 0 ? `${h}h ${m}m` : `${m}m`);
+    };
+    tick();
+    const id = setInterval(tick, 30000);
+    return () => clearInterval(id);
+  }, [nextSpinDate, canSpin]);
+
   const {
     cartItems,
     getCartItemsCount,
-    // removeFromCart,
-    // updateQuantity,
-    // getCartTotal,
-    // clearCart,
   } = useCart();
 
   const cartCount = getCartItemsCount();
+
+  const rewardsPanelRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (rewardsPanelRef.current && !rewardsPanelRef.current.contains(e.target)) {
+        dispatch(closeRewardsPanel());
+      }
+    };
+    if (showRewardsPanel) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showRewardsPanel, dispatch]);
+
+  const handleGiftClick = () => {
+    navigate('/rewards');
+  };
+
+  const formatDate = (ts) => {
+    const d = new Date(ts);
+    return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+  };
+
+  const isExpired = (expiresAt) => expiresAt < Date.now();
 
   useEffect(() => {
     const updateBreakpoint = () => {
@@ -190,6 +251,31 @@ useEffect(() => {
         </div>
         <div className="flex items-center gap-6">
           <div
+            onClick={handleGiftClick}
+            className="relative text-2xl cursor-pointer"
+            style={{ color: '#000', display: 'flex', alignItems: 'center', gap: 6 }}
+          >
+            <div style={{ position: 'relative' }}>
+              <FaGift />
+              {unclaimedRewardsCount > 0 && (
+                <span className="absolute -top-2 -right-2 bg-green-500 text-white text-xs font-semibold rounded-full px-1.5 min-w-[18px] text-center">
+                  {unclaimedRewardsCount}
+                </span>
+              )}
+            </div>
+            {countdown && (
+              <span style={{
+                fontSize: 11,
+                fontWeight: 600,
+                color: '#EF4444',
+                whiteSpace: 'nowrap',
+                fontFamily: "'Inter', sans-serif",
+              }}>
+                {countdown}
+              </span>
+            )}
+          </div>
+          <div
             onClick={() => navigate("/cart")}
             className="relative text-2xl cursor-pointer"
           >
@@ -246,6 +332,142 @@ useEffect(() => {
           </button>
         </div>
       </nav>
+
+      {showRewardsPanel && (
+        <div
+          ref={rewardsPanelRef}
+          style={{
+            position: 'fixed',
+            top: breakpoint === 'mobile' ? 70 : 85,
+            right: breakpoint === 'mobile' ? 8 : 24,
+            width: breakpoint === 'mobile' ? 'calc(100vw - 16px)' : 380,
+            maxHeight: '70vh',
+            backgroundColor: '#fff',
+            borderRadius: 16,
+            boxShadow: '0 10px 40px rgba(0,0,0,0.15)',
+            zIndex: 1001,
+            overflow: 'hidden',
+            display: 'flex',
+            flexDirection: 'column',
+          }}
+        >
+          <div style={{
+            padding: '16px 20px',
+            borderBottom: '1px solid #f0f0f0',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+          }}>
+            <div>
+              <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: '#1a1a1a' }}>
+                My Rewards
+              </h3>
+              <p style={{ margin: '2px 0 0', fontSize: 12, color: '#999' }}>
+                {rewardsIdentifier}
+              </p>
+            </div>
+            <button
+              onClick={() => navigate('/rewards')}
+              style={{
+                background: 'linear-gradient(135deg, #FFD700, #FFA500)',
+                border: 'none',
+                borderRadius: 8,
+                padding: '6px 14px',
+                fontSize: 12,
+                fontWeight: 600,
+                cursor: 'pointer',
+                color: '#1a1a1a',
+              }}
+            >
+              View All
+            </button>
+          </div>
+          <div style={{ overflow: 'auto', flex: 1, padding: 12 }}>
+            {rewardsList.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '32px 16px', color: '#999' }}>
+                <FaGift size={32} style={{ marginBottom: 8, opacity: 0.5 }} />
+                <p style={{ margin: 0, fontSize: 13 }}>No rewards yet</p>
+                <button
+                  onClick={() => { dispatch(closeRewardsPanel()); dispatch(openSpinWheel()); }}
+                  style={{
+                    marginTop: 12,
+                    background: 'linear-gradient(135deg, #FFD700, #FFA500)',
+                    border: 'none',
+                    borderRadius: 8,
+                    padding: '8px 20px',
+                    fontSize: 13,
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    color: '#1a1a1a',
+                  }}
+                >
+                  Spin the Wheel!
+                </button>
+              </div>
+            ) : (
+              rewardsList.slice().reverse().map((reward) => {
+                const expired = isExpired(reward.expiresAt);
+                return (
+                  <div
+                    key={reward.id}
+                    style={{
+                      padding: 12,
+                      borderRadius: 12,
+                      marginBottom: 8,
+                      backgroundColor: reward.claimed ? '#f9f9f9' : '#FFF8E1',
+                      border: `1px solid ${reward.claimed ? '#eee' : '#FFE082'}`,
+                      opacity: expired ? 0.5 : 1,
+                    }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div>
+                        <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: '#1a1a1a' }}>
+                          {reward.label}
+                        </p>
+                        <p style={{ margin: '2px 0', fontSize: 11, color: '#888' }}>
+                          {reward.type === 'reward_points' ? `${reward.value} points` :
+                           reward.type === 'discount_percent' ? `${reward.value}% off` :
+                           reward.type === 'free_shipping' ? 'Free shipping' : ''}
+                        </p>
+                        <p style={{ margin: 0, fontSize: 10, color: expired ? '#e53935' : '#aaa' }}>
+                          {expired ? 'Expired' : `Expires ${formatDate(reward.expiresAt)}`}
+                        </p>
+                      </div>
+                      <div>
+                        {reward.claimed ? (
+                          <span style={{ fontSize: 11, color: '#4CAF50', fontWeight: 600 }}>
+                            Claimed
+                          </span>
+                        ) : !expired ? (
+                          <button
+                            onClick={() => dispatch(claimReward(reward.id))}
+                            style={{
+                              background: 'linear-gradient(135deg, #FFD700, #FFA500)',
+                              border: 'none',
+                              borderRadius: 6,
+                              padding: '6px 14px',
+                              fontSize: 11,
+                              fontWeight: 600,
+                              cursor: 'pointer',
+                              color: '#1a1a1a',
+                            }}
+                          >
+                            Claim
+                          </button>
+                        ) : (
+                          <span style={{ fontSize: 11, color: '#e53935', fontWeight: 600 }}>
+                            Expired
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )
+              })
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Menu Content - No overlay, directly below navbar */}
       <div

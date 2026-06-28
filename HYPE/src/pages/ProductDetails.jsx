@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { productDetails } from "../config/productDetails";
+import { fetchProductsFromAPI } from "../config/productDetails";
 import Navbar from "../components/Navbar";
 import { useCart } from "../store/hooks/useCart";
 import { formatProductMessage, sendWhatsAppMessage } from "../utils/whatsapp";
@@ -9,7 +9,7 @@ import { toast } from "react-toastify";
 import { allowedPincodes } from "../config/allowedPincodes";
 
 const ProductDetails = () => {
-  const { productId } = useParams();
+  const { slug } = useParams();
   const navigate = useNavigate();
   const { addToCart, setPincode } = useCart();
   const [breakpoint, setBreakpoint] = useState("desktop");
@@ -37,12 +37,21 @@ const ProductDetails = () => {
   }, []);
 
   useEffect(() => {
-    if (productId && productDetails[productId]) {
-      setProduct(productDetails[productId]);
-    } else {
-      navigate("/");
-    }
-  }, [productId, navigate]);
+    (async () => {
+      try {
+        const merged = await fetchProductsFromAPI();
+        const product = merged[slug] || Object.values(merged).find(p => p.slug === slug || p.id === slug);
+        if (product) {
+          setProduct(product);
+        } else {
+          navigate("/");
+        }
+      } catch (err) {
+        console.error("Failed to fetch products:", err);
+        navigate("/");
+      }
+    })();
+  }, [slug, navigate]);
 
   useEffect(() => {
     const getPincode = localStorage.getItem("pincode");
@@ -64,6 +73,13 @@ const ProductDetails = () => {
 
   // Related products/variations based on product type
   const getRelatedProducts = () => {
+    const slugCategory = {
+      "cashew-charge": "nuts",
+      "seed-boost": "seeds",
+    };
+    const category = slugCategory[slug];
+    if (!category) return [];
+
     const baseVariations = {
       nuts: [
         {
@@ -169,7 +185,7 @@ const ProductDetails = () => {
       ],
     };
 
-    return baseVariations[productId] || [];
+    return baseVariations[category] || [];
   };
 
   const handleProductSelect = (variation) => {
@@ -325,17 +341,30 @@ const ProductDetails = () => {
               {product.description}
             </p>
 
-            <div style={{ marginBottom: "32px" }}>
+            <div style={{ marginBottom: "32px", display: "flex", alignItems: "baseline", gap: "10px" }}>
               <span
                 style={{
                   fontFamily: "Nunito Sans",
-                  fontSize: breakpoint === "mobile" ? "20px" : "28px",
+                  fontSize: breakpoint === "mobile" ? "28px" : "36px",
                   color: "#111",
-                  fontWeight: 700,
+                  fontWeight: 800,
                 }}
               >
                 {product.price}
               </span>
+              {product.compareAtPrice && (
+                <span
+                  style={{
+                    fontFamily: "Nunito Sans",
+                    fontSize: breakpoint === "mobile" ? "18px" : "22px",
+                    color: "#999",
+                    textDecoration: "line-through",
+                    fontWeight: 400,
+                  }}
+                >
+                  {product.compareAtPrice}
+                </span>
+              )}
             </div>
 
               {
@@ -754,7 +783,7 @@ const ProductDetails = () => {
               margin: 0,
             }}
           >
-            {product.ingredients.map((ingredient, index) => (
+            {(product.ingredients || []).map((ingredient, index) => (
               <li
                 key={index}
                 style={{
@@ -791,7 +820,7 @@ const ProductDetails = () => {
               margin: 0,
             }}
           >
-            {product.benefits.map((benefit, index) => (
+            {(product.benefits || []).map((benefit, index) => (
               <li
                 key={index}
                 style={{
@@ -828,7 +857,7 @@ const ProductDetails = () => {
               gap: "16px",
             }}
           >
-            {Object.entries(product.nutritionalInfo).map(([key, value]) => (
+            {Object.entries(product.nutritionalInfo || {}).map(([key, value]) => (
               <div
                 key={key}
                 style={{
@@ -902,7 +931,7 @@ const ProductDetails = () => {
               gap: "24px",
             }}
           >
-            {product.reviews.map((review) => (
+            {(product.reviews || []).map((review) => (
               <div
                 key={review.id}
                 style={{

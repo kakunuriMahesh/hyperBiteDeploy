@@ -2,7 +2,7 @@ import React, { useState, useEffect ,useLayoutEffect, useRef} from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { FaArrowLeft, FaPlus, FaMinus, FaCheckCircle, FaGift, FaStar, FaShippingFast, FaBoxOpen, FaTag, FaTrash } from 'react-icons/fa';
 import { GrPowerReset } from "react-icons/gr";
-import { productDetails } from '../config/productDetails';
+import { fetchProductsFromAPI } from '../config/productDetails';
 import { packConfigs } from '../config/packConfig';
 import { useCart } from '../store/hooks/useCart';
 import { toast } from 'react-toastify';
@@ -36,7 +36,15 @@ const CustomizePackPage = () => {
 
   const pack = packConfigs[packId] || packConfigs.pack500;
   const detailsContent = pack.detailsContent;
-  const products = Object.values(productDetails);
+  const [products, setProducts] = useState([]);
+  const [productMap, setProductMap] = useState({});
+
+  useEffect(() => {
+    fetchProductsFromAPI().then((merged) => {
+      setProductMap(merged);
+      setProducts(Array.from(new Set(Object.values(merged))));
+    });
+  }, []);
 
   useEffect(() => {
     const updateBreakpoint = () => {
@@ -93,7 +101,7 @@ const CustomizePackPage = () => {
   const calculateTotals = () => {
     return products.reduce(
       (acc, product) => {
-        const priceValue = parseFloat(product.price.replace(/[^0-9.]/g, '')) || 0;
+        const priceValue = typeof product.price === 'number' ? product.price : (parseFloat(String(product.price).replace(/[^0-9.]/g, '')) || 0);
         const quantity = quantities[product.id] || 0;
         acc.price += priceValue * quantity;
         acc.items += quantity;
@@ -107,14 +115,15 @@ const CustomizePackPage = () => {
   const progressPercent = Math.min((total / pack.minPrice) * 100, 100);
 
   const handleQuantityChange = (productId, change) => {
-    if (productDetails[productId].stock === "Not Available") {
+    const p = productMap[productId];
+    if (!p || p.stock === "Not Available") {
       toast.error("Sorry, this product is currently out of stock.");
       return;
     }
     const currentQty = quantities[productId] || 0;
     const newQty = Math.max(0, currentQty + change);
-    const product = productDetails[productId];
-    const priceValue = parseFloat(product.price.replace(/[^0-9.]/g, '')) || 0;
+    const product = p;
+    const priceValue = typeof product.price === 'number' ? product.price : (parseFloat(String(product.price || '').replace(/[^0-9.]/g, '')) || 0);
 
     if (change > 0) {
       if (totalItems >= pack.maxItems) {
@@ -139,8 +148,8 @@ const CustomizePackPage = () => {
     
     if (numValue > currentQty) {
         const diff = numValue - currentQty;
-        const product = productDetails[productId];
-        const priceValue = parseFloat(product.price.replace(/[^0-9.]/g, '')) || 0;
+        const product = productMap[productId];
+        const priceValue = typeof product?.price === 'number' ? product.price : (parseFloat(String(product?.price || '').replace(/[^0-9.]/g, '')) || 0);
 
         if (totalItems + diff > pack.maxItems) {
             toast.warning(`Pack Limit Reached: Maximum ${pack.maxItems} items allowed.`);
@@ -166,7 +175,7 @@ const CustomizePackPage = () => {
       packOffPrice: pack.offPrice,
       items: products
         .filter((p) => (quantities[p.id] || 0) > 0)
-        .map((p) => ({ id: p.id, quantity: quantities[p.id] || 0 })),
+        .map((p) => ({ id: p.id, name: p.name, quantity: quantities[p.id] || 0 })),
       total,
     };
     startOrUpdateInProgressPack(packData);
@@ -197,6 +206,7 @@ const CustomizePackPage = () => {
       .filter((p) => (quantities[p.id] || 0) > 0)
       .map((p) => ({
         id: p.id,
+        name: p.name,
         quantity: quantities[p.id] || 0,
       }));
 
@@ -664,7 +674,7 @@ const CustomizePackPage = () => {
               >
                 {products.map((product) => {
                   const quantity = quantities[product.id] || 0;
-                  const price = parseFloat(product.price.replace(/[^0-9.]/g, '')) || 0;
+                  const price = typeof product.price === 'number' ? product.price : (parseFloat(product.price.replace(/[^0-9.]/g, '')) || 0);
                   const itemTotal = price * quantity;
                   const isActive = quantity > 0;
 
@@ -751,6 +761,7 @@ const CustomizePackPage = () => {
 
       <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
                       {/* Price */}
+                      <div style={{display: 'flex', alignItems: 'baseline', gap: '6px'}}>
                       <p
                         style={{
                           fontFamily: "'Inter', sans-serif",
@@ -762,6 +773,20 @@ const CustomizePackPage = () => {
                       >
                         ₹{price}
                       </p>
+                      {product.compareAtPrice && (
+                        <span
+                          style={{
+                            fontFamily: "'Inter', sans-serif",
+                            fontSize: breakpoint === 'mobile' ? '11px' : '12px',
+                            color: '#999',
+                            textDecoration: 'line-through',
+                            margin: '0 0 10px 0',
+                          }}
+                        >
+                          {product.compareAtPrice}
+                        </span>
+                      )}
+                      </div>
 
                       {/* Item Total */}
                       {isActive && (
@@ -782,7 +807,7 @@ const CustomizePackPage = () => {
       </div>
                       <div className='flex justify-between'>
                         <button
-                          onClick={() => navigate(`/product/${product.id}`)}
+                          onClick={() => navigate(`/product/${product.slug || product.id}`)}
                           style={{
                             padding: '2px 8px',
                             fontFamily: "'Inter', sans-serif",

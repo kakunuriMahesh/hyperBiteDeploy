@@ -2,8 +2,8 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import PackCard from "../components/PackCard";
-import { productDetails } from "../config/productDetails";
-import { getAllPacks } from "../config/packConfig";
+import { fetchProductsFromAPI } from "../config/productDetails";
+import { fetchPacksFromAPI } from "../config/packConfig";
 import { useCart } from "../store/hooks/useCart";
 import { toast } from "react-toastify";
 import 'react-toastify/dist/ReactToastify.css';
@@ -31,8 +31,13 @@ const Products = () => {
     return () => window.removeEventListener('resize', updateBreakpoint);
   }, []);
 
-  const products = Object.values(productDetails);
-  const packs = getAllPacks();
+  const [products, setProducts] = useState([]);
+  const [packs, setPacks] = useState([]);
+
+  useEffect(() => {
+    fetchProductsFromAPI().then((merged) => setProducts(Array.from(new Set(Object.values(merged))))).catch(() => {});
+    fetchPacksFromAPI().then(setPacks).catch(() => {});
+  }, []);
 
   const handleAddDefaultPack = (pack) => {
     // If no pincode is set → show modal first
@@ -43,14 +48,21 @@ const Products = () => {
     //   return;
     // }
 
-    // Pincode already exists → proceed directly
-    const defaultItems = [
+    // Use pack.defaultProducts from API (with names), or fall back to mapping
+    const productNameMap = {};
+    products.forEach((p) => { productNameMap[p.id] = p.name; });
+    const hardcodedFallback = [
       { id: 'cashewCharge', quantity: 2 },
       { id: 'seedBoost', quantity: 2 },
       { id: 'powerChunk', quantity: 2 },
       { id: 'milletMatrix', quantity: 2 },
       { id: 'oatsOctane', quantity: 2 },
     ];
+    const raw = (pack.defaultProducts?.length ? pack.defaultProducts : hardcodedFallback);
+    const defaultItems = raw.map((item) => ({
+      ...item,
+      name: item.name || productNameMap[item.id] || item.id,
+    }));
 
     addPackToCart({
       packId: pack.id,
@@ -200,7 +212,7 @@ const Products = () => {
             {products.map((product) => (
               <div
                 key={product.id}
-                onClick={() => navigate(`/product/${product.id}`)}
+                onClick={() => navigate(`/product/${product.slug || product.id}`)}
                 style={{
                   backgroundColor: '#f9f9f9',
                   borderRadius: '12px',
@@ -262,12 +274,20 @@ const Products = () => {
                   style={{
                     fontFamily: "Nunito Sans",
                     fontSize: breakpoint === 'mobile' ? '18px' : '20px',
-                    color: '#111',
                     marginBottom: '12px',
                     fontWeight: 700,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
                   }}
                 >
-                  {product.price}
+                  <span style={{ color: '#111' }}>{product.price}</span>
+                  {product.compareAtPrice && (
+                    <span style={{ color: '#999', textDecoration: 'line-through', fontSize: '0.85em', fontWeight: 400 }}>
+                      {product.compareAtPrice}
+                    </span>
+                  )}
                 </div>
                 <button
                   style={{

@@ -3,16 +3,22 @@ const mongoose = require("mongoose");
 const orderSchema = new mongoose.Schema({
   customer: {
     name: String,
-    email: String,
     phone: String,
-    whatsapp: String,
+    email: String,
     address: String,
     city: String,
     state: String,
     country: String,
     pincode: String,
   },
-  
+
+  customerIdentifier: {
+    type: String,
+    lowercase: true,
+    trim: true,
+    default: null,
+  },
+
   items: [
     {
       productId: String,
@@ -32,6 +38,16 @@ const orderSchema = new mongoose.Schema({
   ],
 
   totalAmount: Number,
+  finalAmount: Number,
+
+  appliedReward: mongoose.Schema.Types.Mixed,
+  appliedCoupon: mongoose.Schema.Types.Mixed,
+
+  referralAgentId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Agent',
+    default: null,
+  },
 
   razorpayOrderId: String,
   razorpayPaymentId: String,
@@ -64,5 +80,9 @@ const orderSchema = new mongoose.Schema({
   lastAttemptedAt: Date
 
 }, { timestamps: true });
+
+orderSchema.index({ customerIdentifier: 1 });
+orderSchema.index({ 'appliedCoupon.code': 1 });
+orderSchema.index({ referralAgentId: 1 });
 
 module.exports = mongoose.model("Order", orderSchema);

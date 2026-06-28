@@ -12,9 +12,7 @@ exports.createShiprocketOrder = async (order) => {
     items: order.items || [],
     customer: {
       name: cust.name || order.customerName || order.name || "",
-      email: cust.email || order.email || "",
       phone: cust.phone || order.phone || "",
-      whatsapp: cust.whatsapp || order.whatsapp || "",
       address: cust.address || order.address || "",
       city: cust.city || order.city || "",
       state: cust.state || order.state || "",

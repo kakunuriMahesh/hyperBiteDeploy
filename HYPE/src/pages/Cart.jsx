@@ -1,13 +1,15 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useCart } from "../store/hooks/useCart";
-import Navbar from "../components/Navbar";
-import { formatCartMessage } from "../utils/whatsapp";
-import { getCookie, setCookie } from "../utils/cookies";
-import { FaTrash, FaPlus, FaMinus, FaEdit, FaChevronDown, FaChevronUp, FaArrowLeft } from "react-icons/fa";
+import { useSelector, useDispatch } from "react-redux";
+import { FaTrash, FaPlus, FaMinus, FaEdit, FaChevronDown, FaChevronUp, FaArrowLeft, FaGift, FaTag } from "react-icons/fa";
 import { toast } from "react-toastify";
-import { allowedPincodes } from "../config/allowedPincodes";
-import { productDetails } from "../config/productDetails";
+import {
+  selectIdentifier,
+  selectUnclaimedRewards,
+  claimReward,
+} from "../store/slices/rewardsSlice";
+import { validateCoupon, validateReward, checkIdentifier } from "../utils/api";
 
 const PackItemCard = ({
   pack,
@@ -108,7 +110,7 @@ const PackItemCard = ({
                 fontWeight: 700,
               }}
             >
-              ₹{pack.packPrice.toFixed(0)}
+              ₹{(pack.packPrice || 0).toFixed(0)}
             </span>
             {pack.packOffPrice > 0 && pack.packOffPrice !== pack.packPrice && (
               <>
@@ -157,24 +159,31 @@ const PackItemCard = ({
               >
                 {showDetails ? "Hide" : "View"} {showDetails ? <FaChevronUp size={9} /> : <FaChevronDown size={9} />}
               </button>
-              <span style={{ color: "#d1d5db", fontSize: "10px" }}>|</span>
-              <button
-                onClick={handleEdit}
-                style={{
-                  background: "none",
-                  border: "none",
-                  color: "#3b82f6",
-                  cursor: "pointer",
-                  fontSize: "11px",
-                  fontFamily: "'Inter', sans-serif",
-                  padding: 0,
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "3px",
-                }}
-              >
-                <FaEdit size={10} /> Edit
-              </button>
+             <div>
+        </div>
+              {pack.packName !== "The Discovery Pack (10 Pcs)" && (
+                <>
+                  <span style={{ color: "#d1d5db", fontSize: "10px" }}>|</span>
+
+                  <button
+                    onClick={handleEdit}
+                    style={{
+                      background: "none",
+                      border: "none",
+                      color: "#3b82f6",
+                      cursor: "pointer",
+                      fontSize: "11px",
+                      fontFamily: "'Inter', sans-serif",
+                      padding: 0,
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "3px",
+                    }}
+                  >
+                    <FaEdit size={10} /> Edit
+                  </button>
+                </>
+              )}
               <span style={{ color: "#d1d5db", fontSize: "10px" }}>|</span>
             </>
           )}
@@ -210,7 +219,7 @@ const PackItemCard = ({
             }}
           >
             {pack.items?.map((item, i) => {
-              const pDetails = productDetails[item.id];
+              const pDetails = item.name || item.id;
               return (
                 <div
                   key={i}
@@ -222,7 +231,7 @@ const PackItemCard = ({
                     justifyContent: "space-between",
                   }}
                 >
-                  <span>{pDetails?.name || item.id}</span>
+                  <span>{pDetails}</span>
                   <span style={{ color: "#9ca3af" }}>×{item.quantity}</span>
                 </div>
               );
@@ -310,35 +319,180 @@ const Cart = () => {
     cartItems,
     packItems,
     inProgressPacks,
-    pincode,
     finalizeInProgressPack,
     removeInProgressPack,
-    validateAndSetPincode,
     removeFromCart,
     updateQuantity,
     removePackFromCart,
     updatePackQuantity,
     getCartTotal,
-    clearCart,
   } = useCart();
   const [breakpoint, setBreakpoint] = useState("desktop");
-  const [showForm, setShowForm] = useState(false);
-  const [formData, setFormData] = useState({
-    name: "",
-    phone: "",
-    email: "",
-    whatsapp: "",
-    address: "",
-    city: "",
-    state: "",
-    country: "",
-    pincode: "",
-  });
-  const [pincodeError, setPincodeError] = useState("");
-  const [isPaymentLoading, setIsPaymentLoading] = useState(false);
-  const [isFormSubmitting, setIsFormSubmitting] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [successData, setSuccessData] = useState({ points: 0, email: '' });
+
+  const rewardsIdentifier = useSelector(selectIdentifier);
+  const unclaimedRewards = useSelector(selectUnclaimedRewards);
+  const dispatchRewards = useDispatch();
+  const [applyMode, setApplyMode] = useState('reward');
+  const [appliedReward, setAppliedReward] = useState(null);
+  const [couponCode, setCouponCode] = useState('');
+  const [appliedCoupon, setAppliedCoupon] = useState(null);
+  const [couponError, setCouponError] = useState('');
+  const [couponLoading, setCouponLoading] = useState(false);
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
+
+  // Identifier lookup
+  const [lookupValue, setLookupValue] = useState(rewardsIdentifier || '');
+  const [lookupData, setLookupData] = useState(null);
+  const [lookupLoading, setLookupLoading] = useState(false);
+  const [lookupError, setLookupError] = useState('');
+
+  const aggregatedRewards = useMemo(() => {
+    if (!lookupData?.rewards) return [];
+    const pointsRewards = lookupData.rewards.filter(r => r.type === 'reward_points');
+    const otherRewards = lookupData.rewards.filter(r => r.type !== 'reward_points');
+    const activePts = pointsRewards.filter(r => !r.claimed);
+    const totalPts = activePts.reduce((s, r) => s + r.value, 0);
+    const aggregated = totalPts > 0 ? [{
+      id: 'cart-points-total',
+      type: 'reward_points',
+      value: totalPts,
+      label: `${totalPts} Reward Points Total`,
+      claimed: false,
+      isAggregated: true,
+    }] : [];
+    return [...aggregated, ...otherRewards];
+  }, [lookupData]);
+
+  const checkoutSummary = useMemo(() => {
+    const totalItems = cartItems.reduce((sum, item) => sum + item.quantity, 0)
+      + packItems.reduce((sum, pack) => sum + pack.quantity, 0);
+    const totalMRP = cartItems.reduce((sum, item) => {
+      const price = typeof item.price === 'string' ? parseFloat(item.price.replace(/[^0-9.]/g, '')) : item.price;
+      return sum + (price * item.quantity);
+    }, 0) + packItems.reduce((sum, pack) => {
+      const mrp = (pack.packOffPrice && pack.packOffPrice > 0 && pack.packOffPrice !== pack.packPrice)
+        ? pack.packOffPrice : pack.packPrice;
+      return sum + (mrp * pack.quantity);
+    }, 0);
+    const sellingTotal = getCartTotal();
+    const totalDiscount = totalMRP - sellingTotal;
+    const deliveryCharge = 0;
+    let extraDiscount = 0;
+    let freeShippingApplied = false;
+    if (appliedReward) {
+      if (appliedReward.type === 'discount_percent') {
+        extraDiscount = sellingTotal * (appliedReward.value / 100);
+      }
+      if (appliedReward.type === 'discount_fixed') {
+        extraDiscount = appliedReward.value;
+      }
+      if (appliedReward.type === 'free_shipping') {
+        freeShippingApplied = true;
+      }
+    }
+    if (appliedCoupon) {
+      if (appliedCoupon.discount > 0) {
+        extraDiscount = sellingTotal * (appliedCoupon.discount / 100);
+      }
+      if (appliedCoupon.freeShipping) {
+        freeShippingApplied = true;
+      }
+    }
+    const finalTotal = Math.max(0, sellingTotal - extraDiscount);
+    return { totalItems, totalMRP, sellingTotal, totalDiscount, deliveryCharge, extraDiscount, freeShippingApplied, finalTotal };
+  }, [cartItems, packItems, getCartTotal, appliedReward, appliedCoupon]);
+
+  const saveCartState = (overrides = {}) => {
+    try {
+      const current = JSON.parse(localStorage.getItem('cart_lookup') || '{}');
+      localStorage.setItem('cart_lookup', JSON.stringify({ ...current, ...overrides }));
+    } catch {}
+  };
+
+  const handleApplyReward = (reward, fromLookup) => {
+    if (appliedReward && appliedReward.id === reward.id) {
+      setAppliedReward(null);
+      saveCartState({ appliedReward: null, appliedCoupon: null, couponCode: '' });
+      return;
+    }
+    setAppliedReward(reward);
+    setAppliedCoupon(null);
+    setCouponCode('');
+    if (!fromLookup) {
+      dispatchRewards(claimReward(reward.id));
+    }
+    toast.success(`${reward.label} applied!`);
+    saveCartState({ appliedReward: reward, appliedCoupon: null, couponCode: '' });
+  };
+
+  const handleApplyCoupon = async () => {
+    if (!couponCode.trim()) return;
+    const code = couponCode.trim().toUpperCase();
+    setCouponLoading(true);
+    setCouponError('');
+    try {
+      const result = await validateCoupon(code, lookupValue || rewardsIdentifier, checkoutSummary.sellingTotal);
+      if (!result.valid) {
+        setCouponError(result.reason || 'Invalid coupon code');
+        return;
+      }
+      setAppliedCoupon(result.coupon);
+      setAppliedReward(null);
+      toast.success(`Coupon ${code} applied!`);
+      saveCartState({ appliedCoupon: result.coupon, appliedReward: null, couponCode: '' });
+    } catch (err) {
+      setCouponError('Failed to validate coupon. Please try again.');
+    } finally {
+      setCouponLoading(false);
+    }
+  };
+
+  const handleLookup = async () => {
+    const val = lookupValue.trim();
+    if (!val) return;
+    setLookupLoading(true);
+    setLookupError('');
+    try {
+      const data = await checkIdentifier(val);
+      setLookupData(data);
+      saveCartState({ lookupValue: val, lookupData: data });
+    } catch (err) {
+      setLookupError(err.message);
+    } finally {
+      setLookupLoading(false);
+    }
+  };
+
+  const handleApplyOfferCoupon = async (offerCode) => {
+    setCouponLoading(true);
+    setCouponError('');
+    try {
+      const result = await validateCoupon(offerCode, lookupValue || rewardsIdentifier, checkoutSummary.sellingTotal);
+      if (!result.valid) {
+        setCouponError(result.reason || 'Cannot apply this coupon');
+        return;
+      }
+      setAppliedCoupon(result.coupon);
+      setAppliedReward(null);
+      setCouponCode('');
+      toast.success(`Coupon ${offerCode} applied!`);
+      saveCartState({ appliedCoupon: result.coupon, appliedReward: null, couponCode: '' });
+    } catch (err) {
+      setCouponError('Failed to apply coupon.');
+    } finally {
+      setCouponLoading(false);
+    }
+  };
+
+  const handleRemoveApplied = () => {
+    setAppliedReward(null);
+    setAppliedCoupon(null);
+    setCouponCode('');
+    setCouponError('');
+    saveCartState({ appliedReward: null, appliedCoupon: null, couponCode: '' });
+  };
 
   useEffect(() => {
     const updateBreakpoint = () => {
@@ -357,193 +511,68 @@ const Cart = () => {
     return () => window.removeEventListener("resize", updateBreakpoint);
   }, []);
 
+  // Auto-fetch rewards & offers on mount
   useEffect(() => {
-    const savedDetails = getCookie("userDetails");
-    if (savedDetails) {
-      setFormData(savedDetails);
+    if (rewardsIdentifier) {
+      setLookupValue(rewardsIdentifier);
+      (async () => {
+        setLookupLoading(true);
+        try {
+          const data = await checkIdentifier(rewardsIdentifier);
+          setLookupData(data);
+        } catch (err) {
+          // silent
+        } finally {
+          setLookupLoading(false);
+        }
+      })();
     }
-    if (pincode) {
-      setFormData((prev) => ({ ...prev, pincode }));
-    }
-  }, [pincode]);
+  }, [rewardsIdentifier]);
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-    if (name === "pincode") setPincodeError("");
-  };
-
-  const handlePayNow = () => {
-    if (!formData.pincode.trim()) {
-      setPincodeError("Please enter a pincode");
-      return;
-    }
-    initiateRazorpay();
-  };
-
-  const loadRazorpayScript = () => {
-    return new Promise((resolve) => {
-      const script = document.createElement("script");
-      script.src = "https://checkout.razorpay.com/v1/checkout.js";
-      script.onload = () => resolve(true);
-      script.onerror = () => resolve(false);
-      document.body.appendChild(script);
-    });
-  };
-
-  const initiateRazorpay = async () => {
-    if (!formData.pincode.trim()) {
-      setPincodeError("Please enter a pincode");
-      return;
-    }
-
+  // Restore lookup + applied state from localStorage on mount
+  useEffect(() => {
     try {
-      setIsPaymentLoading(true);
-
-      const items = [];
-      cartItems.forEach((it) => {
-        const price = typeof it.price === 'string' ? parseFloat(it.price.replace(/[^0-9.]/g, '')) : Number(it.price);
-        items.push({
-          id: it.id,
-          name: it.name + (it.variation && it.variation !== "default" ? ` (${it.variation})` : ""),
-          price: price || 0,
-          quantity: it.quantity || 1,
-          type: "product",
-        });
-      });
-      packItems.forEach((p) => {
-        // Build sub-items array with product names from productDetails
-        const subItems = (p.items || []).map((sub) => {
-          const detail = productDetails[sub.id];
-          return {
-            id: sub.id,
-            name: detail?.name || sub.id,
-            quantity: sub.quantity || 1,
-          };
-        });
-
-        items.push({
-          id: p.packId || p.instanceId,
-          name: p.packName,
-          price: Number(p.packPrice) || 0,
-          quantity: p.quantity || 1,
-          type: "pack",
-          subItems,
-        });
-      });
-
-      const resp = await fetch("https://hyperbitedeploy.onrender.com/api/payment/create-order", {
-      // const resp = await fetch("http://localhost:5000/api/payment/create-order", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          customer: {
-            name: formData.name,
-            email: formData.email,
-            phone: formData.phone,
-            whatsapp: formData.whatsapp,
-            address: formData.address,
-            city: formData.city,
-            state: formData.state,
-            country: formData.country,
-            pincode: formData.pincode,
-          },
-          items,
-        }),
-      });
-
-      if (!resp.ok) {
-        const err = await resp.json().catch(() => ({}));
-        throw new Error(err.error || "Could not create order");
+      const saved = JSON.parse(localStorage.getItem('cart_lookup'));
+      if (saved) {
+        if (saved.lookupValue && saved.lookupData) {
+          setLookupValue(saved.lookupValue);
+          setLookupData(saved.lookupData);
+        }
+        if (saved.appliedCoupon) {
+          setAppliedCoupon(saved.appliedCoupon);
+          setAppliedReward(null);
+        } else if (saved.appliedReward) {
+          setAppliedReward(saved.appliedReward);
+          setAppliedCoupon(null);
+        }
       }
+    } catch {}
+  }, []);
 
-      const data = await resp.json();
+  // Auto-remove applied coupon if cart total drops below minCartValue
+  useEffect(() => {
+    const sellingTotal = checkoutSummary.sellingTotal;
+    if (!appliedCoupon || !lookupData) return;
 
-      const ok = await loadRazorpayScript();
-      if (!ok) throw new Error("Razorpay SDK failed to load. Check your connection.");
-
-      const options = {
-        key: data.keyId,
-        amount: data.razorpayOrder.amount,
-        currency: data.razorpayOrder.currency || "INR",
-        name: "Hyperbite",
-        description: "Order Payment",
-        order_id: data.razorpayOrder.id,
-        handler: async function (response) {
-          try {
-            const verifyRes = await fetch("https://hyperbitedeploy.onrender.com/api/payment/verify", {
-            // const verifyRes = await fetch("http://localhost:5000/api/payment/verify", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(response),
-            });
-
-            const verifyJson = await verifyRes.json();
-            if (verifyRes.ok && verifyJson.success) {
-              const paidAmount = Math.round((data.razorpayOrder.amount || 0) / 100);
-              clearCart();
-              setIsPaymentLoading(false);
-              setSuccessData({ points: paidAmount, email: formData.email });
-              setShowSuccessModal(true);
-            } else {
-              toast.error("Payment verification failed.");
-              setIsPaymentLoading(false);
-            }
-          } catch (err) {
-            toast.error("Verification error: " + (err.message || err));
-            setIsPaymentLoading(false);
-          }
-        },
-        prefill: {
-          name: formData.name,
-          email: formData.email,
-          contact: formData.phone,
-        },
-        theme: { color: "#1e3a8a" }, // Premium blue
-      };
-
-      const rzp = new window.Razorpay(options);
-      setIsPaymentLoading(false);
-      rzp.on("payment.failed", function (response) {
-        toast.error("Payment failed. " + (response.error?.description || ""));
-        setIsPaymentLoading(false);
-      });
-      rzp.open();
-    } catch (error) {
-      toast.error(error.message || "Payment init failed");
-      setIsPaymentLoading(false);
+    let minCart = appliedCoupon.minCartValue || 0;
+    if (!minCart && lookupData.offerCoupons) {
+      const matched = lookupData.offerCoupons.find(o => o.code === appliedCoupon.code);
+      if (matched) minCart = matched.minCartValue || 0;
     }
-  };
-
-  const handlePlaceOrder = (e) => {
-    e.preventDefault();
-
-    if (!formData.pincode.trim()) {
-      setPincodeError("Please enter a pincode");
-      return;
+    if (!minCart && lookupData.agent && appliedCoupon.code === lookupData.agent.personalCode) {
+      minCart = lookupData.agent.personalMinCartValue || 0;
+    }
+    if (!minCart && lookupData.referralAgent && appliedCoupon.code === lookupData.referralAgent.referralCode) {
+      minCart = lookupData.referralAgent.referralMinCartValue || 0;
     }
 
-    // FIXME: Pincode validation commented out
-    // if (!allowedPincodes.includes(formData.pincode)) {
-    //   setPincodeError("Currently we are not delivering in your location");
-    //   return;
-    // }
-
-    setCookie("userDetails", formData, 30);
-    setIsFormSubmitting(true);
-
-    setTimeout(() => {
-      const message = formatCartMessage(cartItems, packItems, formData);
-      const encodedMessage = encodeURIComponent(message);
-      const whatsappUrl = `https://wa.me/919985944466?text=${encodedMessage}`;
-      window.open(whatsappUrl, "_blank");
-
-      clearCart();
-      toast.success("Order placed successfully!", { position: "bottom-center", autoClose: 12000 });
-      setIsFormSubmitting(false);
-      navigate("/");
-    }, 1500);
-  };
+    if (minCart > 0 && sellingTotal < minCart) {
+      setAppliedCoupon(null);
+      setCouponCode('');
+      saveCartState({ appliedCoupon: null, appliedReward, couponCode: '' });
+      toast.info(`Coupon removed — minimum cart value of ₹${minCart} no longer met`);
+    }
+  }, [checkoutSummary.sellingTotal, appliedCoupon, lookupData, appliedReward]);
 
   if (cartItems.length === 0 && packItems.length === 0 && inProgressPacks.length === 0) {
     return (
@@ -878,6 +907,13 @@ const Cart = () => {
           </div>
         </div>
 
+        <div style={{
+          display: "flex",
+          flexDirection: breakpoint === "mobile" ? "column" : "row",
+          gap: breakpoint === "mobile" ? "0" : "24px",
+          alignItems: breakpoint === "mobile" ? "stretch" : "flex-start",
+        }}>
+        <div style={{ flex: 1, minWidth: 0, width: breakpoint === "mobile" ? "100%" : "auto" }}>
         <div style={{ marginBottom: "24px" }}>
           {cartItems.map((item, index) => (
             <div
@@ -1227,24 +1263,13 @@ const Cart = () => {
             />
           ))}
         </div>
+        </div>
 
+        <div style={{
+          ...(breakpoint === "mobile" ? { width: "100%" } : { flex: "0 0 380px", position: "sticky", top: 104 }),
+        }}>
         {(() => {
-          const totalItems = cartItems.reduce((sum, item) => sum + item.quantity, 0)
-            + packItems.reduce((sum, pack) => sum + pack.quantity, 0);
-
-          // Calculate MRP: for packs use offPrice if available, otherwise packPrice; for items use price
-          const totalMRP = cartItems.reduce((sum, item) => {
-            const price = typeof item.price === 'string' ? parseFloat(item.price.replace(/[^0-9.]/g, '')) : item.price;
-            return sum + (price * item.quantity);
-          }, 0) + packItems.reduce((sum, pack) => {
-            const mrp = (pack.packOffPrice && pack.packOffPrice > 0 && pack.packOffPrice !== pack.packPrice)
-              ? pack.packOffPrice : pack.packPrice;
-            return sum + (mrp * pack.quantity);
-          }, 0);
-
-          const sellingTotal = getCartTotal();
-          const totalDiscount = totalMRP - sellingTotal;
-          const deliveryCharge = 0; // Free delivery
+          const { totalItems, totalMRP, sellingTotal, totalDiscount, deliveryCharge, extraDiscount, freeShippingApplied, finalTotal } = checkoutSummary;
 
           const summaryRowStyle = {
             display: "flex",
@@ -1266,6 +1291,589 @@ const Cart = () => {
                 border: "1px solid #e5e7eb",
               }}
             >
+               <div style={{
+                margin: "10px 0px 16px 0px",
+                borderTop: "1px solid #f0f0f0",
+                paddingTop: "16px",
+              }}>
+                <p style={{
+                  margin: "0 0 12px",
+                  fontSize: "12px",
+                  fontWeight: 700,
+                  color: "#6B7280",
+                  fontFamily: "'Inter', sans-serif",
+                  letterSpacing: "0.5px",
+                  textTransform: "uppercase",
+                }}>
+                  Email/Phone
+                </p>
+
+                {/* Identifier Lookup */}
+                <div style={{
+                  display: "flex",
+                  gap: 8,
+                  marginBottom: lookupData ? 8 : 14,
+                }}>
+                  <input
+                    type="text"
+                    value={lookupValue}
+                    onChange={(e) => { setLookupValue(e.target.value); setLookupData(null); localStorage.removeItem('cart_lookup'); }}
+                    placeholder="Enter email/phone to check rewards & offers"
+                    style={{
+                      flex: 1,
+                      padding: "9px 12px",
+                      fontSize: "12px",
+                      border: `2px solid ${lookupError ? '#FCA5A5' : '#E5E7EB'}`,
+                      borderRadius: 8,
+                      outline: "none",
+                      fontFamily: "'Inter', sans-serif",
+                      color: '#111827',
+                    }}
+                    onKeyDown={(e) => { if (e.key === 'Enter') handleLookup() }}
+                  />
+                  <button
+                    onClick={handleLookup}
+                    disabled={!lookupValue.trim() || lookupLoading}
+                    style={{
+                      padding: "9px 16px",
+                      fontSize: "12px",
+                      fontWeight: 600,
+                      border: "none",
+                      borderRadius: 8,
+                      cursor: lookupValue.trim() && !lookupLoading ? "pointer" : "not-allowed",
+                      background: lookupValue.trim() && !lookupLoading
+                        ? "linear-gradient(135deg, #6366f1, #4f46e5)"
+                        : "#F3F4F6",
+                      color: lookupValue.trim() && !lookupLoading ? "#fff" : "#9CA3AF",
+                      fontFamily: "'Inter', sans-serif",
+                      whiteSpace: "nowrap",
+                      transition: 'all 0.2s',
+                    }}
+                  >
+                    {lookupLoading ? '...' : 'Verify'}
+                  </button>
+                </div>
+
+                {lookupError && (
+                  <p style={{ margin: "0 0 12px", fontSize: "11px", color: "#EF4444", fontFamily: "'Inter', sans-serif" }}>
+                    {lookupError}
+                  </p>
+                )}
+
+                {lookupData && lookupData.totalPoints > 0 && lookupData.hasRewards === false && lookupData.hasOffers === false && !lookupData.agent && !lookupData.referralAgent && (
+                  <p style={{ margin: "0 0 14px", fontSize: "11px", color: "#9CA3AF", fontFamily: "'Inter', sans-serif", textAlign: "center", padding: "10px 0" }}>
+                    No rewards or offers found for this identifier
+                  </p>
+                )}
+
+                {!lookupData ? (
+                  <div style={{ textAlign: "center", padding: "20px 12px" }}>
+                    <FaTag size={28} color="#D1D5DB" style={{ marginBottom: 8 }} />
+                    <p style={{ fontSize: "12px", color: "#9CA3AF", margin: 0, fontFamily: "'Inter', sans-serif" }}>
+                      Enter your email/phone above and verify to see available rewards & coupons
+                    </p>
+                  </div>
+                ) : (<>
+                <div style={{
+                  display: "flex",
+                  backgroundColor: "#F3F4F6",
+                  borderRadius: 10,
+                  padding: 3,
+                  marginBottom: 14,
+                }}>
+                  <button
+                    onClick={() => { setApplyMode('reward'); setCouponError(''); }}
+                    style={{
+                      flex: 1,
+                      padding: "9px 12px",
+                      fontSize: "12px",
+                      fontWeight: 600,
+                      border: "none",
+                      borderRadius: 8,
+                      cursor: "pointer",
+                      background: applyMode === 'reward' ? '#fff' : 'transparent',
+                      color: applyMode === 'reward' ? '#111827' : '#9CA3AF',
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: "6px",
+                      fontFamily: "'Inter', sans-serif",
+                      boxShadow: applyMode === 'reward' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                      transition: 'all 0.2s',
+                    }}
+                  >
+                    <FaGift size={13} color={applyMode === 'reward' ? '#F59E0B' : '#9CA3AF'} /> Reward
+                    {lookupData?.hasRewards && lookupData.rewards.length > 0 && (
+                      <span style={{
+                        fontSize: "10px",
+                        fontWeight: 700,
+                        background: applyMode === 'reward' ? '#F59E0B' : '#D1D5DB',
+                        color: applyMode === 'reward' ? '#fff' : '#6B7280',
+                        borderRadius: 10,
+                        padding: "1px 6px",
+                        minWidth: 18,
+                        textAlign: "center",
+                        lineHeight: "16px",
+                      }}>
+                        {lookupData.rewards.length}
+                      </span>
+                    )}
+                  </button>
+                  <button
+                    onClick={() => { setApplyMode('coupon'); setCouponError(''); }}
+                    style={{
+                      flex: 1,
+                      padding: "9px 12px",
+                      fontSize: "12px",
+                      fontWeight: 600,
+                      border: "none",
+                      borderRadius: 8,
+                      cursor: "pointer",
+                      background: applyMode === 'coupon' ? '#fff' : 'transparent',
+                      color: applyMode === 'coupon' ? '#111827' : '#9CA3AF',
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: "6px",
+                      fontFamily: "'Inter', sans-serif",
+                      boxShadow: applyMode === 'coupon' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                      transition: 'all 0.2s',
+                    }}
+                  >
+                    <FaTag size={13} color={applyMode === 'coupon' ? '#F59E0B' : '#9CA3AF'} /> Coupon
+                    {(() => {
+                      const offerCount = lookupData?.offerCoupons?.filter(o => !o.usedByCurrentUser)?.length || 0;
+                      const agentCount = lookupData?.agent ? 1 : 0;
+                      const referralCount = !lookupData?.agent && lookupData?.referralAgent ? 1 : 0;
+                      const total = offerCount + agentCount + referralCount;
+                      return total > 0 ? (
+                        <span style={{
+                          fontSize: "10px",
+                          fontWeight: 700,
+                          background: applyMode === 'coupon' ? '#F59E0B' : '#D1D5DB',
+                          color: applyMode === 'coupon' ? '#fff' : '#6B7280',
+                          borderRadius: 10,
+                          padding: "1px 6px",
+                          minWidth: 18,
+                          textAlign: "center",
+                          lineHeight: "16px",
+                        }}>
+                          {total}
+                        </span>
+                      ) : null;
+                    })()}
+                  </button>
+                </div>
+
+                {(appliedReward || appliedCoupon) && (
+                  <div style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    padding: "10px 14px",
+                    background: "linear-gradient(135deg, #FFFBEB, #FEF3C7)",
+                    borderRadius: 10,
+                    border: "1px solid #FDE68A",
+                    marginBottom: 10,
+                  }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                      <div style={{
+                        width: 32,
+                        height: 32,
+                        borderRadius: 8,
+                        background: "#FEF3C7",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        color: '#fff',
+                        fontSize: 14,
+                      }}>
+                        {appliedReward ? <FaGift size={14} /> : <FaTag size={14} />}
+                      </div>
+                      <div>
+                        <p style={{ margin: 0, fontSize: "12px", fontWeight: 600, fontFamily: "'Inter', sans-serif", color: "#92400E" }}>
+                          {appliedReward ? appliedReward.label : appliedCoupon.code}
+                        </p>
+                        <p style={{ margin: "1px 0 0", fontSize: "10px", fontFamily: "'Inter', sans-serif", color: "#A16207" }}>
+                          Applied successfully
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={handleRemoveApplied}
+                      style={{
+                        width: 24,
+                        height: 24,
+                        borderRadius: '50%',
+                        background: "rgba(220,38,38,0.1)",
+                        border: "none",
+                        cursor: "pointer",
+                        color: "#DC2626",
+                        fontSize: "14px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        lineHeight: 1,
+                        transition: 'all 0.2s',
+                      }}
+                      onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(220,38,38,0.2)' }}
+                      onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(220,38,38,0.1)' }}
+                    >
+                      ×
+                    </button>
+                  </div>
+                )}
+
+                {applyMode === 'reward' && !appliedReward && !appliedCoupon && (
+                  <div>
+                    {/* Show lookup rewards if available */}
+                    {lookupData && lookupData.hasRewards ? (
+                      <div>
+                        <p style={{ margin: "0 0 8px", fontSize: "10px", fontWeight: 600, color: "#6B7280", fontFamily: "'Inter', sans-serif", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                          Your Rewards ({lookupData.totalPoints} points)
+                        </p>
+                        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                          {aggregatedRewards.map((r) => (
+                            <button
+                              key={r.id}
+                              onClick={() => r.isAggregated ? null : handleApplyReward(r, true)}
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 10,
+                                padding: "10px 12px",
+                                background: "#FFFBEB",
+                                borderRadius: 8,
+                                border: "1px solid #FDE68A",
+                                cursor: r.isAggregated ? "default" : "pointer",
+                                width: "100%",
+                                textAlign: "left",
+                                fontFamily: "'Inter', sans-serif",
+                                transition: "all 0.2s",
+                                opacity: r.isAggregated ? 0.8 : 1,
+                              }}
+                              onMouseEnter={(e) => { if (!r.isAggregated) { e.currentTarget.style.borderColor = "#F59E0B"; e.currentTarget.style.backgroundColor = "#FEF3C7"; } }}
+                              onMouseLeave={(e) => { if (!r.isAggregated) { e.currentTarget.style.borderColor = "#FDE68A"; e.currentTarget.style.backgroundColor = "#FFFBEB"; } }}
+                            >
+                              <FaGift size={14} color="#F59E0B" />
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <span style={{ fontSize: "12px", fontWeight: 600, color: "#92400E" }}>{r.label}</span>
+                                {r.expiresAt && r.type !== 'reward_points' && (
+                                  <span style={{ display: "block", fontSize: "10px", color: "#A16207", marginTop: 1 }}>
+                                    Expires {new Date(r.expiresAt).toLocaleDateString("en-IN")}
+                                  </span>
+                                )}
+                              </div>
+                              <span style={{ fontSize: "11px", padding: "3px 10px", background: r.isAggregated ? "#F0FFFD" : "#FEF3C7", borderRadius: 4, color: r.isAggregated ? "#4ECDC4" : "#D97706", fontWeight: 600 }}>
+                                {r.isAggregated ? `${r.value} PTS` : 'Apply'}
+                              </span>
+                            </button>
+                          ))}                          </div>
+                      </div>
+                    ) : lookupData ? (
+                      <div style={{ textAlign: "center", padding: "20px 12px" }}>
+                        <FaGift size={28} color="#D1D5DB" style={{ marginBottom: 8 }} />
+                        <p style={{ fontSize: "12px", color: "#9CA3AF", margin: 0, fontFamily: "'Inter', sans-serif" }}>
+                          No rewards available
+                        </p>
+                      </div>
+                    ) : !rewardsIdentifier ? (
+                      <div style={{ textAlign: "center", padding: "20px 12px" }}>
+                        <FaGift size={28} color="#D1D5DB" style={{ marginBottom: 8 }} />
+                        <p style={{ fontSize: "12px", color: "#9CA3AF", margin: 0, fontFamily: "'Inter', sans-serif" }}>
+                          Go to Rewards page to earn rewards
+                        </p>
+                      </div>
+                    ) : (
+                      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                        {unclaimedRewards.map((reward) => {
+                          const rewardIcon = reward.type === 'discount_percent' ? <FaTag size={16} /> :
+                            reward.type === 'reward_points' ? <FaGift size={16} /> :
+                            reward.type === 'free_shipping' ? <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="3" width="15" height="13" /><polygon points="16 8 20 8 23 11 23 16 16 16 16 8" /><circle cx="5.5" cy="18.5" r="2.5" /><circle cx="18.5" cy="18.5" r="2.5" /></svg> : null;
+                          return (
+                            <button
+                              key={reward.id}
+                              onClick={() => handleApplyReward(reward)}
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 12,
+                                padding: "12px 14px",
+                                background: "#fff",
+                                borderRadius: 10,
+                                border: "1px solid #F3F4F6",
+                                cursor: "pointer",
+                                width: "100%",
+                                textAlign: "left",
+                                transition: "all 0.2s",
+                                fontFamily: "'Inter', sans-serif",
+                              }}
+                              onMouseEnter={(e) => { e.currentTarget.style.borderColor = "#FDE68A"; e.currentTarget.style.backgroundColor = "#FFFBEB"; e.currentTarget.style.boxShadow = '0 2px 8px rgba(245,158,11,0.08)' }}
+                              onMouseLeave={(e) => { e.currentTarget.style.borderColor = "#F3F4F6"; e.currentTarget.style.backgroundColor = "#fff"; e.currentTarget.style.boxShadow = 'none' }}
+                            >
+                              <div style={{
+                                width: 40,
+                                height: 40,
+                                borderRadius: 10,
+                                background: reward.type === 'discount_percent' ? '#FEF3C7' :
+                                  reward.type === 'reward_points' ? '#DBEAFE' :
+                                  '#D1FAE5',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                color: reward.type === 'discount_percent' ? '#D97706' :
+                                  reward.type === 'reward_points' ? '#2563EB' :
+                                  '#059669',
+                                flexShrink: 0,
+                              }}>
+                                {rewardIcon}
+                              </div>
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <p style={{ margin: 0, fontSize: "12px", fontWeight: 600, color: "#111827" }}>
+                                  {reward.label}
+                                </p>
+                                <p style={{ margin: "2px 0 0", fontSize: "11px", color: "#9CA3AF" }}>
+                                  {reward.type === 'discount_percent' ? `${reward.value}% off on your order` :
+                                   reward.type === 'discount_fixed' ? `₹${reward.value} off on your order` :
+                                   reward.type === 'reward_points' ? `${reward.value} reward points` :
+                                   reward.type === 'free_shipping' ? 'Free shipping on next order' : ''}
+                                </p>
+                                {reward.expiresAt && (
+                                  <p style={{ margin: "1px 0 0", fontSize: "10px", color: "#DC2626" }}>
+                                    Expires {new Date(reward.expiresAt).toLocaleDateString("en-IN")}
+                                  </p>
+                                )}
+                              </div>
+                              <span style={{
+                                padding: "5px 14px",
+                                fontSize: "11px",
+                                fontWeight: 600,
+                                color: "#F59E0B",
+                                backgroundColor: "#FEF3C7",
+                                borderRadius: 6,
+                              }}>
+                                Apply
+                              </span>
+                            </button>
+                          )
+                        })}
+                      </div>
+                    )}
+                  </div>
+                )}
+                </>)}
+                {lookupData && applyMode === 'coupon' && !appliedCoupon && !appliedReward && (
+                  <div>
+                    <div style={{
+                      display: "flex",
+                      border: `2px solid ${couponError ? '#FCA5A5' : '#E5E7EB'}`,
+                      borderRadius: 10,
+                      overflow: "hidden",
+                      transition: 'border-color 0.2s',
+                    }}
+                      onFocus={() => {}}
+                    >
+                      <input
+                        type="text"
+                        value={couponCode}
+                        onChange={(e) => { setCouponCode(e.target.value.toUpperCase()); setCouponError(''); }}
+                        placeholder="Enter coupon code"
+                        style={{
+                          flex: 1,
+                          padding: "11px 14px",
+                          fontSize: "13px",
+                          border: "none",
+                          outline: "none",
+                          boxSizing: "border-box",
+                          textTransform: "uppercase",
+                          letterSpacing: "1px",
+                          fontFamily: "'Inter', sans-serif",
+                          color: '#111827',
+                        }}
+                        onFocus={(e) => {
+                          e.currentTarget.parentElement.style.borderColor = '#F59E0B';
+                          e.currentTarget.parentElement.style.boxShadow = '0 0 0 3px rgba(245,158,11,0.1)';
+                        }}
+                        onBlur={(e) => {
+                          e.currentTarget.parentElement.style.boxShadow = 'none';
+                          e.currentTarget.parentElement.style.borderColor = couponError ? '#FCA5A5' : '#E5E7EB';
+                        }}
+                        onKeyDown={(e) => { if (e.key === 'Enter') handleApplyCoupon() }}
+                      />
+                      <button
+                        onClick={handleApplyCoupon}
+                        disabled={!couponCode.trim() || couponLoading}
+                        style={{
+                          padding: "11px 20px",
+                          fontSize: "12px",
+                          fontWeight: 600,
+                          border: "none",
+                          cursor: couponCode.trim() && !couponLoading ? "pointer" : "not-allowed",
+                          background: couponCode.trim() && !couponLoading
+                            ? "linear-gradient(135deg, #F59E0B, #D97706)"
+                            : "#F3F4F6",
+                          color: couponCode.trim() && !couponLoading ? "#fff" : "#9CA3AF",
+                          fontFamily: "'Inter', sans-serif",
+                          whiteSpace: "nowrap",
+                          transition: 'all 0.2s',
+                        }}
+                      >
+                        Apply
+                      </button>
+                    </div>
+                    {couponError && (
+                      <p style={{
+                        margin: "6px 0 0",
+                        fontSize: "11px",
+                        color: "#EF4444",
+                        fontFamily: "'Inter', sans-serif",
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 4,
+                      }}>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <circle cx="12" cy="12" r="10" /><line x1="15" y1="9" x2="9" y2="15" /><line x1="9" y1="9" x2="15" y2="15" />
+                        </svg>
+                        {couponError}
+                      </p>
+                    )}
+
+                    {/* Available Coupons — offer coupons only */}
+                    {lookupData?.hasOffers && (
+                      <div style={{ marginTop: 12 }}>
+                        <p style={{ margin: "0 0 6px", fontSize: "10px", fontWeight: 600, color: "#6B7280", fontFamily: "'Inter', sans-serif", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                          Available Coupons
+                        </p>
+                        <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                          {lookupData.offerCoupons.filter(o => !o.usedByCurrentUser).map((o) => {
+                            const eligible = sellingTotal >= (o.minCartValue || 0);
+                            return (
+                              <button
+                                key={o.id}
+                                onClick={() => eligible && handleApplyOfferCoupon(o.code)}
+                                disabled={!eligible}
+                                style={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "space-between",
+                                  padding: "8px 12px",
+                                  background: eligible ? "#F0FDF4" : "#F9FAFB",
+                                  borderRadius: 8,
+                                  border: `1px solid ${eligible ? '#BBF7D0' : '#E5E7EB'}`,
+                                  cursor: eligible ? "pointer" : "not-allowed",
+                                  width: "100%",
+                                  textAlign: "left",
+                                  fontFamily: "'Inter', sans-serif",
+                                  transition: "all 0.2s",
+                                  opacity: eligible ? 1 : 0.6,
+                                }}
+                                onMouseEnter={(e) => { if (eligible) { e.currentTarget.style.borderColor = "#22C55E"; e.currentTarget.style.backgroundColor = "#DCFCE7"; }}}
+                                onMouseLeave={(e) => { if (eligible) { e.currentTarget.style.borderColor = "#BBF7D0"; e.currentTarget.style.backgroundColor = "#F0FDF4"; }}}
+                              >
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                  <span style={{ fontSize: "12px", fontWeight: 600, color: eligible ? "#166534" : "#9CA3AF" }}>
+                                    {o.code} {o.discount > 0 ? `- ${o.discount}% OFF` : ''} {o.freeShipping ? '• Free Shipping' : ''}
+                                  </span>
+                                  {!eligible && o.minCartValue > 0 && (
+                                    <p style={{ margin: "2px 0 0", fontSize: "10px", color: "#9CA3AF" }}>Min order: ₹{o.minCartValue}</p>
+                                  )}
+                                </div>
+                                <span style={{ fontSize: "11px", padding: "2px 10px", background: eligible ? "#DCFCE7" : "#F3F4F6", borderRadius: 4, color: eligible ? "#16A34A" : "#9CA3AF", fontWeight: 600, whiteSpace: "nowrap" }}>
+                                  {eligible ? 'Apply' : 'Locked'}
+                                </span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Your Codes — collaborator / referral codes (shown below in a distinct section) */}
+                    {(lookupData?.agent || lookupData?.referralAgent) && (
+                      <div style={{ marginTop: lookupData?.hasOffers ? 16 : 12 }}>
+                        <p style={{ margin: "0 0 6px", fontSize: "10px", fontWeight: 600, color: "#6B7280", fontFamily: "'Inter', sans-serif", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                          Your Codes
+                        </p>
+                        <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                          {lookupData.agent && (() => {
+                            const minCart = lookupData.agent.personalMinCartValue || 0;
+                            const eligible = sellingTotal >= minCart;
+                            return (
+                              <button
+                                onClick={() => eligible && handleApplyOfferCoupon(lookupData.agent.personalCode)}
+                                style={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "space-between",
+                                  padding: "8px 12px",
+                                  background: eligible ? "#F0F0FF" : "#F9FAFB",
+                                  borderRadius: 8,
+                                  border: `1px solid ${eligible ? '#C7D2FE' : '#E5E7EB'}`,
+                                  cursor: eligible ? "pointer" : "not-allowed",
+                                  width: "100%",
+                                  textAlign: "left",
+                                  fontFamily: "'Inter', sans-serif",
+                                  transition: "all 0.2s",
+                                  opacity: eligible ? 1 : 0.6,
+                                }}
+                                onMouseEnter={(e) => { if (eligible) { e.currentTarget.style.borderColor = "#818CF8"; e.currentTarget.style.backgroundColor = "#E0E7FF"; }}}
+                                onMouseLeave={(e) => { if (eligible) { e.currentTarget.style.borderColor = "#C7D2FE"; e.currentTarget.style.backgroundColor = "#F0F0FF"; }}}
+                              >
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                  <span style={{ fontSize: "12px", fontWeight: 600, color: eligible ? "#4338CA" : "#9CA3AF" }}>
+                                    {lookupData.agent.personalCode} — {lookupData.agent.personalDiscountPercent}% off
+                                  </span>
+                                  <p style={{ margin: "1px 0 0", fontSize: "10px", color: eligible ? "#818CF8" : "#9CA3AF" }}>
+                                    Collaborator code{!eligible && minCart > 0 ? ` • Min ₹${minCart}` : ''}
+                                  </p>
+                                </div>
+                                <span style={{ fontSize: "11px", padding: "2px 10px", background: eligible ? "#E0E7FF" : "#F3F4F6", borderRadius: 4, color: eligible ? "#4F46E5" : "#9CA3AF", fontWeight: 600 }}>{eligible ? 'Apply' : 'Locked'}</span>
+                              </button>
+                            );
+                          })()}
+                          {!lookupData.agent && lookupData.referralAgent && (() => {
+                            const minCart = lookupData.referralAgent.referralMinCartValue || 0;
+                            const eligible = sellingTotal >= minCart;
+                            return (
+                              <button
+                                onClick={() => eligible && handleApplyOfferCoupon(lookupData.referralAgent.referralCode)}
+                                style={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "space-between",
+                                  padding: "8px 12px",
+                                  background: eligible ? "#FAF5FF" : "#F9FAFB",
+                                  borderRadius: 8,
+                                  border: `1px solid ${eligible ? '#E9D5FF' : '#E5E7EB'}`,
+                                  cursor: eligible ? "pointer" : "not-allowed",
+                                  width: "100%",
+                                  textAlign: "left",
+                                  fontFamily: "'Inter', sans-serif",
+                                  transition: "all 0.2s",
+                                  opacity: eligible ? 1 : 0.6,
+                                }}
+                                onMouseEnter={(e) => { if (eligible) { e.currentTarget.style.borderColor = "#C084FC"; e.currentTarget.style.backgroundColor = "#F3E8FF"; }}}
+                                onMouseLeave={(e) => { if (eligible) { e.currentTarget.style.borderColor = "#E9D5FF"; e.currentTarget.style.backgroundColor = "#FAF5FF"; }}}
+                              >
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                  <span style={{ fontSize: "12px", fontWeight: 600, color: eligible ? "#7C3AED" : "#9CA3AF" }}>
+                                    {lookupData.referralAgent.referralCode}
+                                  </span>
+                                  <p style={{ margin: "1px 0 0", fontSize: "10px", color: eligible ? "#A855F7" : "#9CA3AF" }}>
+                                    Referral code{!eligible && minCart > 0 ? ` • Min ₹${minCart}` : ''}
+                                  </p>
+                                </div>
+                                <span style={{ fontSize: "11px", padding: "2px 10px", background: eligible ? "#F3E8FF" : "#F3F4F6", borderRadius: 4, color: eligible ? "#9333EA" : "#9CA3AF", fontWeight: 600 }}>{eligible ? 'Apply' : 'Locked'}</span>
+                              </button>
+                            );
+                          })()}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+              </div>
               <h2
                 style={{
                   fontFamily: "'Nunito Sans', sans-serif",
@@ -1304,10 +1912,28 @@ const Cart = () => {
                 </div>
 
                 {/* Delivery Charges */}
-                <div style={{ ...summaryRowStyle, borderBottom: "1px dashed #e5e7eb", paddingBottom: "12px" }}>
+                <div style={{ ...summaryRowStyle }}>
                   <span style={{ color: "#4b5563" }}>Delivery Charges</span>
                   <span style={{ color: "#16a34a", fontWeight: 600 }}>FREE</span>
                 </div>
+
+                {/* Reward / Coupon Discount */}
+                {extraDiscount > 0 && (
+                  <div style={{ ...summaryRowStyle }}>
+                    <span style={{ color: "#F59E0B" }}>
+                      {appliedReward ? 'Reward Discount' : 'Coupon Discount'}
+                    </span>
+                    <span style={{ color: "#F59E0B", fontWeight: 600 }}>
+                      − ₹{extraDiscount.toFixed(2)}
+                    </span>
+                  </div>
+                )}
+                {freeShippingApplied && (
+                  <div style={{ ...summaryRowStyle }}>
+                    <span style={{ color: "#F59E0B" }}>Free Shipping</span>
+                    <span style={{ color: "#16a34a", fontWeight: 600 }}>Applied ✓</span>
+                  </div>
+                )}
 
                 {/* Grand Total */}
                 <div
@@ -1316,6 +1942,8 @@ const Cart = () => {
                     justifyContent: "space-between",
                     alignItems: "center",
                     padding: "14px 0 4px 0",
+                    borderTop: "1px dashed #e5e7eb",
+                    marginTop: "4px",
                     fontFamily: "'Nunito Sans', sans-serif",
                   }}
                 >
@@ -1335,7 +1963,7 @@ const Cart = () => {
                       fontWeight: 800,
                     }}
                   >
-                    ₹{sellingTotal.toFixed(2)}
+                    ₹{finalTotal.toFixed(2)}
                   </span>
                 </div>
               </div>
@@ -1374,392 +2002,69 @@ const Cart = () => {
           );
         })()}
 
-        {!showForm && (
-          <button
-            onClick={() => setShowForm(true)}
-            style={{
-              width: "100%",
-              padding: breakpoint === "mobile" ? "13px" : "15px",
-              fontFamily: "'Inter', sans-serif",
-              fontSize: breakpoint === "mobile" ? "14px" : "16px",
-              background: "linear-gradient(135deg, #f59e0b 0%, #f97316 100%)",
-              color: "#1f2937",
-              fontWeight: 700,
-              border: "none",
-              borderRadius: "8px",
-              cursor: "pointer",
-              transition: "all 0.2s ease",
-              boxShadow: "0 2px 8px rgba(245,158,11,0.25)",
-              letterSpacing: "0.02em",
-            }}
-            onMouseEnter={(e) => {
-              e.target.style.transform = "translateY(-1px)";
-              e.target.style.boxShadow = "0 4px 12px rgba(245,158,11,0.35)";
-            }}
-            onMouseLeave={(e) => {
-              e.target.style.transform = "translateY(0)";
-              e.target.style.boxShadow = "0 2px 8px rgba(245,158,11,0.25)";
-            }}
-          >
-            Proceed to Checkout ({cartItems.reduce((s, i) => s + i.quantity, 0) + packItems.reduce((s, p) => s + p.quantity, 0)} items)
-          </button>
-        )}
-
-        {showForm && (
-          <form
-            onSubmit={handlePlaceOrder}
-            style={{
-              backgroundColor: "#ffffff",
-              padding: breakpoint === "mobile" ? "16px" : "24px",
-              borderRadius: "12px",
-              marginTop: "16px",
-              boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
-              border: "1px solid #e5e7eb",
-            }}
-          >
-            <h2
-              style={{
-                fontFamily: "'Nunito Sans', sans-serif",
-                fontSize: breakpoint === "mobile" ? "20px" : "22px",
-                marginBottom: "24px",
-                color: "#1f2937",
-                fontWeight: 700,
-              }}
-            >
-              Delivery Details
-            </h2>
-
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: breakpoint === "mobile" ? "1fr" : "repeat(2, 1fr)",
-                gap: "16px",
-                marginBottom: "24px",
-              }}
-            >
-              {[
-                { name: "name", label: "Full Name", type: "text", required: true },
-                { name: "phone", label: "Phone Number", type: "tel", required: true },
-                { name: "email", label: "Email Address", type: "email", required: true },
-                { name: "whatsapp", label: "WhatsApp Number", type: "tel", required: true },
-                { name: "pincode", label: "Pincode", type: "text", required: true },
-                { name: "city", label: "City / Town", type: "text", required: true },
-                { name: "state", label: "State", type: "text", required: true },
-                { name: "country", label: "Country", type: "text", required: true },
-              ].map((field) => (
-                <div key={field.name}>
-                  <label
-                    style={{
-                      display: "block",
-                      fontFamily: "'Inter', sans-serif",
-                      fontSize: "13px",
-                      marginBottom: "6px",
-                      color: "#4b5563",
-                      fontWeight: 500,
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "4px",
-                    }}
-                  >
-                    {field.label} {field.required && <span style={{ color: "#ef4444" }}>*</span>}
-                    {field.name === "pincode" && pincode && (
-                      <span
-                        style={{
-                          background: "linear-gradient(135deg, #22c55e 0%, #16a34a 100%)",
-                          color: "#fff",
-                          padding: "2px 8px",
-                          borderRadius: "12px",
-                          fontSize: "11px",
-                          fontWeight: 500,
-                        }}
-                      >
-                        Verified
-                      </span>
-                    )}
-                  </label>
-                  <input
-                    type={field.type}
-                    name={field.name}
-                    value={formData[field.name]}
-                    onChange={handleInputChange}
-                    required={field.required}
-                    style={{
-                      width: "100%",
-                      padding: "10px 12px",
-                      border: pincodeError && field.name === "pincode"
-                        ? "1px solid #ef4444"
-                        : pincode && field.name === "pincode"
-                          ? "1px solid #22c55e"
-                          : "1px solid #d1d5db",
-                      borderRadius: "8px",
-                      fontFamily: "'Inter', sans-serif",
-                      fontSize: "14px",
-                      backgroundColor: "#fff",
-                      transition: "border-color 0.2s ease",
-                    }}
-                    onFocus={(e) => {
-                      e.target.style.borderColor = "#3b82f6";
-                    }}
-                    onBlur={(e) => {
-                      e.target.style.borderColor = pincodeError && field.name === "pincode"
-                        ? "#ef4444"
-                        : pincode && field.name === "pincode"
-                          ? "#22c55e"
-                          : "#d1d5db";
-                    }}
-                  />
-                  {pincodeError && field.name === "pincode" && (
-                    <p
-                      style={{
-                        color: "#ef4444",
-                        fontSize: "12px",
-                        marginTop: "4px",
-                        fontFamily: "'Inter', sans-serif",
-                      }}
-                    >
-                      {pincodeError}
-                    </p>
-                  )}
-                </div>
-              ))}
-            </div>
-
-            <div style={{ marginBottom: "32px" }}>
-              <label
-                style={{
-                  display: "block",
-                  fontFamily: "'Inter', sans-serif",
-                  fontSize: "13px",
-                  marginBottom: "6px",
-                  color: "#4b5563",
-                  fontWeight: 500,
-                }}
-              >
-                Full Address / Landmark Details <span style={{ color: "#ef4444" }}>*</span>
-              </label>
-              <textarea
-                name="address"
-                value={formData.address}
-                onChange={handleInputChange}
-                required
-                placeholder="Enter your complete address with landmark details"
-                style={{
-                  width: "100%",
-                  padding: "10px 12px",
-                  border: "1px solid #d1d5db",
-                  borderRadius: "8px",
-                  fontFamily: "'Inter', sans-serif",
-                  fontSize: "14px",
-                  backgroundColor: "#fff",
-                  minHeight: "80px",
-                  transition: "border-color 0.2s ease",
-                }}
-                onFocus={(e) => {
-                  e.target.style.borderColor = "#3b82f6";
-                }}
-                onBlur={(e) => {
-                  e.target.style.borderColor = "#d1d5db";
-                }}
-              />
-            </div>
-
-            <div style={{ display: "grid", gridTemplateColumns: breakpoint === "mobile" ? "1fr" : "repeat(2, 1fr)", gap: "12px", marginBottom: "12px" }}>
-              <button
-                type="button"
-                disabled={isFormSubmitting}
-                onClick={handlePlaceOrder}
-                style={{
-                  padding: "12px",
-                  fontFamily: "'Inter', sans-serif",
-                  fontSize: "14px",
-                  background: isFormSubmitting
-                    ? "#9ca3af"
-                    : "linear-gradient(135deg, #22c55e 0%, #16a34a 100%)",
-                  color: "#fff",
-                  border: "none",
-                  borderRadius: "8px",
-                  cursor: isFormSubmitting ? "not-allowed" : "pointer",
-                  transition: "all 0.3s ease",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: "8px",
-                  fontWeight: 600,
-                  boxShadow: "0 2px 8px rgba(34,197,94,0.2)",
-                }}
-                onMouseEnter={(e) => {
-                  if (!isFormSubmitting) {
-                    e.target.style.transform = "translateY(-2px)";
-                    e.target.style.boxShadow = "0 4px 12px rgba(34,197,94,0.3)";
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (!isFormSubmitting) {
-                    e.target.style.transform = "translateY(0)";
-                    e.target.style.boxShadow = "0 2px 8px rgba(34,197,94,0.2)";
-                  }
-                }}
-              >
-                {isFormSubmitting ? (
-                  <>
-                    <div style={{ width: "16px", height: "16px", border: "2px solid #fff", borderTop: "2px solid transparent", borderRadius: "50%", animation: "spin 1s linear infinite" }} />
-                    Processing...
-                  </>
-                ) : (
-                  <>
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z" />
-                    </svg>
-                    Place via WhatsApp
-                  </>
-                )}
-              </button>
-
-              <button
-                type="button"
-                disabled={isPaymentLoading}
-                onClick={handlePayNow}
-                style={{
-                  padding: "12px",
-                  fontFamily: "'Inter', sans-serif",
-                  fontSize: "14px",
-                  background: isPaymentLoading
-                    ? "#9ca3af"
-                    : "linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)",
-                  color: "#fff",
-                  border: "none",
-                  borderRadius: "8px",
-                  cursor: isPaymentLoading ? "not-allowed" : "pointer",
-                  transition: "all 0.3s ease",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: "8px",
-                  fontWeight: 600,
-                  boxShadow: "0 2px 8px rgba(59,130,246,0.2)",
-                }}
-                onMouseEnter={(e) => {
-                  if (!isPaymentLoading) {
-                    e.target.style.transform = "translateY(-2px)";
-                    e.target.style.boxShadow = "0 4px 12px rgba(59,130,246,0.3)";
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (!isPaymentLoading) {
-                    e.target.style.transform = "translateY(0)";
-                    e.target.style.boxShadow = "0 2px 8px rgba(59,130,246,0.2)";
-                  }
-                }}
-              >
-                {isPaymentLoading ? (
-                  <>
-                    <div style={{ width: "16px", height: "16px", border: "2px solid #fff", borderTop: "2px solid transparent", borderRadius: "50%", animation: "spin 1s linear infinite" }} />
-                    Processing...
-                  </>
-                ) : (
-                  <>
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M3 5h18M3 19h18M3 12h18" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                    Pay Securely
-                  </>
-                )}
-              </button>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => setShowForm(false)}
-              style={{
-                width: "100%",
-                padding: "10px",
-                fontFamily: "'Inter', sans-serif",
-                fontSize: "13px",
-                backgroundColor: "#f3f4f6",
-                color: "#4b5563",
-                border: "none",
-                borderRadius: "8px",
-                cursor: "pointer",
-                transition: "all 0.2s ease",
-              }}
-              onMouseEnter={(e) => {
-                e.target.style.backgroundColor = "#e5e7eb";
-              }}
-              onMouseLeave={(e) => {
-                e.target.style.backgroundColor = "#f3f4f6";
-              }}
-            >
-              Back to Cart
-            </button>
-          </form>
-        )}
-
-        {(isPaymentLoading || isFormSubmitting) && (
-          <div
-            style={{
-              position: "fixed",
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              backgroundColor: "rgba(255,255,255,0.8)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              zIndex: 9999,
-              backdropFilter: "blur(8px)",
-            }}
-          >
-            <div
-              style={{
-                backgroundColor: "#ffffff",
-                padding: "32px",
-                borderRadius: "16px",
-                textAlign: "center",
-                boxShadow: "0 8px 32px rgba(0,0,0,0.15)",
-                minWidth: "280px",
-              }}
-            >
-              <div
-                style={{
-                  width: "48px",
-                  height: "48px",
-                  border: "3px solid #f3f4f6",
-                  borderTop: "3px solid #3b82f6",
-                  borderRadius: "50%",
-                  animation: "spin 1s linear infinite",
-                  margin: "0 auto 16px",
-                }}
-              />
-              <h3
-                style={{
-                  fontFamily: "'Nunito Sans', sans-serif",
-                  fontSize: "18px",
-                  color: "#1f2937",
-                  marginBottom: "8px",
-                  fontWeight: 700,
-                }}
-              >
-                {isPaymentLoading ? "Securing Payment" : "Verifying Order"}
-              </h3>
-              <p
-                style={{
-                  fontFamily: "'Inter', sans-serif",
-                  fontSize: "14px",
-                  color: "#6b7280",
-                }}
-              >
-                Please wait a moment...
-              </p>
-            </div>
-            <style>{`
-              @keyframes spin {
-                to { transform: rotate(360deg); }
+        <button
+          onClick={async () => {
+            if (!lookupData) {
+              toast.warning('Please verify your email/phone before proceeding');
+              return;
+            }
+            setCheckoutLoading(true);
+            try {
+              const verifiedId = lookupValue || rewardsIdentifier;
+              if (appliedReward && appliedReward.id) {
+                const result = await validateReward(appliedReward.id, verifiedId, checkoutSummary.sellingTotal);
+                if (!result.valid) {
+                  toast.error(result.reason || 'Applied reward is no longer valid');
+                  setAppliedReward(null);
+                  return;
+                }
               }
-            `}</style>
-          </div>
-        )}
+              if (appliedCoupon && appliedCoupon.code) {
+                const result = await validateCoupon(appliedCoupon.code, verifiedId, checkoutSummary.sellingTotal);
+                if (!result.valid) {
+                  toast.error(result.reason || 'Applied coupon is no longer valid');
+                  setAppliedCoupon(null);
+                  setCouponCode('');
+                  return;
+                }
+              }
+              navigate("/checkout", { state: { appliedReward, appliedCoupon, verifiedIdentifier: verifiedId } });
+            } catch {
+              toast.error('Unable to validate discounts. Please try again.');
+            } finally {
+              setCheckoutLoading(false);
+            }
+          }}
+          disabled={checkoutLoading}
+          style={{
+            width: "100%",
+            padding: breakpoint === "mobile" ? "13px" : "15px",
+            fontFamily: "'Inter', sans-serif",
+            fontSize: breakpoint === "mobile" ? "14px" : "16px",
+            background: checkoutLoading ? "#9CA3AF" : (!lookupData ? "#D1D5DB" : "linear-gradient(135deg, #f59e0b 0%, #f97316 100%)"),
+            color: checkoutLoading || !lookupData ? "#fff" : "#1f2937",
+            fontWeight: 700,
+            border: "none",
+            borderRadius: "8px",
+            cursor: checkoutLoading ? "not-allowed" : "pointer",
+            transition: "all 0.2s ease",
+            boxShadow: checkoutLoading ? "none" : (!lookupData ? "none" : "0 2px 8px rgba(245,158,11,0.25)"),
+            letterSpacing: "0.02em",
+          }}
+          onMouseEnter={(e) => {
+            e.target.style.transform = "translateY(-1px)";
+            e.target.style.boxShadow = "0 4px 12px rgba(245,158,11,0.35)";
+          }}
+          onMouseLeave={(e) => {
+            e.target.style.transform = "translateY(0)";
+            e.target.style.boxShadow = "0 2px 8px rgba(245,158,11,0.25)";
+          }}
+        >
+          {checkoutLoading ? 'Validating...' : `Proceed to Checkout (${cartItems.reduce((s, i) => s + i.quantity, 0) + packItems.reduce((s, p) => s + p.quantity, 0)} items)`}
+        </button>
+        </div>
       </div>
+    </div>
     </div>
   );
 };

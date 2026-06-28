@@ -126,12 +126,12 @@ const ActiveHyper = () => {
   };
 
   return (
-    <section ref={sectionRef} className="relative min-h-screen bg-[#020202] flex flex-col items-center overflow-hidden">
+    <section ref={sectionRef} className="relative min-h-screen bg-[#fff] flex flex-col items-center overflow-hidden">
       
       {/* Background Aura */}
       <div 
-        className="absolute top-[45%] left-1/2 -translate-x-1/2 -translate-y-1/2 w-[100vw] h-[100vw] md:w-[60vw] md:h-[60vw] rounded-full blur-[140px] transition-all duration-1000 opacity-20 pointer-events-none"
-        style={{ background: products[activeId].glow }}
+        className="absolute top-[45%] left-1/2 -translate-x-1/2 -translate-y-1/2 w-[100vw] h-[100vw] md:w-[60vw] md:h-[60vw] rounded-full blur-[140px] transition-all duration-1000 opacity-[0.06] pointer-events-none"
+        style={{ background: 'radial-gradient(ellipse at center, #d1d5db 0%, transparent 70%)' }}
       />
 
       {/* Heading - Reduced size for Mobile */}
@@ -140,9 +140,9 @@ const ActiveHyper = () => {
           NO EXCUSES.<br />
           <span className="text-gray-800">ONLY FUEL.</span>
         </h2> */}
-  <h2 className="text-4xl md:text-8xl font-black italic tracking-tighter uppercase leading-[0.85] bg-gradient-to-b from-gray-300 via-white to-gray-800 bg-clip-text text-transparent">
+  <h2 className="text-4xl md:text-8xl font-black italic tracking-tighter uppercase leading-[0.85] bg-gradient-to-b from-gray-700 to-gray-900 bg-clip-text text-transparent">
   NO EXCUSES.<br />
-  <span className="bg-gradient-to-b from-gray-300 via-white to-gray-800 bg-clip-text text-transparent">
+  <span className="bg-gradient-to-b from-gray-700 to-gray-900 bg-clip-text text-transparent">
     ONLY FUEL.
   </span>
 </h2>
@@ -157,33 +157,37 @@ const ActiveHyper = () => {
             className={`product-pack pack-${item.id} absolute w-[130px] md:w-[280px] cursor-pointer will-change-transform touch-none`}
             style={{ zIndex: activeId === item.id ? 100 : 10 + item.id }}
           >
+            <div 
+              className="absolute inset-0 w-full h-full scale-110 rounded-full blur-[60px] opacity-30 pointer-events-none"
+              style={{ background: item.glow }}
+            />
             <img 
               src={item.img} 
               alt={item.name} 
-              className="w-full h-auto drop-shadow-[0_20px_40px_rgba(0,0,0,0.9)]"
+              className="w-full h-auto relative z-10 drop-shadow-[0_25px_50px_rgba(0,0,0,0.15)]"
             />
           </div>
         ))}
       </div>
 
       {/* Glowing Button Section - Guaranteed Spacing */}
-      <div className="z-30 w-full flex flex-col items-center py-10 md:py-16 px-6 bg-gradient-to-t from-black via-black/80 to-transparent">
+      <div className="z-30 w-full flex flex-col items-center py-10 md:py-16 px-6 border-t border-gray-200/60">
         <button 
           onClick={()=>navigate("/products")}
           onMouseEnter={triggerHoverShine}
-          className="relative group overflow-hidden cursor-pointer w-fit max-w-[280px] md:max-w-[350px] py-2 md:py-4 rounded-2xl bg-[#080808] border-2 border-emerald-500/30 
-                     shadow-[0_0_25px_rgba(16,185,129,0.15)] hover:shadow-[0_0_50px_rgba(52,211,153,0.5)] 
-                     hover:border-emerald-400 transition-all duration-500 active:scale-95"
+          className="relative group overflow-hidden cursor-pointer w-fit max-w-[280px] md:max-w-[350px] py-2 md:py-4 rounded-2xl bg-white border-2 border-gray-200
+                     shadow-[0_0_25px_rgba(0,0,0,0.04)] hover:shadow-[0_0_50px_rgba(0,0,0,0.1)] 
+                     hover:border-gray-300 transition-all duration-500 active:scale-95"
         >
-          <span className="relative z-10 bg-gradient-to-b from-gray-300 via-emerald-400 to-gray-800 bg-clip-text text-transparent text-sm md:text-xl font-black tracking-[0.15em] uppercase px-2 md:px-4 block">
+          <span className="relative z-10 bg-gradient-to-b from-gray-700 to-gray-900 bg-clip-text text-transparent text-sm md:text-xl font-black tracking-[0.15em] uppercase px-2 md:px-4 block">
             [ Activate Hyperbite ]
           </span>
           
           {/* High-Contrast Shine */}
-          <div className="btn-shine absolute top-0 -left-full w-full h-full bg-gradient-to-r from-transparent via-emerald-400/30 to-transparent skew-x-[-25deg] pointer-events-none" />
+          <div className="btn-shine absolute top-0 -left-full w-full h-full bg-gradient-to-r from-transparent via-gray-300/40 to-transparent skew-x-[-25deg] pointer-events-none" />
           
           {/* Constant Inner Glow */}
-          <div className="absolute inset-0 bg-emerald-500/5 animate-pulse" />
+          <div className="absolute inset-0 bg-gray-900/5 animate-pulse" />
         </button>
         
         {/* <p className="text-gray-600 text-[10px] md:text-xs tracking-[0.4em] uppercase mt-6 font-bold opacity-60">

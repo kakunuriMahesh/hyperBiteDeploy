@@ -1,17 +1,23 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { productDetails } from "../config/productDetails";
+import { fetchProductsFromAPI } from "../config/productDetails";
 import { formatProductMessage, sendWhatsAppMessage } from "../utils/whatsapp";
 import { FaPlus, FaMinus, FaTimes, FaBolt, FaLeaf, FaShieldAlt, FaHeart, FaCheck } from "react-icons/fa";
 import LiveCommunityHub from "./LiveCommunityHub";
 import ProductsShowcase from "./ProductsShowcase";
-import HeroCarousel from "../pages/HeroCarousel";
+// import HeroCarousel from "../pages/HeroCarousel";
+import OrbitSlider from "./OrbitSlider";
 import HyperBiteManifesto from "./OurSection";
 import CinematicSceneTailwind from "./CinematicSceneTailwind";
 import ActiveHyper from "./ActiveHyper";
 
 export default function LandingView({ onEnterPremiumMode, breakpoint }) {
-  const products = Object.values(productDetails);
+  const [products, setProducts] = useState([]);
+
+  useEffect(() => {
+    fetchProductsFromAPI().then((map) => setProducts(Array.from(new Set(Object.values(map))))).catch(() => {});
+  }, []);
+
   const [quantities, setQuantities] = useState({});
 const navigate = useNavigate();
 
@@ -32,10 +38,11 @@ const navigate = useNavigate();
   };
 
   return (
-    <div className="bg-gradient-to-b from-amber-50 to-white min-h-screen">
+    <div className="bg-gradient-to-b from-amber-50 to-white min-h-screen" style={{ fontFamily: "'Istok Web', sans-serif" }}>
 
       {/* ================= HERO ================= */}
-<HeroCarousel  onEnterPremiumMode={onEnterPremiumMode}/>
+{/* <HeroCarousel  onEnterPremiumMode={onEnterPremiumMode}/> */}
+<OrbitSlider />
 
 <ActiveHyper />
 
@@ -57,7 +64,7 @@ const navigate = useNavigate();
   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
     {products.slice(0, 3).map((product) => (
       <div
-        onClick={() => navigate(`/product/${product.id}`)}
+        onClick={() => navigate(`/product/${product.slug || product.id}`)}
         key={product.id}
         className="bg-white border border-gray-100 rounded-xl p-4 flex gap-4 items-center hover:shadow-sm transition cursor-pointer"
       >

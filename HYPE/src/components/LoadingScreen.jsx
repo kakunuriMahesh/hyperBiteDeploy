@@ -8,6 +8,8 @@ const LoadingScreen = ({ onComplete }) => {
   const pathStrokeRef = useRef(null);
   const lineRef = useRef(null);
   const startTimeRef = useRef(Date.now());
+  const onCompleteRef = useRef(onComplete);
+  onCompleteRef.current = onComplete;
 
   useEffect(() => {
     if (!svgRef.current || !pathRef.current || !pathStrokeRef.current || !containerRef.current) return;
@@ -32,7 +34,7 @@ const LoadingScreen = ({ onComplete }) => {
           gsap.to(containerRef.current, {
             opacity: 0,
             duration: 0.5,
-            onComplete: onComplete,
+            onComplete: onCompleteRef.current,
           });
         }, remainingTime);
       },
@@ -83,7 +85,7 @@ const LoadingScreen = ({ onComplete }) => {
     return () => {
       tl.kill();
     };
-  }, [onComplete]);
+  }, []);
 
   return (
     <div
