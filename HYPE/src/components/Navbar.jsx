@@ -131,11 +131,14 @@ const Navbar = () => {
   useEffect(() => {
     if (isMenuOpen) {
       document.body.style.overflow = "hidden";
+      document.documentElement.style.overflow = "hidden";
     } else {
       document.body.style.overflow = "";
+      document.documentElement.style.overflow = "";
     }
     return () => {
       document.body.style.overflow = "";
+      document.documentElement.style.overflow = "";
     };
   }, [isMenuOpen]);
 
@@ -476,8 +479,6 @@ useEffect(() => {
           top: breakpoint === "mobile" ? "0px" : "0px",
           left: 0,
           width: "100%",
-          height: breakpoint === "mobile" ? "100vh" : "auto",
-          overflowY: "auto",
           zIndex: 999,
           padding: breakpoint === "mobile" ? "15px 16px" : "40px 50px",
           backgroundColor: "#fff",
@@ -572,7 +573,7 @@ useEffect(() => {
                     }}
                   >
                     {item.label}
-                    <FaChevronDown size={10} style={{ transform: openDropdown === item.label ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s ease' }} />
+                    {item.dropdown && <FaChevronDown size={10} style={{ transform: openDropdown === item.label ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s ease' }} />}
                   </button>
 
                   {/* Dropdown */}
@@ -588,9 +589,11 @@ useEffect(() => {
                         ...(breakpoint !== "mobile" ? {
                           position: "absolute",
                           top: "calc(100% + 8px)",
-                          left: 0,
+                          left: "50%",
+                          transform: "translateX(-50%)",
                           border: "1px solid #f0f0f0",
                           boxShadow: "0 12px 40px rgba(0,0,0,0.08)",
+                          whiteSpace: "nowrap",
                         } : {
                           position: "relative",
                           marginTop: "4px",
