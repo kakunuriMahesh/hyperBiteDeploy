@@ -429,7 +429,6 @@ const CustomizePackPage = () => {
                   >
                     ₹{pack.offPrice}
                   </span>
-                  {discountPercent > 0 && (
                   <span
                     style={{
                       fontFamily: "'Inter', sans-serif",
@@ -443,7 +442,6 @@ const CustomizePackPage = () => {
                   >
                     Save {discountPercent}%
                   </span>
-                  )}
                 </div>
 
                 {/* What's Inside */}
