@@ -476,6 +476,8 @@ useEffect(() => {
           top: breakpoint === "mobile" ? "0px" : "0px",
           left: 0,
           width: "100%",
+          height: breakpoint === "mobile" ? "100vh" : "auto",
+          overflowY: "auto",
           zIndex: 999,
           padding: breakpoint === "mobile" ? "15px 16px" : "40px 50px",
           backgroundColor: "#fff",
@@ -526,8 +528,8 @@ useEffect(() => {
               style={{
                 display: "flex",
                 flexDirection: "row",
-                justifyContent: "space-around",
-                marginTop: breakpoint === "mobile" ? "30px" : "35px",
+                justifyContent: breakpoint === "mobile" ? "flex-start" : "space-around",
+                marginTop: breakpoint === "mobile" ? "16px" : "35px",
               }}
             >
               {/* Navigation Links */}
@@ -537,6 +539,9 @@ useEffect(() => {
                   flexDirection: breakpoint === "mobile" ? "column" : "row",
                   justifyContent: "center",
                   gap: breakpoint === "mobile" ? "16px" : "20px",
+                  alignItems: breakpoint === "mobile" ? "flex-start" : "center",
+                  width: breakpoint === "mobile" ? "100%" : "auto",
+                  paddingLeft: breakpoint === "mobile" ? "30px" : "0",
                 }}
               >
               {navItems.map((item) => (
@@ -567,38 +572,50 @@ useEffect(() => {
                     }}
                   >
                     {item.label}
-                    {item.dropdown && <FaChevronDown />}
+                    <FaChevronDown size={10} style={{ transform: openDropdown === item.label ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s ease' }} />
                   </button>
 
-                  {/* ✅ Dropdown */}
+                  {/* Dropdown */}
                   {item.dropdown && openDropdown === item.label && (
                     <div
                       onClick={(e) => e.stopPropagation()}
                       style={{
-                        position: "absolute",
-                        top: "100%",
-                        left: 0,
                         background: "#fff",
-                        border: "1px solid #ddd",
-                        borderRadius: "6px",
-                        padding: "8px 0",
-                        minWidth: "180px",
+                        borderRadius: breakpoint === "mobile" ? "0" : "12px",
+                        padding: breakpoint === "mobile" ? "4px 0 4px 12px" : "8px 0",
+                        minWidth: breakpoint === "mobile" ? "100%" : "200px",
                         zIndex: 1000,
+                        ...(breakpoint !== "mobile" ? {
+                          position: "absolute",
+                          top: "calc(100% + 8px)",
+                          left: 0,
+                          border: "1px solid #f0f0f0",
+                          boxShadow: "0 12px 40px rgba(0,0,0,0.08)",
+                        } : {
+                          position: "relative",
+                          marginTop: "4px",
+                        }),
                       }}
                     >
                       {item.dropdownItems.map((subItem) => (
                         <button
-                          key={subItem.path}
+                          key={subItem.path + subItem.label}
                           onClick={() => handleNavClick(subItem.path)}
                           style={{
                             display: "block",
                             width: "100%",
-                            padding: "10px 16px",
+                            padding: breakpoint === "mobile" ? "8px 12px" : "10px 16px",
                             border: "none",
                             background: "transparent",
                             textAlign: "left",
                             cursor: "pointer",
+                            fontSize: breakpoint === "mobile" ? "14px" : "14px",
+                            color: "#555",
+                            borderRadius: "8px",
+                            transition: "all 0.15s ease",
                           }}
+                          onMouseEnter={(e) => { e.currentTarget.style.background = "#f5f5f5"; e.currentTarget.style.color = "#000"; }}
+                          onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "#555"; }}
                         >
                           {subItem.label}
                         </button>

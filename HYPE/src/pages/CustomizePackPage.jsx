@@ -6,6 +6,7 @@ import { fetchProductsFromAPI } from '../config/productDetails';
 import { packConfigs } from '../config/packConfig';
 import { useCart } from '../store/hooks/useCart';
 import { toast } from 'react-toastify';
+import Spinner from '../components/Spinner';
 // 
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
@@ -38,12 +39,13 @@ const CustomizePackPage = () => {
   const detailsContent = pack.detailsContent;
   const [products, setProducts] = useState([]);
   const [productMap, setProductMap] = useState({});
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchProductsFromAPI().then((merged) => {
       setProductMap(merged);
       setProducts(Array.from(new Set(Object.values(merged))));
-    });
+    }).finally(() => setLoading(false));
   }, []);
 
   useEffect(() => {
@@ -236,6 +238,11 @@ const CustomizePackPage = () => {
         paddingTop: '70px',
       }}
     >
+      {loading ? (
+        <div style={{ minHeight: 'calc(100vh - 70px)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <Spinner text="Loading products..." />
+        </div>
+      ) : (
       <div
         style={{
           maxWidth: '1200px',
@@ -983,6 +990,7 @@ const CustomizePackPage = () => {
           </button>
         </div>
       </div>
+      )}
     </div>
   );
 };

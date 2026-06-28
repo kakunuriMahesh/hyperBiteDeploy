@@ -255,21 +255,21 @@ export default function OrbitSlider() {
             x = cx + r * Math.cos(extraAngle) - size / 2
             y = cy - r * Math.sin(extraAngle) - size / 2
             op = 0.85
-            el.style.zIndex = 800 - offset
+            el.style.zIndex = 10 - offset
             el.style.border = `2px solid ${products[visualActive].accentColor}`
           } else if (isActive) {
             size = maxSize
             x = cx + r * Math.cos(angle) - size / 2
             y = cy - r * Math.sin(angle) - size / 2
             op = 1
-            el.style.zIndex = 999
+            el.style.zIndex = 20
             el.style.border = `3px solid ${products[visualActive].accentColor}`
           } else if (offset === 0) {
             size = minSize + depth * (maxSize - minSize) * 0.6
             x = cx + r * Math.cos(angle) - size / 2
             y = cy - r * Math.sin(angle) - size / 2
             op = 0.25 + depth * 0.5
-            el.style.zIndex = Math.floor(depth * 100)
+            el.style.zIndex = Math.floor(depth * 5)
             el.style.border = 'none'
           } else {
             size = 0

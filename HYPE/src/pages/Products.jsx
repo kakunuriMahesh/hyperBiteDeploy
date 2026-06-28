@@ -9,6 +9,7 @@ import { toast } from "react-toastify";
 import 'react-toastify/dist/ReactToastify.css';
 import PincodeModal from "../components/PincodeModal";
 import PackDetailsModal from "../components/PackDetailsModal";
+import Spinner from "../components/Spinner";
 
 const Products = () => {
   const navigate = useNavigate();
@@ -33,10 +34,13 @@ const Products = () => {
 
   const [products, setProducts] = useState([]);
   const [packs, setPacks] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchProductsFromAPI().then((merged) => setProducts(Array.from(new Set(Object.values(merged))))).catch(() => {});
-    fetchPacksFromAPI().then(setPacks).catch(() => {});
+    Promise.all([
+      fetchProductsFromAPI().then((merged) => setProducts(Array.from(new Set(Object.values(merged))))),
+      fetchPacksFromAPI().then(setPacks),
+    ]).catch(() => {}).finally(() => setLoading(false));
   }, []);
 
   const handleAddDefaultPack = (pack) => {
@@ -102,6 +106,11 @@ const Products = () => {
 
   return (
     <div style={{ backgroundColor: '#fff', minHeight: '100vh', paddingTop: '70px' }}>
+      {loading ? (
+        <div style={{ minHeight: 'calc(100vh - 70px)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <Spinner text="Loading products..." />
+        </div>
+      ) : (<>
       <div
         style={{
           maxWidth: breakpoint === 'desktop' ? '1200px' : '100%',
@@ -326,6 +335,7 @@ const Products = () => {
         onClose={() => setIsPincodeModalOpen(false)}
         onConfirm={handlePincodeConfirm}
       />
+      </>)}
     </div>
   );
 };

@@ -7,6 +7,7 @@ import { formatProductMessage, sendWhatsAppMessage } from "../utils/whatsapp";
 import { FaWhatsapp, FaShoppingCart } from "react-icons/fa";
 import { toast } from "react-toastify";
 import { allowedPincodes } from "../config/allowedPincodes";
+import Spinner from "../components/Spinner";
 
 const ProductDetails = () => {
   const { slug } = useParams();
@@ -14,6 +15,7 @@ const ProductDetails = () => {
   const { addToCart, setPincode } = useCart();
   const [breakpoint, setBreakpoint] = useState("desktop");
   const [product, setProduct] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [pincode, setPincodeLocal] = useState("");
   const [pincodeError, setPincodeError] = useState("");
@@ -49,6 +51,8 @@ const ProductDetails = () => {
       } catch (err) {
         console.error("Failed to fetch products:", err);
         navigate("/");
+      } finally {
+        setLoading(false);
       }
     })();
   }, [slug, navigate]);
@@ -230,9 +234,11 @@ const ProductDetails = () => {
 
   return (
     <div style={{ backgroundColor: "#fff", minHeight: "100vh", paddingTop: "70px" }}>
-      {/* <Navbar /> */}
-
-      {/* Main Content */}
+      {loading ? (
+        <div style={{ minHeight: 'calc(100vh - 70px)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <Spinner text="Loading product..." />
+        </div>
+      ) : (
       <div
         style={{
           maxWidth: breakpoint === "desktop" ? "1200px" : "100%",
@@ -999,6 +1005,7 @@ const ProductDetails = () => {
           </div>
         </div>
       </div>
+      )}
     </div>
   );
 };
