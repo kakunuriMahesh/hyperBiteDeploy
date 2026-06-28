@@ -37,7 +37,8 @@ export async function fetchProductsFromAPI() {
   arr.forEach((p) => {
     const slug = p.slug || p.name?.toLowerCase().replace(/\s+/g, '-');
     const productReviews = reviews[slug] || [];
-    map[slug] = { ...p, id: p._id || slug, slug, packImg: p.image || '', stock: p.stockStatus || 'Available', reviews: productReviews, reviewCount: productReviews.length };
+    const fmtPrice = (val) => val != null ? `₹${val}` : '';
+    map[slug] = { ...p, id: p._id || slug, slug, packImg: p.image || '', stock: p.stockStatus || 'Available', price: fmtPrice(p.price), compareAtPrice: fmtPrice(p.compareAtPrice), reviews: productReviews, reviewCount: productReviews.length };
     map[p._id] = map[slug];
   });
   return map;

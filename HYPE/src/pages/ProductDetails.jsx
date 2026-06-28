@@ -341,17 +341,30 @@ const ProductDetails = () => {
               {product.description}
             </p>
 
-            <div style={{ marginBottom: "32px" }}>
+            <div style={{ marginBottom: "32px", display: "flex", alignItems: "baseline", gap: "10px" }}>
               <span
                 style={{
                   fontFamily: "Nunito Sans",
-                  fontSize: breakpoint === "mobile" ? "20px" : "28px",
+                  fontSize: breakpoint === "mobile" ? "28px" : "36px",
                   color: "#111",
-                  fontWeight: 700,
+                  fontWeight: 800,
                 }}
               >
                 {product.price}
               </span>
+              {product.compareAtPrice && (
+                <span
+                  style={{
+                    fontFamily: "Nunito Sans",
+                    fontSize: breakpoint === "mobile" ? "18px" : "22px",
+                    color: "#999",
+                    textDecoration: "line-through",
+                    fontWeight: 400,
+                  }}
+                >
+                  {product.compareAtPrice}
+                </span>
+              )}
             </div>
 
               {

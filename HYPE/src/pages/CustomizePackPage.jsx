@@ -761,6 +761,7 @@ const CustomizePackPage = () => {
 
       <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
                       {/* Price */}
+                      <div style={{display: 'flex', alignItems: 'baseline', gap: '6px'}}>
                       <p
                         style={{
                           fontFamily: "'Inter', sans-serif",
@@ -772,6 +773,20 @@ const CustomizePackPage = () => {
                       >
                         ₹{price}
                       </p>
+                      {product.compareAtPrice && (
+                        <span
+                          style={{
+                            fontFamily: "'Inter', sans-serif",
+                            fontSize: breakpoint === 'mobile' ? '11px' : '12px',
+                            color: '#999',
+                            textDecoration: 'line-through',
+                            margin: '0 0 10px 0',
+                          }}
+                        >
+                          {product.compareAtPrice}
+                        </span>
+                      )}
+                      </div>
 
                       {/* Item Total */}
                       {isActive && (

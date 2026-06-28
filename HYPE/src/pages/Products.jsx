@@ -274,12 +274,20 @@ const Products = () => {
                   style={{
                     fontFamily: "Nunito Sans",
                     fontSize: breakpoint === 'mobile' ? '18px' : '20px',
-                    color: '#111',
                     marginBottom: '12px',
                     fontWeight: 700,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
                   }}
                 >
-                  {product.price}
+                  <span style={{ color: '#111' }}>{product.price}</span>
+                  {product.compareAtPrice && (
+                    <span style={{ color: '#999', textDecoration: 'line-through', fontSize: '0.85em', fontWeight: 400 }}>
+                      {product.compareAtPrice}
+                    </span>
+                  )}
                 </div>
                 <button
                   style={{
