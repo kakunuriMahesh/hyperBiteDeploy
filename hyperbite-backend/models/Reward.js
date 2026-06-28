@@ -30,6 +30,22 @@ const rewardSchema = new mongoose.Schema({
     ref: 'Order',
     default: null,
   },
+  minCartValue: {
+    type: Number,
+    default: 0,
+  },
+  maxCartValue: {
+    type: Number,
+    default: 0,
+  },
+  maxUses: {
+    type: Number,
+    default: null,
+  },
+  currentUses: {
+    type: Number,
+    default: 0,
+  },
   claimed: {
     type: Boolean,
     default: false,

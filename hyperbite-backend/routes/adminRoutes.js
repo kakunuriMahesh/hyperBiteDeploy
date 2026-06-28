@@ -432,7 +432,7 @@ function generateRandomString(length) {
 
 router.post("/coupons/generate-retail", async (req, res) => {
   try {
-    const { codePrefix, count, discount, maxUses, expiresAt, minCartValue, randomLength } = req.body;
+    const { codePrefix, count, discount, maxUses, expiresAt, minCartValue, maxCartValue, randomLength, isRandom, startFrom } = req.body;
 
     if (!codePrefix || !count || count < 1) {
       return res.status(400).json({ error: "codePrefix and count (>= 1) are required" });
@@ -443,41 +443,86 @@ router.post("/coupons/generate-retail", async (req, res) => {
     const existingCodes = await Coupon.find({ code: { $regex: `^${prefix}` } }).select('code');
     const existingSet = new Set(existingCodes.map(c => c.code));
 
-    const generated = [];
     const batch = [];
-    let attempts = 0;
-    const maxAttempts = count * 10;
 
-    while (batch.length < count && attempts < maxAttempts) {
-      attempts++;
-      const code = prefix + generateRandomString(len);
-      if (!existingSet.has(code)) {
-        existingSet.add(code);
-        batch.push({
-          code,
-          prefix,
-          type: 'retail',
-          discount: discount || 0,
-          maxUses: maxUses || null,
-          expiresAt: expiresAt || null,
-          minCartValue: minCartValue || 0,
-          isActive: true,
-          perCustomerLimit: 1,
-        });
+    if (isRandom === false) {
+      // ── Serial generation ──
+      // startFrom is a string with leading zeros indicating counter width,
+      // followed by a fixed suffix. e.g. "0001" → counter width 3, suffix "1"
+      // Generated: 0011, 0021, 0031, ...
+      const startStr = String(startFrom || '0001').replace(/[^0-9]/g, '') || '0001';
+      // Find first non-zero digit → everything before it is counter width
+      let nonZeroIdx = 0;
+      while (nonZeroIdx < startStr.length && startStr[nonZeroIdx] === '0') {
+        nonZeroIdx++;
+      }
+      const counterWidth = Math.max(nonZeroIdx, 1);
+      const suffix = startStr.slice(counterWidth);
+      // find the highest existing counter for this prefix+suffix to avoid gaps
+      let maxCounter = 0;
+      for (const code of existingSet) {
+        if (code.startsWith(prefix) && code.endsWith(suffix)) {
+          const middle = code.slice(prefix.length, code.length - suffix.length);
+          const num = parseInt(middle, 10);
+          if (!isNaN(num) && num > maxCounter) {
+            maxCounter = num;
+          }
+        }
+      }
+      for (let i = 0; i < count; i++) {
+        const num = maxCounter + 1 + i;
+        const code = prefix + String(num).padStart(counterWidth, '0') + suffix;
+        if (!existingSet.has(code)) {
+          existingSet.add(code);
+          batch.push({
+            code,
+            prefix,
+            type: 'retail',
+            discount: discount || 0,
+            maxUses: maxUses || null,
+            expiresAt: expiresAt || null,
+            minCartValue: minCartValue || 0,
+            maxCartValue: maxCartValue || 0,
+            isActive: true,
+            perCustomerLimit: 1,
+          });
+        }
+      }
+    } else {
+      // ── Random generation ──
+      let attempts = 0;
+      const maxAttempts = count * 10;
+      while (batch.length < count && attempts < maxAttempts) {
+        attempts++;
+        const code = prefix + generateRandomString(len);
+        if (!existingSet.has(code)) {
+          existingSet.add(code);
+          batch.push({
+            code,
+            prefix,
+            type: 'retail',
+            discount: discount || 0,
+            maxUses: maxUses || null,
+            expiresAt: expiresAt || null,
+            minCartValue: minCartValue || 0,
+            maxCartValue: maxCartValue || 0,
+            isActive: true,
+            perCustomerLimit: 1,
+          });
+        }
       }
     }
 
     if (batch.length === 0) {
-      return res.status(400).json({ error: "Could not generate any unique coupon codes. Try a different prefix or longer random length." });
+      return res.status(400).json({ error: "Could not generate any unique coupon codes. Try a different prefix or longer random/serial length." });
     }
 
     const inserted = await Coupon.insertMany(batch);
-    generated.push(...inserted);
 
-    res.status(201).json({ count: generated.length, coupons: generated });
+    res.status(201).json({ count: inserted.length, coupons: inserted });
   } catch (error) {
     if (error.code === 11000) {
-      return res.status(400).json({ error: "Duplicate code collision. Try again with a different prefix or longer random length." });
+      return res.status(400).json({ error: "Duplicate code collision. Try again with a different prefix or longer random/serial length." });
     }
     res.status(500).json({ error: error.message });
   }
@@ -617,10 +662,19 @@ router.get("/rewards/stats", async (req, res) => {
 
 router.post("/rewards", async (req, res) => {
   try {
-    const { identifier, type, value, label, source, expiresInDays, target } = req.body;
+    const { identifier, type, value, label, source, expiresInDays, target, minCartValue, maxCartValue, maxUses } = req.body;
     if (!type || value === undefined) {
       return res.status(400).json({ error: 'type and value are required' });
     }
+
+    const baseReward = {
+      type, value,
+      label: label || `${type} reward`, source: source || 'admin',
+      expiresAt: new Date(Date.now() + (expiresInDays || 365) * 24 * 60 * 60 * 1000),
+      minCartValue: (minCartValue ? Number(minCartValue) : 0),
+      maxCartValue: (maxCartValue ? Number(maxCartValue) : 0),
+      maxUses: maxUses ? Number(maxUses) : null,
+    };
 
     if (target === 'customers') {
       const [rewardIds, couponUserIds, orderIds] = await Promise.all([
@@ -635,9 +689,8 @@ router.post("/rewards", async (req, res) => {
       if (ids.length === 0) return res.status(404).json({ error: 'No customers found' });
 
       await Reward.insertMany(ids.map(id => ({
-        identifier: id.toLowerCase().trim(), type, value,
-        label: label || `${type} reward`, source: source || 'admin',
-        expiresAt: new Date(Date.now() + (expiresInDays || 365) * 24 * 60 * 60 * 1000),
+        ...baseReward,
+        identifier: id.toLowerCase().trim(),
       })));
 
       return res.status(201).json({ count: ids.length, message: `Reward created for ${ids.length} customers` });
@@ -655,9 +708,8 @@ router.post("/rewards", async (req, res) => {
       if (ids.length === 0) return res.status(404).json({ error: 'No collaborators found' });
 
       await Reward.insertMany(ids.map(id => ({
-        identifier: id.toLowerCase().trim(), type, value,
-        label: label || `${type} reward`, source: source || 'admin',
-        expiresAt: new Date(Date.now() + (expiresInDays || 365) * 24 * 60 * 60 * 1000),
+        ...baseReward,
+        identifier: id.toLowerCase().trim(),
       })));
 
       return res.status(201).json({ count: ids.length, message: `Reward created for ${ids.length} collaborators` });
@@ -668,10 +720,8 @@ router.post("/rewards", async (req, res) => {
     }
 
     const reward = await Reward.create({
+      ...baseReward,
       identifier: identifier.toLowerCase().trim(),
-      type, value,
-      label: label || `${type} reward`, source: source || 'admin',
-      expiresAt: new Date(Date.now() + (expiresInDays || 365) * 24 * 60 * 60 * 1000),
     });
 
     res.status(201).json(reward);

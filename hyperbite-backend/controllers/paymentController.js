@@ -105,7 +105,11 @@ exports.createOrder = async (req, res) => {
           ? await Reward.findById(appliedReward.id)
           : null;
       } catch { reward = null; }
-      if (!reward || reward.claimed || reward.expiresAt < new Date()) {
+      const rewardInvalid = !reward || reward.claimed || reward.expiresAt < new Date()
+        || (reward.maxUses !== null && reward.currentUses >= reward.maxUses)
+        || (reward.minCartValue > 0 && itemTotal < reward.minCartValue)
+        || (reward.maxCartValue > 0 && itemTotal > reward.maxCartValue);
+      if (rewardInvalid) {
         console.log(`[PaymentController] Reward ${appliedReward.id} is no longer valid — stripping`);
       } else {
         orderData.appliedReward = {
@@ -126,7 +130,8 @@ exports.createOrder = async (req, res) => {
         const basicValid = coupon.isActive
           && (!coupon.expiresAt || coupon.expiresAt > new Date())
           && (coupon.maxUses === null || coupon.currentUses < coupon.maxUses)
-          && (coupon.minCartValue === 0 || itemTotal >= coupon.minCartValue);
+          && (coupon.minCartValue === 0 || itemTotal >= coupon.minCartValue)
+          && (coupon.maxCartValue === 0 || itemTotal <= coupon.maxCartValue);
 
         let withinCustomerLimit = true;
         if (basicValid && coupon.perCustomerLimit > 0 && customerIdentifier) {
@@ -228,12 +233,13 @@ exports.verifyPayment = async (req, res) => {
 
     // ── Post-payment actions ──
     if (updated) {
-      // 1. Mark reward as claimed (if applied)
+      // 1. Mark reward as claimed + increment uses (if applied)
       if (updated.appliedReward && updated.appliedReward.rewardId && mongoose.Types.ObjectId.isValid(updated.appliedReward.rewardId)) {
         await Reward.findByIdAndUpdate(updated.appliedReward.rewardId, {
           claimed: true,
           claimedAt: new Date(),
           orderId: updated._id,
+          $inc: { currentUses: 1 },
         });
       }
 

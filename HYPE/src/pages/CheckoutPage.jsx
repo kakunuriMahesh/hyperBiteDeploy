@@ -35,6 +35,7 @@ const CheckoutPage = () => {
   const [formData, setFormData] = useState({
     name: "",
     phone: "",
+    email: "",
     address: "",
     city: "",
     state: "",
@@ -222,7 +223,7 @@ const CheckoutPage = () => {
         body: JSON.stringify({
           customer: {
             name: formData.name,
-            email: "",
+            email: formData.email,
             phone: phoneValue,
             address: formData.address,
             city: formData.city,
@@ -599,6 +600,25 @@ const CheckoutPage = () => {
             )}
           </div>
         ))}
+      </div>
+
+      <div style={{ marginBottom: "24px" }}>
+        <label style={{ fontFamily: "'Inter', sans-serif", fontSize: "13px", marginBottom: "6px", color: "#4b5563", fontWeight: 500, display: "flex", alignItems: "center", gap: "4px" }}>
+          Email <span style={{ color: "#9ca3af", fontSize: "11px" }}>(optional)</span>
+        </label>
+        <input
+          type="email" name="email" value={formData.email}
+          onChange={(e) => { handleInputChange(e); }}
+          placeholder="Enter your email for order updates"
+          style={{
+            width: "100%", padding: "10px 12px",
+            border: "1px solid #d1d5db",
+            borderRadius: "8px", fontFamily: "'Inter', sans-serif", fontSize: "14px",
+            backgroundColor: "#fff", boxSizing: "border-box",
+          }}
+          onFocus={(e) => { e.target.style.borderColor = "#3b82f6"; }}
+          onBlur={(e) => { e.target.style.borderColor = "#d1d5db"; }}
+        />
       </div>
 
       <div style={{ marginBottom: "32px" }}>

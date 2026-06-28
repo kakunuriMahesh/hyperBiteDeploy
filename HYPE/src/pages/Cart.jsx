@@ -1994,7 +1994,7 @@ const Cart = () => {
             try {
               const verifiedId = lookupValue || rewardsIdentifier;
               if (appliedReward && appliedReward.id) {
-                const result = await validateReward(appliedReward.id, verifiedId);
+                const result = await validateReward(appliedReward.id, verifiedId, checkoutSummary.sellingTotal);
                 if (!result.valid) {
                   toast.error(result.reason || 'Applied reward is no longer valid');
                   setAppliedReward(null);

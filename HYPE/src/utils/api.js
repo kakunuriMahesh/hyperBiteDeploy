@@ -33,10 +33,10 @@ export function claimRewardAPI(rewardId, identifier) {
   });
 }
 
-export function validateReward(rewardId, identifier) {
+export function validateReward(rewardId, identifier, cartTotal) {
   return request('/api/rewards/validate-reward', {
     method: 'POST',
-    body: JSON.stringify({ rewardId, identifier }),
+    body: JSON.stringify({ rewardId, identifier, cartTotal }),
   });
 }
 

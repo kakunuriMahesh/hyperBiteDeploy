@@ -51,6 +51,10 @@ const couponSchema = new mongoose.Schema({
     type: Number,
     default: 0,
   },
+  maxCartValue: {
+    type: Number,
+    default: 0,
+  },
   prefix: {
     type: String,
     default: null,

@@ -19,6 +19,10 @@ exports.lookupRewards = async (req, res) => {
       identifier: normalized,
       claimed: false,
       expiresAt: { $gt: new Date() },
+      $or: [
+        { maxUses: null },
+        { $expr: { $lt: ['$currentUses', '$maxUses'] } },
+      ],
     }).sort({ createdAt: -1 });
 
     const totalPoints = rewards
@@ -34,6 +38,8 @@ exports.lookupRewards = async (req, res) => {
       claimed: r.claimed,
       expiresAt: r.expiresAt.getTime(),
       createdAt: r.createdAt.getTime(),
+      minCartValue: r.minCartValue,
+      maxCartValue: r.maxCartValue,
     }));
 
     res.json({ rewards: formatted, totalPoints });
@@ -127,6 +133,7 @@ exports.claimReward = async (req, res) => {
 
     reward.claimed = true;
     reward.claimedAt = new Date();
+    reward.currentUses = (reward.currentUses || 0) + 1;
     await reward.save();
 
     res.json({
@@ -146,7 +153,7 @@ exports.claimReward = async (req, res) => {
 
 exports.validateReward = async (req, res) => {
   try {
-    const { rewardId, identifier } = req.body;
+    const { rewardId, identifier, cartTotal } = req.body;
     if (!rewardId) {
       return res.status(400).json({ error: 'rewardId is required' });
     }
@@ -161,8 +168,20 @@ exports.validateReward = async (req, res) => {
     if (reward.expiresAt < new Date()) {
       return res.json({ valid: false, reason: 'This reward has expired.' });
     }
+    if (reward.maxUses !== null && reward.currentUses >= reward.maxUses) {
+      return res.json({ valid: false, reason: 'This reward has reached its usage limit.' });
+    }
     if (identifier && reward.identifier !== identifier.toLowerCase().trim()) {
       return res.json({ valid: false, reason: 'This reward does not belong to the provided identifier.' });
+    }
+
+    // ── Cart value range check ──
+    const total = Number(cartTotal) || 0;
+    if (reward.minCartValue > 0 && total < reward.minCartValue) {
+      return res.json({ valid: false, reason: `Minimum cart value of ₹${reward.minCartValue} required for this reward.` });
+    }
+    if (reward.maxCartValue > 0 && total > reward.maxCartValue) {
+      return res.json({ valid: false, reason: `Maximum cart value of ₹${reward.maxCartValue} exceeded for this reward.` });
     }
 
     res.json({
@@ -209,15 +228,19 @@ exports.validateCoupon = async (req, res) => {
       return res.json({ valid: false, reason: 'This coupon has reached its usage limit.' });
     }
 
-    // ── Minimum cart value check ──
-    if (coupon.minCartValue > 0) {
-      const total = Number(cartTotal) || 0;
-      if (total < coupon.minCartValue) {
-        return res.json({
-          valid: false,
-          reason: `Minimum cart value of ₹${coupon.minCartValue} required to use this coupon.`,
-        });
-      }
+    // ── Cart value range check ──
+    const total = Number(cartTotal) || 0;
+    if (coupon.minCartValue > 0 && total < coupon.minCartValue) {
+      return res.json({
+        valid: false,
+        reason: `Minimum cart value of ₹${coupon.minCartValue} required to use this coupon.`,
+      });
+    }
+    if (coupon.maxCartValue > 0 && total > coupon.maxCartValue) {
+      return res.json({
+        valid: false,
+        reason: `Maximum cart value of ₹${coupon.maxCartValue} exceeded for this coupon.`,
+      });
     }
 
     // ── Per-customer limit (offer coupons: once per email/phone) ──
