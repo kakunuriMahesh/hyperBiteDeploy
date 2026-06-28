@@ -2,8 +2,8 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import PackCard from "../components/PackCard";
-import { productDetails } from "../config/productDetails";
-import { getAllPacks } from "../config/packConfig";
+import { fetchProductsFromAPI } from "../config/productDetails";
+import { fetchPacksFromAPI } from "../config/packConfig";
 import { useCart } from "../store/hooks/useCart";
 import { toast } from "react-toastify";
 import 'react-toastify/dist/ReactToastify.css';
@@ -31,8 +31,13 @@ const Products = () => {
     return () => window.removeEventListener('resize', updateBreakpoint);
   }, []);
 
-  const products = Object.values(productDetails);
-  const packs = getAllPacks();
+  const [products, setProducts] = useState([]);
+  const [packs, setPacks] = useState([]);
+
+  useEffect(() => {
+    fetchProductsFromAPI().then((merged) => setProducts(Object.values(merged)));
+    fetchPacksFromAPI().then(setPacks);
+  }, []);
 
   const handleAddDefaultPack = (pack) => {
     // If no pincode is set → show modal first

@@ -1,3 +1,5 @@
+const API_BASE = import.meta.env.VITE_API_URL || 'https://hyperbitedeploy.onrender.com';
+
 // Product details for each product type
 export const productDetails = {
     milletMatrix:{
@@ -291,3 +293,71 @@ powerChunk:{
   reviewCount: 156
 },
 };
+
+/**
+ * Fetch products from the backend API and merge with hardcoded productDetails.
+ * API data overrides image, price, stock for products matching by slug/name.
+ * Returns the merged productDetails map (keyed by the same IDs as hardcoded).
+ */
+export async function fetchProductsFromAPI() {
+  try {
+    const res = await fetch(`${API_BASE}/api/products`);
+    if (!res.ok) throw new Error('Failed to fetch products');
+    const apiProducts = await res.json();
+    if (!apiProducts || apiProducts.length === 0) return { ...productDetails };
+
+    const merged = { ...productDetails };
+
+    // Build a name-to-id map from the hardcoded config for matching
+    const nameToId = {};
+    Object.entries(productDetails).forEach(([id, p]) => {
+      nameToId[p.name?.toLowerCase()] = id;
+      nameToId[p.slug?.toLowerCase()] = id;
+    });
+
+    apiProducts.forEach((apiP) => {
+      const slug = apiP.slug?.toLowerCase();
+      const name = apiP.name?.toLowerCase();
+      // Try matching by slug first, then by name
+      const matchId = nameToId[slug] || nameToId[name];
+
+      if (matchId && merged[matchId]) {
+        // Override fields from API, keeping the original id key
+        merged[matchId] = {
+          ...merged[matchId],
+          image: apiP.image || merged[matchId].image,
+          packImg: apiP.image || merged[matchId].packImg || merged[matchId].image,
+          images: apiP.images?.length ? apiP.images : merged[matchId].images,
+          price: apiP.price ? `₹${apiP.price}` : merged[matchId].price,
+          stock: apiP.stockStatus || merged[matchId].stock,
+          ingredients: apiP.ingredients?.length ? apiP.ingredients : merged[matchId].ingredients,
+          benefits: apiP.benefits?.length ? apiP.benefits : merged[matchId].benefits,
+          nutritionalInfo: apiP.nutritionalInfo?.servingSize ? apiP.nutritionalInfo : merged[matchId].nutritionalInfo,
+          description: apiP.description || merged[matchId].description,
+        };
+      } else {
+        // New product from API — key by slug
+        merged[slug] = {
+          id: slug,
+          name: apiP.name,
+          slug: apiP.slug,
+          stock: apiP.stockStatus || 'Available',
+          description: apiP.description || '',
+          ingredients: apiP.ingredients || [],
+          benefits: apiP.benefits || [],
+          nutritionalInfo: apiP.nutritionalInfo || {},
+          price: apiP.price ? `₹${apiP.price}` : '',
+          image: apiP.image || '',
+          packImg: apiP.image || '',
+          images: apiP.images || [],
+          reviews: [],
+          reviewCount: 0,
+        };
+      }
+    });
+
+    return merged;
+  } catch {
+    return { ...productDetails };
+  }
+}

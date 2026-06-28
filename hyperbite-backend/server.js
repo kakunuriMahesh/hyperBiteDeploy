@@ -18,6 +18,7 @@ app.use("/api/payment", paymentRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/cron", cronRoutes);
 app.use("/api/rewards", rewardRoutes);
+app.use("/api", adminRoutes.publicPacksRouter);
 
 const PORT = process.env.PORT || 5000;
 

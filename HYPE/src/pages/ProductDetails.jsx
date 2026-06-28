@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { productDetails } from "../config/productDetails";
+import { fetchProductsFromAPI } from "../config/productDetails";
 import Navbar from "../components/Navbar";
 import { useCart } from "../store/hooks/useCart";
 import { formatProductMessage, sendWhatsAppMessage } from "../utils/whatsapp";
@@ -37,11 +37,14 @@ const ProductDetails = () => {
   }, []);
 
   useEffect(() => {
-    if (productId && productDetails[productId]) {
-      setProduct(productDetails[productId]);
-    } else {
-      navigate("/");
-    }
+    (async () => {
+      const merged = await fetchProductsFromAPI();
+      if (productId && merged[productId]) {
+        setProduct(merged[productId]);
+      } else {
+        navigate("/");
+      }
+    })();
   }, [productId, navigate]);
 
   useEffect(() => {

@@ -794,4 +794,212 @@ router.put("/spin-config/:id", async (req, res) => {
   }
 });
 
+// ──────────────────────────────────────────────
+//  PACKS
+// ──────────────────────────────────────────────
+
+const Pack = require('../models/Pack');
+const { upload, uploadToCloudinary } = require('../utils/upload');
+
+router.get('/packs', async (req, res) => {
+  try {
+    const packs = await Pack.find().sort({ createdAt: -1 });
+    res.json(packs);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.get('/packs/:id', async (req, res) => {
+  try {
+    const pack = await Pack.findById(req.params.id);
+    if (!pack) return res.status(404).json({ error: 'Pack not found' });
+    res.json(pack);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.post('/packs', upload.single('image'), async (req, res) => {
+  try {
+    let body;
+    try {
+      body = JSON.parse(req.body.body);
+    } catch {
+      return res.status(400).json({ error: 'Invalid JSON body' });
+    }
+
+    // Upload image to Cloudinary if a file was provided
+    if (req.file) {
+      body.image = await uploadToCloudinary(req.file.buffer, 'packs');
+    }
+
+    // Auto-calculate discount
+    const price = Number(body.price) || 0;
+    const offPrice = Number(body.offPrice) || 0;
+    if (price && offPrice > price) {
+      body.discount = Math.round(((offPrice - price) / offPrice) * 100) + '%';
+    }
+
+    const pack = await Pack.create(body);
+    res.status(201).json(pack);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.put('/packs/:id', upload.single('image'), async (req, res) => {
+  try {
+    let body;
+    try {
+      body = JSON.parse(req.body.body);
+    } catch {
+      return res.status(400).json({ error: 'Invalid JSON body' });
+    }
+
+    // Upload image to Cloudinary if a new file was provided
+    if (req.file) {
+      body.image = await uploadToCloudinary(req.file.buffer, 'packs');
+    }
+
+    // Auto-calculate discount
+    const price = Number(body.price) || 0;
+    const offPrice = Number(body.offPrice) || 0;
+    if (price && offPrice > price) {
+      body.discount = Math.round(((offPrice - price) / offPrice) * 100) + '%';
+    }
+
+    const pack = await Pack.findByIdAndUpdate(req.params.id, body, { new: true, runValidators: true });
+    if (!pack) return res.status(404).json({ error: 'Pack not found' });
+    res.json(pack);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.delete('/packs/:id', async (req, res) => {
+  try {
+    const pack = await Pack.findByIdAndDelete(req.params.id);
+    if (!pack) return res.status(404).json({ error: 'Pack not found' });
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ──────────────────────────────────────────────
+//  PRODUCTS
+// ──────────────────────────────────────────────
+
+const Product = require('../models/Product');
+
+router.get('/products', async (req, res) => {
+  try {
+    const products = await Product.find().sort({ sortOrder: 1, createdAt: -1 });
+    res.json(products);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.get('/products/:id', async (req, res) => {
+  try {
+    const product = await Product.findById(req.params.id);
+    if (!product) return res.status(404).json({ error: 'Product not found' });
+    res.json(product);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+const productUpload = upload.fields([
+  { name: 'image', maxCount: 1 },
+  { name: 'gallery', maxCount: 10 },
+]);
+
+router.post('/products', productUpload, async (req, res) => {
+  try {
+    let body;
+    try {
+      body = JSON.parse(req.body.body);
+    } catch {
+      return res.status(400).json({ error: 'Invalid JSON body' });
+    }
+
+    if (req.files?.image?.[0]) {
+      body.image = await uploadToCloudinary(req.files.image[0].buffer, 'products');
+    }
+
+    // Upload gallery images
+    const galleryFiles = req.files?.gallery || [];
+    const uploaded = await Promise.all(
+      galleryFiles.map((f) => uploadToCloudinary(f.buffer, 'products'))
+    );
+    body.images = [...(body.images || []), ...uploaded];
+
+    const product = await Product.create(body);
+    res.status(201).json(product);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.put('/products/:id', productUpload, async (req, res) => {
+  try {
+    let body;
+    try {
+      body = JSON.parse(req.body.body);
+    } catch {
+      return res.status(400).json({ error: 'Invalid JSON body' });
+    }
+
+    if (req.files?.image?.[0]) {
+      body.image = await uploadToCloudinary(req.files.image[0].buffer, 'products');
+    }
+
+    // Upload gallery images
+    const galleryFiles = req.files?.gallery || [];
+    const uploaded = await Promise.all(
+      galleryFiles.map((f) => uploadToCloudinary(f.buffer, 'products'))
+    );
+    body.images = [...(body.images || []), ...uploaded];
+
+    const product = await Product.findByIdAndUpdate(req.params.id, body, { new: true, runValidators: true });
+    if (!product) return res.status(404).json({ error: 'Product not found' });
+    res.json(product);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.delete('/products/:id', async (req, res) => {
+  try {
+    const product = await Product.findByIdAndDelete(req.params.id);
+    if (!product) return res.status(404).json({ error: 'Product not found' });
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ── Public endpoints (no auth) ──
+const publicRouter = require('express').Router();
+publicRouter.get('/packs', async (req, res) => {
+  try {
+    const packs = await Pack.find({ isActive: true }).sort({ createdAt: -1 });
+    res.json(packs);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+publicRouter.get('/products', async (req, res) => {
+  try {
+    const products = await Product.find({ isActive: true }).sort({ sortOrder: 1, createdAt: -1 });
+    res.json(products);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 module.exports = router;
+module.exports.publicPacksRouter = publicRouter;

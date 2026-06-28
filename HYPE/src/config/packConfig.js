@@ -1,3 +1,5 @@
+const API_BASE = import.meta.env.VITE_API_URL || 'https://hyperbitedeploy.onrender.com';
+
 // Pack configurations for combo products
 export const packConfigs = {
   pack250: {
@@ -119,3 +121,20 @@ export const packConfigs = {
 
 // Get all packs as array
 export const getAllPacks = () => Object.values(packConfigs);
+
+/**
+ * Fetch packs from the backend API.
+ * Falls back to hardcoded configs on failure.
+ */
+export async function fetchPacksFromAPI() {
+  try {
+    const res = await fetch(`${API_BASE}/api/packs`);
+    if (!res.ok) throw new Error('Failed to fetch packs');
+    const data = await res.json();
+    if (!data || data.length === 0) return getAllPacks();
+    // Map _id → id so existing frontend code works
+    return data.map((p) => ({ ...p, id: p._id || p.id }));
+  } catch {
+    return getAllPacks();
+  }
+}
