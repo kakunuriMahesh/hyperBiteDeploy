@@ -1,6 +1,6 @@
 // WhatsApp utility functions
 
-import { productDetails } from '../config/productDetails';
+
 
 //FIXME: Updated WhatsApp number to '+91 99859 44466'
 const WHATSAPP_NUMBER = '919985944466';
@@ -54,7 +54,7 @@ export const formatCartMessage = (cartItems, packItems, userDetails, appliedRewa
     if (pack.items && pack.items.length > 0) {
       message += `   Items in pack:\n`;
       pack.items.forEach((item) => {
-        const name = (productDetails[item.id] && productDetails[item.id].name) || item.id;
+        const name = item.name || item.id;
         
         // Format quantity logic
         let qtyDisplay = `${item.quantity} unit(s)`;

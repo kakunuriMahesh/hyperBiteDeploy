@@ -4,7 +4,6 @@ import { useCart } from "../store/hooks/useCart";
 import { useSelector, useDispatch } from "react-redux";
 import { FaTrash, FaPlus, FaMinus, FaEdit, FaChevronDown, FaChevronUp, FaArrowLeft, FaGift, FaTag } from "react-icons/fa";
 import { toast } from "react-toastify";
-import { productDetails } from "../config/productDetails";
 import {
   selectIdentifier,
   selectUnclaimedRewards,
@@ -220,7 +219,7 @@ const PackItemCard = ({
             }}
           >
             {pack.items?.map((item, i) => {
-              const pDetails = productDetails[item.id];
+              const pDetails = item.name || item.id;
               return (
                 <div
                   key={i}
@@ -232,7 +231,7 @@ const PackItemCard = ({
                     justifyContent: "space-between",
                   }}
                 >
-                  <span>{pDetails?.name || item.id}</span>
+                  <span>{pDetails}</span>
                   <span style={{ color: "#9ca3af" }}>×{item.quantity}</span>
                 </div>
               );
@@ -348,6 +347,23 @@ const Cart = () => {
   const [lookupData, setLookupData] = useState(null);
   const [lookupLoading, setLookupLoading] = useState(false);
   const [lookupError, setLookupError] = useState('');
+
+  const aggregatedRewards = useMemo(() => {
+    if (!lookupData?.rewards) return [];
+    const pointsRewards = lookupData.rewards.filter(r => r.type === 'reward_points');
+    const otherRewards = lookupData.rewards.filter(r => r.type !== 'reward_points');
+    const activePts = pointsRewards.filter(r => !r.claimed);
+    const totalPts = activePts.reduce((s, r) => s + r.value, 0);
+    const aggregated = totalPts > 0 ? [{
+      id: 'cart-points-total',
+      type: 'reward_points',
+      value: totalPts,
+      label: `${totalPts} Reward Points Total`,
+      claimed: false,
+      isAggregated: true,
+    }] : [];
+    return [...aggregated, ...otherRewards];
+  }, [lookupData]);
 
   const checkoutSummary = useMemo(() => {
     const totalItems = cartItems.reduce((sum, item) => sum + item.quantity, 0)
@@ -1517,10 +1533,10 @@ const Cart = () => {
                           Your Rewards ({lookupData.totalPoints} points)
                         </p>
                         <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                          {lookupData.rewards.map((r) => (
+                          {aggregatedRewards.map((r) => (
                             <button
                               key={r.id}
-                              onClick={() => handleApplyReward(r, true)}
+                              onClick={() => r.isAggregated ? null : handleApplyReward(r, true)}
                               style={{
                                 display: "flex",
                                 alignItems: "center",
@@ -1529,28 +1545,30 @@ const Cart = () => {
                                 background: "#FFFBEB",
                                 borderRadius: 8,
                                 border: "1px solid #FDE68A",
-                                cursor: "pointer",
+                                cursor: r.isAggregated ? "default" : "pointer",
                                 width: "100%",
                                 textAlign: "left",
                                 fontFamily: "'Inter', sans-serif",
                                 transition: "all 0.2s",
+                                opacity: r.isAggregated ? 0.8 : 1,
                               }}
-                              onMouseEnter={(e) => { e.currentTarget.style.borderColor = "#F59E0B"; e.currentTarget.style.backgroundColor = "#FEF3C7"; }}
-                              onMouseLeave={(e) => { e.currentTarget.style.borderColor = "#FDE68A"; e.currentTarget.style.backgroundColor = "#FFFBEB"; }}
+                              onMouseEnter={(e) => { if (!r.isAggregated) { e.currentTarget.style.borderColor = "#F59E0B"; e.currentTarget.style.backgroundColor = "#FEF3C7"; } }}
+                              onMouseLeave={(e) => { if (!r.isAggregated) { e.currentTarget.style.borderColor = "#FDE68A"; e.currentTarget.style.backgroundColor = "#FFFBEB"; } }}
                             >
                               <FaGift size={14} color="#F59E0B" />
                               <div style={{ flex: 1, minWidth: 0 }}>
                                 <span style={{ fontSize: "12px", fontWeight: 600, color: "#92400E" }}>{r.label}</span>
-                                {r.expiresAt && (
+                                {r.expiresAt && r.type !== 'reward_points' && (
                                   <span style={{ display: "block", fontSize: "10px", color: "#A16207", marginTop: 1 }}>
                                     Expires {new Date(r.expiresAt).toLocaleDateString("en-IN")}
                                   </span>
                                 )}
                               </div>
-                              <span style={{ fontSize: "11px", padding: "3px 10px", background: "#FEF3C7", borderRadius: 4, color: "#D97706", fontWeight: 600 }}>Apply</span>
+                              <span style={{ fontSize: "11px", padding: "3px 10px", background: r.isAggregated ? "#F0FFFD" : "#FEF3C7", borderRadius: 4, color: r.isAggregated ? "#4ECDC4" : "#D97706", fontWeight: 600 }}>
+                                {r.isAggregated ? `${r.value} PTS` : 'Apply'}
+                              </span>
                             </button>
-                          ))}
-                        </div>
+                          ))}                          </div>
                       </div>
                     ) : lookupData ? (
                       <div style={{ textAlign: "center", padding: "20px 12px" }}>

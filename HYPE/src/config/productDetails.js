@@ -294,6 +294,19 @@ powerChunk:{
 },
 };
 
+// ── Cached product map (populated synchronously from hardcoded, updated by API) ──
+let cachedProductMap = { ...productDetails };
+
+/** Get a product by ID synchronously — falls back to hardcoded if API not yet loaded. */
+export function getProduct(id) {
+  return cachedProductMap[id];
+}
+
+/** Get all products as array — returns cached (hardcoded or API-merged) data. */
+export function getAllProducts() {
+  return Object.values(cachedProductMap);
+}
+
 /**
  * Fetch products from the backend API and merge with hardcoded productDetails.
  * API data overrides image, price, stock for products matching by slug/name.
@@ -356,8 +369,10 @@ export async function fetchProductsFromAPI() {
       }
     });
 
+    cachedProductMap = merged;
     return merged;
   } catch {
+    cachedProductMap = { ...productDetails };
     return { ...productDetails };
   }
 }

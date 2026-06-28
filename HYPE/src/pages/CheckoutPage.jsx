@@ -6,7 +6,6 @@ import { getCookie, setCookie } from "../utils/cookies";
 import { FaChevronDown, FaChevronUp } from "react-icons/fa";
 import { toast } from "react-toastify";
 import { allowedPincodes } from "../config/allowedPincodes";
-import { productDetails } from "../config/productDetails";
 import Navbar from "../components/Navbar";
 import PhoneInput from "react-phone-number-input";
 import { isValidPhoneNumber } from "react-phone-number-input";
@@ -199,10 +198,10 @@ const CheckoutPage = () => {
       });
       packItems.forEach((p) => {
         const subItems = (p.items || []).map((sub) => {
-          const detail = productDetails[sub.id];
+          const detail = sub.name || sub.id;
           return {
             id: sub.id,
-            name: detail?.name || sub.id,
+            name: detail,
             quantity: sub.quantity || 1,
           };
         });
@@ -483,6 +482,15 @@ const CheckoutPage = () => {
               {appliedCoupon && ` (${appliedCoupon.code})`}
             </span>
             <span style={{ color: "#F59E0B", fontWeight: 600 }}>− ₹{extraDiscount.toFixed(2)}</span>
+          </div>
+        )}
+        {appliedReward && (
+          <div style={{ padding: "6px 8px", marginTop: 4, background: "#FFFBEB", borderRadius: 6, border: "1px solid #FDE68A", fontFamily: "'Inter', sans-serif", fontSize: "11px", color: "#92400E", lineHeight: 1.6 }}>
+            <div><strong>{appliedReward.label}</strong> {appliedReward.type === 'discount_percent' ? `(${appliedReward.value}% off)` : appliedReward.type === 'discount_fixed' ? `(₹${appliedReward.value} off)` : appliedReward.type === 'free_shipping' ? '(Free Shipping)' : ''}</div>
+            {(appliedReward.minCartValue > 0 || appliedReward.maxCartValue > 0) && (
+              <div>Cart range: {appliedReward.minCartValue > 0 ? `₹${appliedReward.minCartValue}` : '₹0'} – {appliedReward.maxCartValue > 0 ? `₹${appliedReward.maxCartValue}` : 'No limit'}</div>
+            )}
+            {appliedReward.expiresAt && <div>Expires: {new Date(appliedReward.expiresAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</div>}
           </div>
         )}
         {freeShippingApplied && (

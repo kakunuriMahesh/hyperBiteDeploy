@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { productDetails } from "../config/productDetails";
+import { getAllProducts } from "../config/productDetails";
 import { formatProductMessage, sendWhatsAppMessage } from "../utils/whatsapp";
 import { FaPlus, FaMinus, FaTimes, FaBolt, FaLeaf, FaShieldAlt, FaHeart, FaCheck } from "react-icons/fa";
 import LiveCommunityHub from "./LiveCommunityHub";
@@ -12,7 +12,7 @@ import CinematicSceneTailwind from "./CinematicSceneTailwind";
 import ActiveHyper from "./ActiveHyper";
 
 export default function LandingView({ onEnterPremiumMode, breakpoint }) {
-  const products = Object.values(productDetails);
+  const products = getAllProducts();
   const [quantities, setQuantities] = useState({});
 const navigate = useNavigate();
 

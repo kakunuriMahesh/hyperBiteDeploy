@@ -244,7 +244,8 @@ exports.validateCoupon = async (req, res) => {
     }
 
     // ── Per-customer limit (offer coupons: once per email/phone) ──
-    if (customerIdentifier && coupon.perCustomerLimit > 0) {
+    // Collaborator personal codes are governed by monthlyPackLimit, not per-customer
+    if (customerIdentifier && coupon.perCustomerLimit > 0 && coupon.type !== 'collaborator') {
       const usageCount = await CouponUsage.countDocuments({
         couponId: coupon._id,
         customerIdentifier: customerIdentifier.toLowerCase().trim(),
@@ -405,7 +406,7 @@ exports.checkIdentifier = async (req, res) => {
         discount: c.discount,
         freeShipping: c.freeShipping,
         minCartValue: c.minCartValue || 0,
-        usedByCurrentUser: (usageMap[c._id.toString()] || 0) >= (c.perCustomerLimit || 1),
+        usedByCurrentUser: c.type === 'collaborator' ? false : (usageMap[c._id.toString()] || 0) >= (c.perCustomerLimit || 1),
         expiresAt: c.expiresAt ? c.expiresAt.getTime() : null,
       }));
 
@@ -489,7 +490,7 @@ exports.useCoupon = async (req, res) => {
       return res.status(400).json({ error: 'This coupon has reached its usage limit.' });
     }
 
-    if (customerIdentifier && coupon.perCustomerLimit > 0) {
+    if (customerIdentifier && coupon.perCustomerLimit > 0 && coupon.type !== 'collaborator') {
       const usageCount = await CouponUsage.countDocuments({
         couponId: coupon._id,
         customerIdentifier: customerIdentifier.toLowerCase().trim(),

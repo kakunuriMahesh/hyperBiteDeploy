@@ -106,33 +106,78 @@ const RewardsPage = () => {
     return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
   }
 
-  const isExpired = (expiresAt) => expiresAt < Date.now()
+  const isExpired = (expiresAt, type) => type === 'reward_points' ? false : expiresAt < Date.now()
 
   const sourceRewards = useApiData && apiRewards ? apiRewards : rewards
   const sourceTotalPoints = useApiData ? apiTotalPoints : totalPoints
   const sourceUnclaimedCount = useApiData
-    ? (apiRewards ? apiRewards.filter(r => !r.claimed).length : 0)
+    ? (apiRewards ? apiRewards.filter(r => !r.claimed && r.type !== 'reward_points').length : 0)
     : unclaimedCount
 
   const filteredRewards = useMemo(() => {
-    const sorted = [...sourceRewards].reverse()
+    const source = [...sourceRewards]
+    // Separate reward_points from other types
+    const pointsRewards = source.filter(r => r.type === 'reward_points')
+    const otherRewards = source.filter(r => r.type !== 'reward_points')
+
+    // Aggregate all unclaimed points into one entry
+    const activePoints = pointsRewards.filter(r => !r.claimed && !isExpired(r.expiresAt, r.type))
+    const totalPoints = activePoints.reduce((sum, r) => sum + r.value, 0)
+    const aggregated = totalPoints > 0 ? [{
+      id: 'reward-points-total',
+      type: 'reward_points',
+      value: totalPoints,
+      label: `${totalPoints} Reward Points Total`,
+      claimed: false,
+      expiresAt: activePoints.reduce((lat, r) => r.expiresAt > lat ? r.expiresAt : lat, 0),
+      isAggregated: true,
+      createdAt: activePoints.reduce((ear, r) => !ear || r.createdAt < ear ? r.createdAt : ear, 0),
+    }] : []
+
+    // Also aggregate claimed points (for "claimed" filter)
+    const claimedPoints = pointsRewards.filter(r => r.claimed)
+    const claimedTotal = claimedPoints.reduce((sum, r) => sum + r.value, 0)
+    const aggregatedClaimed = claimedTotal > 0 ? [{
+      id: 'reward-points-claimed-total',
+      type: 'reward_points',
+      value: claimedTotal,
+      label: `${claimedTotal} Reward Points (Claimed)`,
+      claimed: true,
+      claimedAt: claimedPoints.reduce((lat, r) => r.claimedAt > lat ? r.claimedAt : lat, 0),
+      isAggregated: true,
+    }] : []
+
+    // Also aggregate expired points (for "expired" filter)
+    const expiredPoints = pointsRewards.filter(r => isExpired(r.expiresAt, r.type))
+    const expiredTotal = expiredPoints.reduce((sum, r) => sum + r.value, 0)
+    const aggregatedExpired = expiredTotal > 0 ? [{
+      id: 'reward-points-expired-total',
+      type: 'reward_points',
+      value: expiredTotal,
+      label: `${expiredTotal} Reward Points (Expired)`,
+      claimed: false,
+      expiresAt: 0,
+      isAggregated: true,
+    }] : []
+
+    const combined = [...aggregated, ...aggregatedClaimed, ...aggregatedExpired, ...otherRewards].reverse()
     switch (activeFilter) {
       case 'unclaimed':
-        return sorted.filter(r => !r.claimed && !isExpired(r.expiresAt))
+        return combined.filter(r => !r.claimed && !isExpired(r.expiresAt, r.type))
       case 'claimed':
-        return sorted.filter(r => r.claimed)
+        return combined.filter(r => r.claimed)
       case 'expired':
-        return sorted.filter(r => isExpired(r.expiresAt))
+        return combined.filter(r => isExpired(r.expiresAt, r.type))
       default:
-        return sorted
+        return combined
     }
   }, [sourceRewards, activeFilter])
 
   const stats = useMemo(() => [
     { label: 'Total Points', value: sourceTotalPoints, icon: <FaCoins />, color: '#4ECDC4', gradient: 'linear-gradient(135deg, #4ECDC4, #44B09E)' },
     { label: 'Unclaimed', value: sourceUnclaimedCount, icon: <FaGift />, color: '#FFD700', gradient: 'linear-gradient(135deg, #FFD700, #FFA500)' },
-    { label: 'Total Earned', value: sourceRewards.length, icon: <FaTrophy />, color: '#45B7D1', gradient: 'linear-gradient(135deg, #45B7D1, #2E86AB)' },
-  ], [sourceTotalPoints, sourceUnclaimedCount, sourceRewards.length])
+    { label: 'Total Earned', value: sourceRewards.filter(r => r.type !== 'reward_points').length, icon: <FaTrophy />, color: '#45B7D1', gradient: 'linear-gradient(135deg, #45B7D1, #2E86AB)' },
+  ], [sourceTotalPoints, sourceUnclaimedCount, sourceRewards])
 
   const containerMaxW = isMobile ? '100%' : 960
   const contentPad = isMobile ? '0 16px' : '0 32px'
@@ -586,7 +631,7 @@ const RewardsPage = () => {
                       exit={{ opacity: 0 }}
                     >
                       {filteredRewards.map((reward, index) => {
-                        const expired = isExpired(reward.expiresAt)
+                        const expired = isExpired(reward.expiresAt, reward.type)
                         const meta = rewardMeta[reward.type] || rewardMeta.none
 
                         return (
@@ -663,12 +708,29 @@ const RewardsPage = () => {
                                 fontFamily: "'Inter', sans-serif",
                               }}>
                                 {reward.claimed ? `Claimed on ${formatDate(reward.claimedAt)}` :
-                                 expired ? 'Expired' : `Expires ${formatDate(reward.expiresAt)}`}
+                                 expired ? 'Expired' : reward.type === 'reward_points' ? '' : `Expires ${formatDate(reward.expiresAt)}`}
                               </p>
                             </div>
 
                             <div style={{ flexShrink: 0 }}>
-                              {reward.claimed ? (
+                              {reward.isAggregated ? (
+                                <div style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: 4,
+                                  color: '#4ECDC4',
+                                  fontSize: isMobile ? 11 : 12,
+                                  fontWeight: 600,
+                                  backgroundColor: '#F0FFFD',
+                                  padding: isMobile ? '5px 10px' : '6px 14px',
+                                  borderRadius: 8,
+                                  fontFamily: "'Inter', sans-serif",
+                                  whiteSpace: 'nowrap',
+                                }}>
+                                  <FaCoins size={isMobile ? 9 : 10} />
+                                  {reward.value} PTS
+                                </div>
+                              ) : reward.claimed ? (
                                 <div style={{
                                   display: 'flex',
                                   alignItems: 'center',

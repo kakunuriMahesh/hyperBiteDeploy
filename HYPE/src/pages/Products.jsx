@@ -48,14 +48,21 @@ const Products = () => {
     //   return;
     // }
 
-    // Pincode already exists → proceed directly
-    const defaultItems = [
+    // Use pack.defaultProducts from API (with names), or fall back to mapping
+    const productNameMap = {};
+    products.forEach((p) => { productNameMap[p.id] = p.name; });
+    const hardcodedFallback = [
       { id: 'cashewCharge', quantity: 2 },
       { id: 'seedBoost', quantity: 2 },
       { id: 'powerChunk', quantity: 2 },
       { id: 'milletMatrix', quantity: 2 },
       { id: 'oatsOctane', quantity: 2 },
     ];
+    const raw = (pack.defaultProducts?.length ? pack.defaultProducts : hardcodedFallback);
+    const defaultItems = raw.map((item) => ({
+      ...item,
+      name: item.name || productNameMap[item.id] || item.id,
+    }));
 
     addPackToCart({
       packId: pack.id,

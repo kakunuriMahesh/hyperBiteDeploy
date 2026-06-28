@@ -134,7 +134,7 @@ exports.createOrder = async (req, res) => {
           && (coupon.maxCartValue === 0 || itemTotal <= coupon.maxCartValue);
 
         let withinCustomerLimit = true;
-        if (basicValid && coupon.perCustomerLimit > 0 && customerIdentifier) {
+        if (basicValid && coupon.perCustomerLimit > 0 && customerIdentifier && coupon.type !== 'collaborator') {
           const usageCount = await CouponUsage.countDocuments({
             couponId: coupon._id,
             customerIdentifier: customerIdentifier.toLowerCase().trim(),

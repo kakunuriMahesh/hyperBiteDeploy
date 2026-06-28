@@ -175,7 +175,7 @@ const CustomizePackPage = () => {
       packOffPrice: pack.offPrice,
       items: products
         .filter((p) => (quantities[p.id] || 0) > 0)
-        .map((p) => ({ id: p.id, quantity: quantities[p.id] || 0 })),
+        .map((p) => ({ id: p.id, name: p.name, quantity: quantities[p.id] || 0 })),
       total,
     };
     startOrUpdateInProgressPack(packData);
@@ -206,6 +206,7 @@ const CustomizePackPage = () => {
       .filter((p) => (quantities[p.id] || 0) > 0)
       .map((p) => ({
         id: p.id,
+        name: p.name,
         quantity: quantities[p.id] || 0,
       }));
 
