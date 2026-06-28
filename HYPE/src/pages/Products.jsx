@@ -96,7 +96,7 @@ const Products = () => {
     //   setIsPincodeModalOpen(true);
     //   return;
     // }
-    navigate(`/customize-pack/${pack.id}`);
+    navigate(`/customize-pack/${pack.id}`, { state: { pack } });
   };
 
   const handleViewDetails = (pack) => {

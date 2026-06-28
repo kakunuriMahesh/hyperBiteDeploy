@@ -1,9 +1,9 @@
 import React, { useState, useEffect ,useLayoutEffect, useRef} from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { FaArrowLeft, FaPlus, FaMinus, FaCheckCircle, FaGift, FaStar, FaShippingFast, FaBoxOpen, FaTag, FaTrash } from 'react-icons/fa';
 import { GrPowerReset } from "react-icons/gr";
 import { fetchProductsFromAPI } from '../config/productDetails';
-import { packConfigs } from '../config/packConfig';
+import { packConfigs, fetchPacksFromAPI } from '../config/packConfig';
 import { useCart } from '../store/hooks/useCart';
 import { toast } from 'react-toastify';
 import Spinner from '../components/Spinner';
@@ -19,6 +19,7 @@ gsap.registerPlugin(ScrollTrigger);
 const CustomizePackPage = () => {
   const navigate = useNavigate();
   const { packId } = useParams();
+  const location = useLocation();
   const { addPackToCart, startOrUpdateInProgressPack, inProgressPacks } = useCart();
 
   const [breakpoint, setBreakpoint] = useState('desktop');
@@ -35,18 +36,34 @@ const CustomizePackPage = () => {
   });
   const [alertedFilled, setAlertedFilled] = useState(false);
 
-  const pack = packConfigs[packId] || packConfigs.pack500;
-  const detailsContent = pack.detailsContent;
+  const [pack, setPack] = useState(location.state?.pack || null);
   const [products, setProducts] = useState([]);
   const [productMap, setProductMap] = useState({});
   const [loading, setLoading] = useState(true);
+  const detailsContent = pack?.detailsContent;
 
   useEffect(() => {
+    if (!pack) {
+      fetchPacksFromAPI().then(allPacks => {
+        const found = allPacks.find(p => p.id === packId || p._id === packId);
+        if (found) {
+          setPack(found);
+        } else {
+          const configPack = packConfigs[packId];
+          if (configPack) {
+            setPack(configPack);
+          } else {
+            const byName = allPacks.find(p => p.name === packConfigs.pack500?.name);
+            setPack(byName || packConfigs.pack500);
+          }
+        }
+      });
+    }
     fetchProductsFromAPI().then((merged) => {
       setProductMap(merged);
       setProducts(Array.from(new Set(Object.values(merged))));
     }).finally(() => setLoading(false));
-  }, []);
+  }, [packId]);
 
   useEffect(() => {
     const updateBreakpoint = () => {
@@ -114,7 +131,8 @@ const CustomizePackPage = () => {
   };
 
   const { price: total, items: totalItems } = calculateTotals();
-  const progressPercent = Math.min((total / pack.minPrice) * 100, 100);
+  const progressPercent = pack ? Math.min((total / pack.minPrice) * 100, 100) : 0;
+  const discountPercent = pack ? Math.round(((pack.offPrice - pack.price) / pack.offPrice) * 100) : 0;
 
   const handleQuantityChange = (productId, change) => {
     const p = productMap[productId];
@@ -170,6 +188,7 @@ const CustomizePackPage = () => {
   };
 
   useEffect(() => {
+    if (!pack) return;
     const packData = {
       packId: pack.id,
       packName: pack.name,
@@ -192,7 +211,7 @@ const CustomizePackPage = () => {
     if (total < pack.minPrice && alertedFilled) {
       setAlertedFilled(false);
     }
-  }, [quantities, total, totalItems]);
+  }, [pack, quantities, total, totalItems]);
 
   const handleOrderNow = () => {
     if (total < pack.minPrice) {
@@ -238,9 +257,9 @@ const CustomizePackPage = () => {
         paddingTop: '70px',
       }}
     >
-      {loading ? (
+      {loading || pack === null ? (
         <div style={{ minHeight: 'calc(100vh - 70px)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <Spinner text="Loading products..." />
+          <Spinner text="Loading..." />
         </div>
       ) : (
       <div
@@ -410,6 +429,7 @@ const CustomizePackPage = () => {
                   >
                     ₹{pack.offPrice}
                   </span>
+                  {discountPercent > 0 && (
                   <span
                     style={{
                       fontFamily: "'Inter', sans-serif",
@@ -421,8 +441,9 @@ const CustomizePackPage = () => {
                       borderRadius: '4px',
                     }}
                   >
-                    Save {pack.discount}
+                    Save {discountPercent}%
                   </span>
+                  )}
                 </div>
 
                 {/* What's Inside */}
