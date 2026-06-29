@@ -10,6 +10,7 @@ import {
   claimReward,
 } from "../store/slices/rewardsSlice";
 import { validateCoupon, validateReward, checkIdentifier } from "../utils/api";
+import { fetchSettings } from "../config/settings";
 
 const PackItemCard = ({
   pack,
@@ -341,6 +342,13 @@ const Cart = () => {
   const [couponError, setCouponError] = useState('');
   const [couponLoading, setCouponLoading] = useState(false);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const [deliveryCharge, setDeliveryCharge] = useState(75);
+
+  useEffect(() => {
+    fetchSettings().then(s => {
+      if (s?.deliveryCharge) setDeliveryCharge(s.deliveryCharge);
+    });
+  }, []);
 
   // Identifier lookup
   const [lookupValue, setLookupValue] = useState(rewardsIdentifier || '');
@@ -378,7 +386,6 @@ const Cart = () => {
     }, 0);
     const sellingTotal = getCartTotal();
     const totalDiscount = totalMRP - sellingTotal;
-    const deliveryCharge = 0;
     let extraDiscount = 0;
     let freeShippingApplied = false;
     if (appliedReward) {
@@ -400,9 +407,9 @@ const Cart = () => {
         freeShippingApplied = true;
       }
     }
-    const finalTotal = Math.max(0, sellingTotal - extraDiscount);
+    const finalTotal = Math.max(0, sellingTotal - extraDiscount) + (freeShippingApplied ? 0 : deliveryCharge);
     return { totalItems, totalMRP, sellingTotal, totalDiscount, deliveryCharge, extraDiscount, freeShippingApplied, finalTotal };
-  }, [cartItems, packItems, getCartTotal, appliedReward, appliedCoupon]);
+  }, [cartItems, packItems, getCartTotal, appliedReward, appliedCoupon, deliveryCharge]);
 
   const saveCartState = (overrides = {}) => {
     try {
@@ -454,10 +461,14 @@ const Cart = () => {
     if (!val) return;
     setLookupLoading(true);
     setLookupError('');
+    setAppliedCoupon(null);
+    setAppliedReward(null);
+    setCouponCode('');
+    setCouponError('');
     try {
       const data = await checkIdentifier(val);
       setLookupData(data);
-      saveCartState({ lookupValue: val, lookupData: data });
+      saveCartState({ lookupValue: val, lookupData: data, appliedCoupon: null, appliedReward: null, couponCode: '' });
     } catch (err) {
       setLookupError(err.message);
     } finally {
@@ -1914,7 +1925,14 @@ const Cart = () => {
                 {/* Delivery Charges */}
                 <div style={{ ...summaryRowStyle }}>
                   <span style={{ color: "#4b5563" }}>Delivery Charges</span>
-                  <span style={{ color: "#16a34a", fontWeight: 600 }}>FREE</span>
+                  {freeShippingApplied ? (
+                    <span style={{ color: "#16a34a", fontWeight: 600 }}>
+                      <span style={{ textDecoration: 'line-through', color: '#999', marginRight: 6 }}>₹{deliveryCharge}</span>
+                      FREE
+                    </span>
+                  ) : (
+                    <span style={{ color: "#4b5563", fontWeight: 600 }}>₹{deliveryCharge}</span>
+                  )}
                 </div>
 
                 {/* Reward / Coupon Discount */}
@@ -1926,12 +1944,6 @@ const Cart = () => {
                     <span style={{ color: "#F59E0B", fontWeight: 600 }}>
                       − ₹{extraDiscount.toFixed(2)}
                     </span>
-                  </div>
-                )}
-                {freeShippingApplied && (
-                  <div style={{ ...summaryRowStyle }}>
-                    <span style={{ color: "#F59E0B" }}>Free Shipping</span>
-                    <span style={{ color: "#16a34a", fontWeight: 600 }}>Applied ✓</span>
                   </div>
                 )}
 

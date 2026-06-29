@@ -6,6 +6,7 @@ import { getCookie, setCookie } from "../utils/cookies";
 import { FaChevronDown, FaChevronUp } from "react-icons/fa";
 import { toast } from "react-toastify";
 import { allowedPincodes } from "../config/allowedPincodes";
+import { fetchSettings } from "../config/settings";
 import Navbar from "../components/Navbar";
 import PhoneInput from "react-phone-number-input";
 import { isValidPhoneNumber } from "react-phone-number-input";
@@ -47,6 +48,13 @@ const CheckoutPage = () => {
   const [isFormSubmitting, setIsFormSubmitting] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [successData, setSuccessData] = useState({ points: 0, email: '' });
+  const [deliveryCharge, setDeliveryCharge] = useState(75);
+
+  useEffect(() => {
+    fetchSettings().then(s => {
+      if (s?.deliveryCharge) setDeliveryCharge(s.deliveryCharge);
+    });
+  }, []);
 
   const checkoutSummary = useMemo(() => {
     const totalItems = cartItems.reduce((sum, item) => sum + item.quantity, 0)
@@ -61,7 +69,6 @@ const CheckoutPage = () => {
     }, 0);
     const sellingTotal = getCartTotal();
     const totalDiscount = totalMRP - sellingTotal;
-    const deliveryCharge = 0;
     let extraDiscount = 0;
     let freeShippingApplied = false;
     if (appliedReward) {
@@ -83,9 +90,9 @@ const CheckoutPage = () => {
         freeShippingApplied = true;
       }
     }
-    const finalTotal = Math.max(0, sellingTotal - extraDiscount);
+    const finalTotal = Math.max(0, sellingTotal - extraDiscount) + (freeShippingApplied ? 0 : deliveryCharge);
     return { totalItems, totalMRP, sellingTotal, totalDiscount, deliveryCharge, extraDiscount, freeShippingApplied, finalTotal };
-  }, [cartItems, packItems, getCartTotal, appliedReward, appliedCoupon]);
+  }, [cartItems, packItems, getCartTotal, appliedReward, appliedCoupon, deliveryCharge]);
 
   useEffect(() => {
     const updateBreakpoint = () => {
@@ -322,7 +329,7 @@ const CheckoutPage = () => {
     }, 1500);
   };
 
-  const { totalItems, totalMRP, sellingTotal, totalDiscount, deliveryCharge, extraDiscount, freeShippingApplied, finalTotal } = checkoutSummary;
+  const { totalItems, totalMRP, sellingTotal, totalDiscount, deliveryCharge: dcCharge, extraDiscount, freeShippingApplied, finalTotal } = checkoutSummary;
 
   const isMobile = breakpoint === "mobile";
 
@@ -501,7 +508,14 @@ const CheckoutPage = () => {
         )}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "5px 0", fontFamily: "'Inter', sans-serif", fontSize: isMobile ? "12px" : "13px" }}>
           <span style={{ color: "#6B7280" }}>Delivery</span>
-          <span style={{ color: "#16A34A", fontWeight: 600 }}>FREE</span>
+          {freeShippingApplied ? (
+            <span style={{ color: "#16A34A", fontWeight: 600 }}>
+              <span style={{ textDecoration: 'line-through', color: '#999', marginRight: 6 }}>₹{dcCharge}</span>
+              FREE
+            </span>
+          ) : (
+            <span style={{ color: "#6B7280", fontWeight: 600 }}>₹{dcCharge}</span>
+          )}
         </div>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0 0", marginTop: "6px", borderTop: "1px dashed #e5e7eb", fontFamily: "'Nunito Sans', sans-serif" }}>
           <span style={{ fontSize: isMobile ? "15px" : "16px", fontWeight: 700, color: "#111827" }}>Total</span>
