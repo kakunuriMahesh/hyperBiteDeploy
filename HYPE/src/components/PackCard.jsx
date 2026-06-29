@@ -185,6 +185,7 @@ const PackCard = ({ pack, breakpoint, onClickCustomize, onClickAdd, isCustomized
         >
           ₹{pack.price}
         </span>
+        {pack.offPrice > pack.price && (
         <span
           style={{
             fontFamily: "'Inter', sans-serif",
@@ -195,6 +196,8 @@ const PackCard = ({ pack, breakpoint, onClickCustomize, onClickAdd, isCustomized
         >
           ₹{pack.offPrice}
         </span>
+        )}
+          {pack.offPrice > pack.price && (
           <span
             style={{
               fontFamily: "'Inter', sans-serif",
@@ -208,6 +211,7 @@ const PackCard = ({ pack, breakpoint, onClickCustomize, onClickAdd, isCustomized
           >
             {Math.round(((pack.offPrice - pack.price) / pack.offPrice) * 100)}%
           </span>
+          )}
         <p className='text-[10px] '>
           {pack?.detailsContent?.footer}
         </p>

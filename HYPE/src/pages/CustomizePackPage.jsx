@@ -20,7 +20,7 @@ const CustomizePackPage = () => {
   const navigate = useNavigate();
   const { packId } = useParams();
   const location = useLocation();
-  const { addPackToCart, startOrUpdateInProgressPack, inProgressPacks } = useCart();
+  const { addPackToCart, startOrUpdateInProgressPack, removeInProgressPack, inProgressPacks } = useCart();
 
   const [breakpoint, setBreakpoint] = useState('desktop');
   
@@ -241,6 +241,7 @@ const CustomizePackPage = () => {
     };
 
     addPackToCart(packData);
+    removeInProgressPack(pack.id);
     toast.success(`${pack.name} added to cart!`);
     navigate('/cart');
   };
@@ -419,6 +420,7 @@ const CustomizePackPage = () => {
                   >
                     ₹{pack.price}
                   </span>
+                  {pack.offPrice > pack.price && (
                   <span
                     style={{
                       fontFamily: "'Inter', sans-serif",
@@ -429,6 +431,8 @@ const CustomizePackPage = () => {
                   >
                     ₹{pack.offPrice}
                   </span>
+                  )}
+                  {discountPercent > 0 && (
                   <span
                     style={{
                       fontFamily: "'Inter', sans-serif",
@@ -442,6 +446,7 @@ const CustomizePackPage = () => {
                   >
                     Save {discountPercent}%
                   </span>
+                  )}
                 </div>
 
                 {/* What's Inside */}
