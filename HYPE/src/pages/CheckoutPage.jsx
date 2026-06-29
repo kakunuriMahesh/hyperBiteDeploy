@@ -500,6 +500,11 @@ const CheckoutPage = () => {
             {appliedReward.expiresAt && <div>Expires: {new Date(appliedReward.expiresAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</div>}
           </div>
         )}
+        {appliedCoupon && (
+          <div style={{ padding: "6px 8px", marginTop: 4, background: "#FFFBEB", borderRadius: 6, border: "1px solid #FDE68A", fontFamily: "'Inter', sans-serif", fontSize: "11px", color: "#92400E", lineHeight: 1.6 }}>
+            <div><strong>{appliedCoupon.code}</strong> {appliedCoupon.discount > 0 ? `(${appliedCoupon.discount}% off)` : ''} {appliedCoupon.freeShipping ? '(Free Shipping)' : ''}</div>
+          </div>
+        )}
         {freeShippingApplied && (
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "5px 0", fontFamily: "'Inter', sans-serif", fontSize: isMobile ? "12px" : "13px" }}>
             <span style={{ color: "#16A34A" }}>Free Shipping</span>

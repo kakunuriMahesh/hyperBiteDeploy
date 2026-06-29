@@ -1506,7 +1506,16 @@ const Cart = () => {
                           {appliedReward ? appliedReward.label : appliedCoupon.code}
                         </p>
                         <p style={{ margin: "1px 0 0", fontSize: "10px", fontFamily: "'Inter', sans-serif", color: "#A16207" }}>
-                          Applied successfully
+                          {appliedReward
+                            ? appliedReward.type === 'discount_percent' ? `${appliedReward.value}% OFF`
+                              : appliedReward.type === 'discount_fixed' ? `₹${appliedReward.value} OFF`
+                              : appliedReward.type === 'free_shipping' ? 'Free Shipping'
+                              : 'Applied successfully'
+                            : appliedCoupon.discount > 0 && appliedCoupon.freeShipping
+                              ? `${appliedCoupon.discount}% OFF + Free Shipping`
+                              : appliedCoupon.discount > 0 ? `${appliedCoupon.discount}% OFF`
+                              : appliedCoupon.freeShipping ? 'Free Shipping'
+                              : 'Applied successfully'}
                         </p>
                       </div>
                     </div>
