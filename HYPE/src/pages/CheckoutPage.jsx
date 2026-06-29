@@ -49,7 +49,7 @@ const CheckoutPage = () => {
   const [isFormSubmitting, setIsFormSubmitting] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [successData, setSuccessData] = useState({ points: 0, email: '' });
-  const [deliveryCharge, setDeliveryCharge] = useState(75);
+  const [deliveryCharge, setDeliveryCharge] = useState(85);
   const [validationError, setValidationError] = useState(null);
 
   useEffect(() => {
@@ -92,7 +92,7 @@ const CheckoutPage = () => {
         freeShippingApplied = true;
       }
     }
-    const finalTotal = Math.max(0, sellingTotal - extraDiscount) + (freeShippingApplied ? 0 : deliveryCharge);
+    const finalTotal = Math.max(0, sellingTotal - extraDiscount);
     return { totalItems, totalMRP, sellingTotal, totalDiscount, deliveryCharge, extraDiscount, freeShippingApplied, finalTotal };
   }, [cartItems, packItems, getCartTotal, appliedReward, appliedCoupon, deliveryCharge]);
 
@@ -622,14 +622,10 @@ const CheckoutPage = () => {
         )}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "5px 0", fontFamily: "'Inter', sans-serif", fontSize: isMobile ? "12px" : "13px" }}>
           <span style={{ color: "#6B7280" }}>Delivery</span>
-          {freeShippingApplied ? (
-            <span style={{ color: "#16A34A", fontWeight: 600 }}>
-              <span style={{ textDecoration: 'line-through', color: '#999', marginRight: 6 }}>₹{dcCharge}</span>
-              FREE
-            </span>
-          ) : (
-            <span style={{ color: "#6B7280", fontWeight: 600 }}>₹{dcCharge}</span>
-          )}
+          <span style={{ color: "#16A34A", fontWeight: 600 }}>
+            <span style={{ textDecoration: 'line-through', color: '#999', marginRight: 6 }}>₹{dcCharge}</span>
+            FREE
+          </span>
         </div>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0 0", marginTop: "6px", borderTop: "1px dashed #e5e7eb", fontFamily: "'Nunito Sans', sans-serif" }}>
           <span style={{ fontSize: isMobile ? "15px" : "16px", fontWeight: 700, color: "#111827" }}>Total</span>

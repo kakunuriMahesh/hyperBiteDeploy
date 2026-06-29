@@ -342,7 +342,7 @@ const Cart = () => {
   const [couponError, setCouponError] = useState('');
   const [couponLoading, setCouponLoading] = useState(false);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
-  const [deliveryCharge, setDeliveryCharge] = useState(75);
+  const [deliveryCharge, setDeliveryCharge] = useState(85);
 
   useEffect(() => {
     fetchSettings().then(s => {
@@ -407,7 +407,7 @@ const Cart = () => {
         freeShippingApplied = true;
       }
     }
-    const finalTotal = Math.max(0, sellingTotal - extraDiscount) + (freeShippingApplied ? 0 : deliveryCharge);
+    const finalTotal = Math.max(0, sellingTotal - extraDiscount);
     return { totalItems, totalMRP, sellingTotal, totalDiscount, deliveryCharge, extraDiscount, freeShippingApplied, finalTotal };
   }, [cartItems, packItems, getCartTotal, appliedReward, appliedCoupon, deliveryCharge]);
 
@@ -1941,14 +1941,10 @@ const Cart = () => {
                 {/* Delivery Charges */}
                 <div style={{ ...summaryRowStyle }}>
                   <span style={{ color: "#4b5563" }}>Delivery Charges</span>
-                  {freeShippingApplied ? (
-                    <span style={{ color: "#16a34a", fontWeight: 600 }}>
-                      <span style={{ textDecoration: 'line-through', color: '#999', marginRight: 6 }}>₹{deliveryCharge}</span>
-                      FREE
-                    </span>
-                  ) : (
-                    <span style={{ color: "#4b5563", fontWeight: 600 }}>₹{deliveryCharge}</span>
-                  )}
+                  <span style={{ color: "#16a34a", fontWeight: 600 }}>
+                    <span style={{ textDecoration: 'line-through', color: '#999', marginRight: 6 }}>₹{deliveryCharge}</span>
+                    FREE
+                  </span>
                 </div>
 
                 {/* Reward / Coupon Discount */}

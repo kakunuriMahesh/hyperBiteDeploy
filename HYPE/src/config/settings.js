@@ -1,7 +1,7 @@
 const API_BASE = import.meta.env.VITE_API_URL || 'https://hyperbitedeploy.onrender.com';
 
 const DEFAULT_SETTINGS = {
-  deliveryCharge: 75,
+  deliveryCharge: 85,
 };
 
 let cachedSettings = null;
