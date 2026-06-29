@@ -1,334 +1,165 @@
 import React from 'react';
-import { FaPlus, FaTag } from 'react-icons/fa';
+import { FaPlus, FaTag, FaStar } from 'react-icons/fa';
 import { useCart } from '../store/hooks/useCart';
 import { useLanguage } from '../store/hooks/useLanguage';
 
 const PackCard = ({ pack, breakpoint, onClickCustomize, onClickAdd, isCustomized = false, onViewDetails }) => {
-  const { 
-    packItems, 
-    addPackToCart, 
-    updatePackQuantity, 
-    pincode, 
-    setPincode, 
-    validateAndSetPincode
-  } = useCart();
+  const { packItems } = useCart();
   const { t } = useLanguage();
 
   const existingPack = packItems.find((p) => p.packId === pack.id);
   const qty = existingPack ? existingPack.quantity : 0;
-
-  // We'll use a ref or local state if needed, but here we can use document.getElementById safely
-  const handleCheckPincode = () => {
-    const input = document.getElementById(`pincode-${pack.id}`);
-    if (input) {
-      validateAndSetPincode(input.value);
-    }
-  };
-
-  const handleKeyDown = (e) => {
-    if (e.key === 'Enter') {
-      handleCheckPincode();
-    }
-  };
+  const isMobile = breakpoint === 'mobile';
+  const discount = pack.offPrice > pack.price ? Math.round(((pack.offPrice - pack.price) / pack.offPrice) * 100) : 0;
 
   return (
     <div
-      style={{
-        backgroundColor: '#f9f9f9',
-        borderRadius: '12px',
-        padding: breakpoint === 'mobile' ? '20px' : '24px',
-        border: '2px solid #eee',
-        cursor: pack.isCustomizable ? 'pointer' : 'default',
-        transition: 'all 0.3s ease',
-        position: 'relative',
-        overflow: 'hidden',
-      }}
-      onMouseEnter={(e) => {
-        if (pack.isCustomizable) {
-          e.currentTarget.style.transform = 'translateY(-4px)';
-          e.currentTarget.style.boxShadow = '0 12px 24px rgba(0,0,0,0.15)';
-          e.currentTarget.style.borderColor = '#000';
-        }
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.transform = 'translateY(0)';
-        e.currentTarget.style.boxShadow = 'none';
-        e.currentTarget.style.borderColor = '#eee';
-      }}
+      className="group bg-white rounded-2xl overflow-hidden transition-all duration-500 hover:-translate-y-1"
+      style={{boxShadow: '0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.03)'}}
     >
-      {pack.isCustomizable && isCustomized && (
-        <div
-          style={{
-            position: 'absolute',
-            top: '12px',
-            left: '12px',
-            padding: '8px 12px',
-            backgroundColor: '#e8f5e9',
-            borderRadius: '4px',
-            fontSize: '12px',
-            color: '#2e7d32',
-            fontWeight: 500,
-          }}
-        >
-          ✓ Pack started
-        </div>
-      )}
-      {/* Badge */}
-      <div
-        style={{
-          position: 'absolute',
-          top: '12px',
-          right: '12px',
-          backgroundColor: '#000',
-          color: '#fff',
-          padding: '6px 12px',
-          borderRadius: '20px',
-          fontSize: '12px',
-          fontWeight: 600,
-          display: 'flex',
-          alignItems: 'center',
-          gap: '6px',
-        }}
-      >
-        <FaTag size={10} />
-        {pack.badge}
-      </div>
-
-      {/* Image/Icon */}
-      <div
-        style={{
-          marginBottom: '16px',
-          display: 'flex',
-          justifyContent: 'center',
-          height: '190px',
-          // backgroundColor: '#fff',
-          borderRadius: '8px',
-          alignItems: 'center',
-          overflow: 'hidden',
-        }}
-      >
-        {pack.image ? (
-          <div className='flex justify-center items-center'>
-            <img
-            className={`h-[150px] ${pack?.freepack?.image ? 'w-[100px]' : 'w-[150px]'}`}
-              src={pack.image}
-              alt={pack.name}
-              style={{
-                // maxWidth: '100%',
-                // maxHeight: '100%',
-                // objectFit: 'contain',
-              }}
-            />
-            {pack?.freepack?.image && <FaPlus className='text-black' size={20} style={{marginLeft:10,marginRight:10}}/>}
-            {pack?.freepack?.image && (
-              <div
-              className={`h-[150px] ${pack?.freepack?.image ? 'w-[100px]' : 'w-[150px]'}`}
-              >
-                <img
-              src={pack.freepack.image}
-              alt={pack.freepack.name}
-              style={{
-                // maxWidth: '100%',
-                // maxHeight: '100%',
-                // objectFit: 'contain',
-              }}
-            />
-              </div>
-            )}
-          </div>
-        ) : (
-          <div style={{ fontSize: '48px', color: '#ddd' }}>📦</div>
-        )}
-      </div>
-
-      <h3
-        style={{
-          fontFamily: 'Nunito Sans',
-          fontSize: breakpoint === 'mobile' ? '18px' : '20px',
-          marginBottom: '8px',
-          color: '#111',
-          fontWeight: 600,
-        }}
-      >
-        {pack.name}
-      </h3>
-
-      <p
-        style={{
-          fontFamily: "'Inter', sans-serif",
-          fontSize: '14px',
-          color: '#666',
-          marginBottom: '16px',
-          lineHeight: 1.5,
-          minHeight: '40px',
-        }}
-      >
-        {pack.description}
-      </p>
-
-      {/* Pricing */}
-      <div
-        style={{
-          marginBottom: '16px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px',
-        }}
-      >
-        <span
-          style={{
-            fontFamily: 'Nunito Sans',
-            fontSize: breakpoint === 'mobile' ? '20px' : '24px',
-            color: '#111',
-            fontWeight: 700,
-          }}
-        >
-          ₹{pack.price}
-        </span>
-        {pack.offPrice > pack.price && (
-        <span
-          style={{
-            fontFamily: "'Inter', sans-serif",
-            fontSize: '10px',
-            color: '#999',
-            textDecoration: 'line-through',
-          }}
-        >
-          ₹{pack.offPrice}
-        </span>
-        )}
-          {pack.offPrice > pack.price && (
-          <span
-            style={{
-              fontFamily: "'Inter', sans-serif",
-              fontSize: '10px',
-              backgroundColor: '#ff4444',
-              color: '#fff',
-              padding: '2px 4px',
-              borderRadius: '4px',
-              fontWeight: 600,
-            }}
-          >
-            {Math.round(((pack.offPrice - pack.price) / pack.offPrice) * 100)}%
-          </span>
+      {/* Image Section */}
+      <div className="relative overflow-hidden bg-[#f8f7f4]">
+        <div className="aspect-[4/3] flex items-center justify-center p-6 relative">
+          <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" style={{background: 'linear-gradient(180deg, transparent 40%, rgba(0,0,0,0.03) 100%)'}} />
+          {pack.image ? (
+            <div className="flex items-center justify-center gap-2 relative z-10">
+              <img
+                src={pack.image}
+                alt={pack.name}
+                className="h-28 md:h-36 w-auto object-contain transition-transform duration-700 group-hover:scale-110"
+              />
+              {pack?.freepack?.image && (
+                <>
+                  <FaPlus className="text-[#b0b0b0] text-sm md:text-base flex-shrink-0" />
+                  <img
+                    src={pack.freepack.image}
+                    alt={pack.freepack.name}
+                    className="h-24 md:h-32 w-auto object-contain transition-transform duration-700 group-hover:scale-110"
+                  />
+                </>
+              )}
+            </div>
+          ) : (
+            <div className="text-5xl opacity-20">📦</div>
           )}
-        <p className='text-[10px] '>
-          {pack?.detailsContent?.footer}
-        </p>
+        </div>
+
+        {/* Badges */}
+        <div className="absolute top-3 left-3 flex flex-col gap-2">
+          {pack.isCustomizable && isCustomized && (
+            <span className="px-3 py-1 rounded-full text-[10px] md:text-xs font-semibold bg-[#e8f5e9] text-[#2e7d32] shadow-sm" style={{backdropFilter: 'blur(4px)'}}>
+              ✓ Customizing
+            </span>
+          )}
+        </div>
+        <div className="absolute top-3 right-3 flex flex-col gap-2 items-end">
+          {discount > 0 && (
+            <span className="px-2.5 py-1 rounded-full text-[10px] md:text-xs font-bold text-white shadow-sm"
+              style={{background: 'linear-gradient(135deg, #e53935, #c62828)'}}
+            >
+              {discount}% OFF
+            </span>
+          )}
+          {pack.badge && (
+            <span className="px-2.5 py-1 rounded-full text-[10px] md:text-xs font-semibold text-white shadow-sm flex items-center gap-1.5"
+              style={{background: 'linear-gradient(135deg, #1a1a1a, #444)'}}
+            >
+              <FaTag className="text-[9px]" />
+              {pack.badge}
+            </span>
+          )}
+        </div>
+
+        {/* Quick-add indicator on hover */}
+        <div className="absolute inset-x-0 bottom-0 h-16 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+          style={{background: 'linear-gradient(0deg, rgba(0,0,0,0.04), transparent)'}}
+        />
       </div>
 
-      {/* Pincode Section –– now using hooks properly */}
-      {/* <div style={{ marginBottom: '16px' }}>
-        {pincode ? (
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              fontSize: '12px',
-              marginBottom: '8px',
-            }}
-          >
-            <span style={{ color: '#2e7d32', fontWeight: 600 }}>
-              {t('delivering_to')} {pincode}
-            </span>
-            <button
-              onClick={() => setPincode('')}
-              style={{
-                background: 'none',
-                border: 'none',
-                textDecoration: 'underline',
-                cursor: 'pointer',
-                color: '#666',
-              }}
-            >
-              {t('change')}
-            </button>
-          </div>
-        ) : (
-          <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
-            <input
-              type="text"
-              placeholder={t('enter_pincode')}
-              id={`pincode-${pack.id}`}
-              style={{
-                flex: 1,
-                padding: '8px',
-                border: '1px solid #ddd',
-                borderRadius: '4px',
-                fontSize: '14px',
-              }}
-              onKeyDown={handleKeyDown}
-              maxLength={6}
-            />
-            <button
-              onClick={handleCheckPincode}
-              style={{
-                padding: '8px 12px',
-                backgroundColor: '#333',
-                color: '#fff',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                fontSize: '12px',
-              }}
-            >
-              {t('check')}
-            </button>
+      {/* Content */}
+      <div className="p-5 md:p-6">
+        <h3 className="font-['Nunito_Sans'] text-base md:text-lg font-semibold text-[#1a1a1a] mb-1.5 leading-tight">
+          {pack.name}
+        </h3>
+        <p className="font-['Inter'] text-xs md:text-sm text-[#8b8b8b] leading-relaxed mb-3 line-clamp-2">
+          {pack.description}
+        </p>
+
+        {/* Free gift badge */}
+        {pack?.freepack?.name && (
+          <div className="flex items-center gap-1.5 mb-3 px-2.5 py-1.5 rounded-lg bg-[#fff8e1] text-[#b8860b] text-[10px] md:text-xs font-medium w-fit">
+            <FaStar className="text-[10px]" />
+            Free {pack.freepack.name}
           </div>
         )}
-      </div> */}
 
-      {/* Action Buttons */}
-      <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-        <button
-          onClick={() => onViewDetails(pack)}
-          style={{
-            flex: 1,
-            height: '44px',
-            backgroundColor: 'transparent',
-            color: '#000',
-            border: '1px solid #ddd',
-            borderRadius: '8px',
-            cursor: 'pointer',
-            fontSize: '14px',
-            fontWeight: 600,
-            transition: 'all 0.3s',
-          }}
-        >
-          View Details
-        </button>
-        <button
-          disabled={pack.availableStatus === "Out of Stock"}
-          onClick={() => {
-            if (pack.isCustomizable) {
-              // Current we are allowing the pack to be customized without pincode check  
-              // But in future we will add the pincode check
-              onClickCustomize(pack);
-              return;
-            }
-            onClickAdd(pack);
-          }}
-          style={{
-            flex: 1,
-            height: '44px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            backgroundColor: pack.availableStatus !== "Out of Stock" ? '#000' : '#ccc',
-            color: '#fff',
-            borderRadius: '8px',
-            border: 'none',
-            cursor: pack.availableStatus !== "Out of Stock" ? 'pointer' : 'not-allowed',
-            fontSize: '14px',
-            fontWeight: 600,
-            transition: 'background-color 0.3s',
-          }}
-        >
-          {pack.availableStatus === "Out of Stock" ? 'Out of Stock' : pack.isCustomizable ? 'Customize' : 'Add Pack'}
-        </button>
+        {/* Pricing */}
+        <div className="flex items-baseline gap-2.5 mb-4">
+          <span className="font-['Nunito_Sans'] text-xl md:text-2xl font-bold text-[#1a1a1a]">
+            ₹{pack.price}
+          </span>
+          {pack.offPrice > pack.price && (
+            <span className="font-['Inter'] text-xs md:text-sm text-[#b0b0b0] line-through">
+              ₹{pack.offPrice}
+            </span>
+          )}
+        </div>
+
+        {/* Footer text */}
+        {pack?.detailsContent?.footer && (
+          <p className="text-[10px] md:text-xs text-[#a0a0a0] mb-4 leading-relaxed">
+            {pack.detailsContent.footer}
+          </p>
+        )}
+
+        {/* Actions */}
+        <div className="flex gap-2.5">
+          <button
+            onClick={() => onViewDetails(pack)}
+            className="flex-1 h-11 rounded-xl text-xs md:text-sm font-semibold transition-all duration-300 border"
+            style={{
+              borderColor: '#e5e5e5',
+              color: '#4a4a4a',
+              background: '#fff',
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#1a1a1a'; e.currentTarget.style.color = '#1a1a1a' }}
+            onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#e5e5e5'; e.currentTarget.style.color = '#4a4a4a' }}
+          >
+            Details
+          </button>
+          <button
+            disabled={pack.availableStatus === "Out of Stock"}
+            onClick={() => {
+              if (pack.isCustomizable) {
+                onClickCustomize(pack);
+                return;
+              }
+              onClickAdd(pack);
+            }}
+            className="flex-1 h-11 rounded-xl text-xs md:text-sm font-semibold tracking-wide transition-all duration-300"
+            style={{
+              background: pack.availableStatus !== "Out of Stock"
+                ? 'linear-gradient(135deg, #1a1a1a, #333)'
+                : '#d4d4d4',
+              color: '#fff',
+              cursor: pack.availableStatus !== "Out of Stock" ? 'pointer' : 'not-allowed',
+            }}
+            onMouseEnter={(e) => {
+              if (pack.availableStatus !== "Out of Stock") {
+                e.currentTarget.style.opacity = '0.92';
+                e.currentTarget.style.transform = 'translateY(-1px)';
+              }
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.opacity = '1';
+              e.currentTarget.style.transform = 'translateY(0)';
+            }}
+          >
+            {pack.availableStatus === "Out of Stock" ? 'Out of Stock'
+              : pack.isCustomizable ? 'Customize' : 'Add Pack'}
+          </button>
+        </div>
       </div>
-      
     </div>
   );
 };
