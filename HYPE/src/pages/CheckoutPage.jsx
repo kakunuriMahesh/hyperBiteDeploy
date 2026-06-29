@@ -7,6 +7,7 @@ import { FaChevronDown, FaChevronUp } from "react-icons/fa";
 import { toast } from "react-toastify";
 import { allowedPincodes } from "../config/allowedPincodes";
 import { fetchSettings } from "../config/settings";
+import { validateCoupon, validateReward } from "../utils/api";
 import Navbar from "../components/Navbar";
 import PhoneInput from "react-phone-number-input";
 import { isValidPhoneNumber } from "react-phone-number-input";
@@ -49,6 +50,7 @@ const CheckoutPage = () => {
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [successData, setSuccessData] = useState({ points: 0, email: '' });
   const [deliveryCharge, setDeliveryCharge] = useState(75);
+  const [validationError, setValidationError] = useState(null);
 
   useEffect(() => {
     fetchSettings().then(s => {
@@ -168,8 +170,47 @@ const CheckoutPage = () => {
     return Object.keys(errors).length === 0;
   };
 
-  const handlePayNow = () => {
+  const handlePayNow = async () => {
     if (!validateForm()) return;
+
+    const verifiedId = routeState.verifiedIdentifier || savedCartLookup.lookupValue;
+    const sellingTotal = getCartTotal();
+
+    if (appliedReward && appliedReward.id) {
+      const result = await validateReward(appliedReward.id, verifiedId, sellingTotal);
+      if (!result.valid) {
+        setValidationError(result.reason || 'Applied reward is no longer valid');
+        return;
+      }
+      if (result.reward) {
+        const mismatches = [];
+        if (result.reward.type !== appliedReward.type) mismatches.push('reward type');
+        if (result.reward.value !== appliedReward.value) mismatches.push('reward value');
+        if (result.reward.minCartValue > sellingTotal) mismatches.push('minimum cart value');
+        if (mismatches.length > 0) {
+          setValidationError(`Applied reward no longer matches: ${mismatches.join(', ')} changed`);
+          return;
+        }
+      }
+    }
+    if (appliedCoupon && appliedCoupon.code) {
+      const result = await validateCoupon(appliedCoupon.code, verifiedId, sellingTotal);
+      if (!result.valid) {
+        setValidationError(result.reason || 'Applied coupon is no longer valid');
+        return;
+      }
+      if (result.coupon) {
+        const mismatches = [];
+        if (result.coupon.discount !== appliedCoupon.discount) mismatches.push('discount percentage');
+        if (result.coupon.freeShipping !== appliedCoupon.freeShipping) mismatches.push('free shipping');
+        if (result.coupon.minCartValue > sellingTotal) mismatches.push('minimum cart value');
+        if (mismatches.length > 0) {
+          setValidationError(`Applied coupon no longer matches: ${mismatches.join(', ')} changed`);
+          return;
+        }
+      }
+    }
+
     initiateRazorpay();
   };
 
@@ -307,9 +348,27 @@ const CheckoutPage = () => {
     }
   };
 
-  const handlePlaceOrder = (e) => {
+  const handlePlaceOrder = async (e) => {
     e.preventDefault();
     if (!validateForm()) return;
+
+    const verifiedId = routeState.verifiedIdentifier || savedCartLookup.lookupValue;
+    const sellingTotal = getCartTotal();
+
+    if (appliedReward && appliedReward.id) {
+      const result = await validateReward(appliedReward.id, verifiedId, sellingTotal);
+      if (!result.valid) {
+        setValidationError(result.reason || 'Applied reward is no longer valid');
+        return;
+      }
+    }
+    if (appliedCoupon && appliedCoupon.code) {
+      const result = await validateCoupon(appliedCoupon.code, verifiedId, sellingTotal);
+      if (!result.valid) {
+        setValidationError(result.reason || 'Applied coupon is no longer valid');
+        return;
+      }
+    }
 
     const dataForMsg = { ...formData, phone: phoneValue };
 
@@ -338,6 +397,56 @@ const CheckoutPage = () => {
     margin: "0 auto",
     padding: isMobile ? "24px 16px" : "32px 32px",
   };
+
+  const renderValidationError = () => (
+    <div
+      style={{
+        position: "fixed", top: 0, left: 0, width: "100%", height: "100%",
+        backgroundColor: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center",
+        zIndex: 9999, backdropFilter: "blur(4px)",
+      }}
+    >
+      <div style={{
+        backgroundColor: "#fff", borderRadius: "20px", padding: "40px 32px",
+        maxWidth: "420px", width: "90%", textAlign: "center",
+        boxShadow: "0 20px 60px rgba(0,0,0,0.2)",
+      }}>
+        <div style={{
+          width: "80px", height: "80px", borderRadius: "50%",
+          background: "linear-gradient(135deg, #ef4444 0%, #dc2626 100%)",
+          display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 20px",
+          boxShadow: "0 4px 16px rgba(239,68,68,0.3)",
+        }}>
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18" />
+            <line x1="6" y1="6" x2="18" y2="18" />
+          </svg>
+        </div>
+        <h2 style={{ fontFamily: "'Nunito Sans', sans-serif", fontSize: "22px", fontWeight: 800, color: "#1f2937", marginBottom: "8px" }}>
+          Discount No Longer Available
+        </h2>
+        <p style={{ fontFamily: "'Inter', sans-serif", fontSize: "14px", color: "#6b7280", marginBottom: "24px" }}>
+          {validationError}
+        </p>
+        <button
+          onClick={() => {
+            localStorage.removeItem('cart_lookup');
+            navigate('/cart', { state: { clearApplied: true } });
+          }}
+          style={{
+            padding: "12px 32px", border: "none", borderRadius: "12px",
+            background: "linear-gradient(135deg, #6366f1, #4f46e5)",
+            color: "#fff", fontSize: "15px", fontWeight: 600, cursor: "pointer",
+            fontFamily: "'Inter', sans-serif", transition: 'all 0.2s',
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.opacity = '0.9' }}
+          onMouseLeave={(e) => { e.currentTarget.style.opacity = '1' }}
+        >
+          Go to Cart
+        </button>
+      </div>
+    </div>
+  );
 
   const renderSuccessModal = () => (
     <div
@@ -731,6 +840,7 @@ const CheckoutPage = () => {
 
   return (
     <div style={{ backgroundColor: "#f9fafb", minHeight: "100vh", paddingTop: "80px" }}>
+      {validationError && renderValidationError()}
       {showSuccessModal && renderSuccessModal()}
 
       <div style={containerStyle}>

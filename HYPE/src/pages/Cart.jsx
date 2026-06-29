@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useCart } from "../store/hooks/useCart";
 import { useSelector, useDispatch } from "react-redux";
 import { FaTrash, FaPlus, FaMinus, FaEdit, FaChevronDown, FaChevronUp, FaArrowLeft, FaGift, FaTag } from "react-icons/fa";
@@ -540,8 +540,15 @@ const Cart = () => {
     }
   }, [rewardsIdentifier]);
 
+  const location = useLocation();
+
   // Restore lookup + applied state from localStorage on mount
   useEffect(() => {
+    if (location.state?.clearApplied) {
+      localStorage.removeItem('cart_lookup');
+      window.history.replaceState({}, document.title);
+      return;
+    }
     try {
       const saved = JSON.parse(localStorage.getItem('cart_lookup'));
       if (saved) {
