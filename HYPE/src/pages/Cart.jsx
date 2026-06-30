@@ -1993,7 +1993,7 @@ const Cart = () => {
               </div>
 
               {/* Savings Banner */}
-              {totalDiscount > 0 && (
+              {totalDiscount + extraDiscount + deliveryCharge > 0 && (
                 <div
                   style={{
                     marginTop: "12px",
@@ -2018,7 +2018,7 @@ const Cart = () => {
                       fontWeight: 600,
                     }}
                   >
-                    You will save ₹{totalDiscount.toFixed(2)} on this order
+                    You will save ₹{(totalDiscount + extraDiscount + deliveryCharge).toFixed(2)} on this order
                   </span>
                 </div>
               )}

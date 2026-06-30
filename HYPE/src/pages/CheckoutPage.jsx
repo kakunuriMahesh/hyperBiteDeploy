@@ -600,6 +600,12 @@ const CheckoutPage = () => {
             <span style={{ color: "#F59E0B", fontWeight: 600 }}>− ₹{extraDiscount.toFixed(2)}</span>
           </div>
         )}
+        {(totalDiscount > 0 || extraDiscount > 0 || deliveryCharge > 0) && (
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "5px 0", borderTop: "1px dashed #e5e7eb", marginTop: "4px", fontFamily: "'Inter', sans-serif", fontSize: isMobile ? "12px" : "13px" }}>
+            <span style={{ color: "#16A34A", fontWeight: 600 }}>Total Savings</span>
+            <span style={{ color: "#16A34A", fontWeight: 700 }}>− ₹{(totalDiscount + extraDiscount + deliveryCharge).toFixed(2)}</span>
+          </div>
+        )}
         {appliedReward && (
           <div style={{ padding: "6px 8px", marginTop: 4, background: "#FFFBEB", borderRadius: 6, border: "1px solid #FDE68A", fontFamily: "'Inter', sans-serif", fontSize: "11px", color: "#92400E", lineHeight: 1.6 }}>
             <div><strong>{appliedReward.label}</strong> {appliedReward.type === 'discount_percent' ? `(${appliedReward.value}% off)` : appliedReward.type === 'discount_fixed' ? `(₹${appliedReward.value} off)` : appliedReward.type === 'free_shipping' ? '(Free Shipping)' : ''}</div>
