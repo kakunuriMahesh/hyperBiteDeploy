@@ -26,7 +26,7 @@ const PackCard = ({ pack, breakpoint, onClickCustomize, onClickAdd, isCustomized
               <img
                 src={pack.image}
                 alt={pack.name}
-                className="h-28 md:h-36 w-auto object-contain transition-transform duration-700 group-hover:scale-110"
+                className="h-34 md:h-44 w-auto object-contain transition-transform duration-700 group-hover:scale-110"
               />
               {pack?.freepack?.image && (
                 <>
@@ -52,7 +52,7 @@ const PackCard = ({ pack, breakpoint, onClickCustomize, onClickAdd, isCustomized
             </span>
           )}
         </div>
-        <div className="absolute top-3 right-3 flex flex-col gap-2 items-end">
+        <div className="z-50 absolute top-3 right-3 flex flex-col gap-2 items-end">
           {discount > 0 && (
             <span className="px-2.5 py-1 rounded-full text-[10px] md:text-xs font-bold text-white shadow-sm"
               style={{background: 'linear-gradient(135deg, #e53935, #c62828)'}}

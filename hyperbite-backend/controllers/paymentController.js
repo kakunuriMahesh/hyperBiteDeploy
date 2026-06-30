@@ -31,6 +31,95 @@ function computeFinalTotal(sellingTotal, appliedReward, appliedCoupon) {
   return Math.round(Math.max(0, sellingTotal - discount) * 100) / 100;
 }
 
+// ── Post-payment / post-creation actions (shared by paid & free orders) ──
+async function executePostPaymentActions(order) {
+  if (!order) return;
+
+  // 1. Mark reward as claimed + increment uses (if applied)
+  if (order.appliedReward && order.appliedReward.rewardId && mongoose.Types.ObjectId.isValid(order.appliedReward.rewardId)) {
+    await Reward.findByIdAndUpdate(order.appliedReward.rewardId, {
+      claimed: true,
+      claimedAt: new Date(),
+      orderId: order._id,
+      $inc: { currentUses: 1 },
+    });
+  }
+
+  // 2. Record coupon usage (if applied)
+  if (order.appliedCoupon && order.appliedCoupon.code) {
+    const coupon = await Coupon.findOne({ code: order.appliedCoupon.code.toUpperCase() });
+    if (coupon) {
+      await Coupon.updateOne({ _id: coupon._id }, { $inc: { currentUses: 1 } });
+
+      const couponOriginalTotal = Number(order.totalAmount) || 0;
+      const couponFinalTotal = order.finalAmount !== undefined && order.finalAmount !== null
+        ? Number(order.finalAmount)
+        : couponOriginalTotal;
+      const discountAmount = couponOriginalTotal - couponFinalTotal;
+
+      await CouponUsage.create({
+        couponId: coupon._id,
+        code: coupon.code,
+        type: coupon.type,
+        customerIdentifier: order.customerIdentifier || 'unknown',
+        agentId: coupon.agentId || null,
+        orderId: order._id,
+        discountAmount: Math.max(0, discountAmount),
+      });
+
+      // Update agent stats for referral / collaborator
+      if ((coupon.type === 'referral' || coupon.type === 'collaborator') && coupon.agentId) {
+        const update = { $inc: { totalOrders: 1 } };
+        if (coupon.type === 'referral') {
+          update.$inc.totalReferrals = 1;
+          const agent = await Agent.findById(coupon.agentId);
+          if (agent) {
+            update.$inc.rewardPoints = agent.rewardPointsPerReferral || 100;
+          }
+        }
+        if (coupon.type === 'collaborator') {
+          update.$inc.packsUsedThisMonth = 1;
+        }
+        await Agent.findByIdAndUpdate(coupon.agentId, update);
+      }
+    }
+  }
+
+  // 3. Award purchase reward points (if customer identifier exists)
+  if (order.customerIdentifier) {
+    const existingPoints = await Reward.findOne({ orderId: order._id, source: 'purchase' });
+    if (!existingPoints) {
+      const pointsEarned = Math.floor((Number(order.totalAmount) || 0) / 10);
+      if (pointsEarned > 0) {
+        await Reward.create({
+          identifier: order.customerIdentifier,
+          type: 'reward_points',
+          value: pointsEarned,
+          label: `Points from order #${order._id.toString().slice(-6)}`,
+          source: 'purchase',
+          orderId: order._id,
+          expiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
+        });
+        console.log(`[PaymentController] Awarded ${pointsEarned} points to ${order.customerIdentifier}`);
+      }
+    } else {
+      console.log(`[PaymentController] Points already awarded for order ${order._id} — skipping`);
+    }
+  }
+
+  // 4. Register shipment in Shiprocket (via cron)
+  if (order.customer?.pincode) {
+    try {
+      await Order.findByIdAndUpdate(order._id, {
+        $set: { shipmentStatus: 'PENDING' }
+      });
+      console.log(`[PaymentController] Order ${order._id} queued for shipment (PENDING)`);
+    } catch (updateErr) {
+      console.error(`[PaymentController] Failed to set shipmentStatus=PENDING for order ${order._id}:`, updateErr.message);
+    }
+  }
+}
+
 exports.createOrder = async (req, res) => {
   try {
     const { customer, items, appliedReward, appliedCoupon, customerIdentifier, finalAmount: _ignored } = req.body;
@@ -47,6 +136,118 @@ exports.createOrder = async (req, res) => {
       appliedCoupon: appliedCoupon ? { code: appliedCoupon.code, discount: appliedCoupon.discount } : null,
     }));
 
+    // ── Free order (₹0) — skip Razorpay entirely ──
+    if (computedFinal <= 0) {
+      const orderData = {
+        customer: {
+          name: customer?.name || "",
+          phone: customer?.phone || "",
+          address: customer?.address || "",
+          city: customer?.city || "",
+          state: customer?.state || "",
+          country: customer?.country || "",
+          pincode: customer?.pincode || "",
+          email: customer?.email || "",
+        },
+        customerIdentifier: customerIdentifier || customer?.phone || null,
+        items,
+        totalAmount: itemTotal,
+        finalAmount: 0,
+        paymentStatus: "paid",
+        shipmentStatus: customer?.pincode ? "PENDING" : undefined,
+      };
+
+      // Attach reward and coupon (same validation as paid path)
+      if (appliedReward && appliedReward.id) {
+        let reward = null;
+        try {
+          reward = mongoose.Types.ObjectId.isValid(appliedReward.id)
+            ? await Reward.findById(appliedReward.id)
+            : null;
+        } catch { reward = null; }
+        const rewardInvalid = !reward || reward.claimed || reward.expiresAt < new Date()
+          || (reward.maxUses !== null && reward.currentUses >= reward.maxUses)
+          || (reward.minCartValue > 0 && itemTotal < reward.minCartValue)
+          || (reward.maxCartValue > 0 && itemTotal > reward.maxCartValue);
+        if (!rewardInvalid) {
+          orderData.appliedReward = {
+            rewardId: reward._id.toString(),
+            type: reward.type,
+            value: reward.value,
+            label: reward.label,
+          };
+        }
+      }
+
+      if (appliedCoupon && appliedCoupon.code) {
+        const coupon = await Coupon.findOne({ code: appliedCoupon.code.toUpperCase() });
+        let couponValid = false;
+        if (coupon) {
+          const basicValid = coupon.isActive
+            && (!coupon.expiresAt || coupon.expiresAt > new Date())
+            && (coupon.maxUses === null || coupon.currentUses < coupon.maxUses)
+            && (coupon.minCartValue === 0 || itemTotal >= coupon.minCartValue)
+            && (coupon.maxCartValue === 0 || itemTotal <= coupon.maxCartValue);
+          let withinCustomerLimit = true;
+          if (basicValid && coupon.perCustomerLimit > 0 && customerIdentifier && coupon.type !== 'collaborator') {
+            const usageCount = await CouponUsage.countDocuments({
+              couponId: coupon._id,
+              customerIdentifier: customerIdentifier.toLowerCase().trim(),
+            });
+            withinCustomerLimit = usageCount < coupon.perCustomerLimit;
+          }
+          let withinMonthlyLimit = true;
+          if (basicValid && withinCustomerLimit && coupon.type === 'collaborator' && coupon.agentId) {
+            const agent = await Agent.findById(coupon.agentId);
+            if (!agent || !agent.isActive) {
+              withinMonthlyLimit = false;
+            } else if (agent.monthlyPackLimit > 0) {
+              const monthlyUsage = await CouponUsage.countDocuments({
+                couponId: coupon._id,
+                agentId: coupon.agentId,
+                usedAt: { $gte: new Date(new Date().getFullYear(), new Date().getMonth(), 1) },
+              });
+              withinMonthlyLimit = monthlyUsage < agent.monthlyPackLimit;
+            }
+          }
+          couponValid = basicValid && withinCustomerLimit && withinMonthlyLimit;
+        }
+        if (couponValid) {
+          orderData.appliedCoupon = {
+            couponId: coupon._id,
+            code: coupon.code,
+            type: coupon.type,
+            discount: coupon.discount,
+            freeShipping: coupon.freeShipping,
+          };
+          if ((coupon.type === 'referral' || coupon.type === 'collaborator') && coupon.agentId) {
+            orderData.referralAgentId = coupon.agentId;
+          }
+        }
+      }
+
+      const order = await Order.create(orderData);
+
+      // Post-creation actions (reward claim, coupon usage, points, agent stats)
+      await executePostPaymentActions(order);
+
+      console.log("[PaymentController] Free order created", JSON.stringify({
+        orderId: order._id,
+        totalAmount: order.totalAmount,
+        finalAmount: order.finalAmount,
+        paymentStatus: order.paymentStatus,
+        shipmentStatus: order.shipmentStatus,
+      }));
+
+      return res.json({
+        razorpayOrder: null,
+        orderId: order._id,
+        keyId: null,
+        freeOrder: true,
+      });
+    }
+
+    // ── Paid order — proceed with Razorpay ──
     const razorpay = new Razorpay({
       key_id: process.env.RAZORPAY_KEY_ID,
       key_secret: process.env.RAZORPAY_KEY_SECRET
@@ -88,6 +289,7 @@ exports.createOrder = async (req, res) => {
         state: customer?.state || "",
         country: customer?.country || "",
         pincode: customer?.pincode || "",
+        email: customer?.email || "",
       },
       customerIdentifier: customerIdentifier || customer?.phone || null,
       items,
@@ -231,94 +433,8 @@ exports.verifyPayment = async (req, res) => {
 
     console.log("[PaymentController] Order updated - Payment Status: paid");
 
-    // ── Post-payment actions ──
     if (updated) {
-      // 1. Mark reward as claimed + increment uses (if applied)
-      if (updated.appliedReward && updated.appliedReward.rewardId && mongoose.Types.ObjectId.isValid(updated.appliedReward.rewardId)) {
-        await Reward.findByIdAndUpdate(updated.appliedReward.rewardId, {
-          claimed: true,
-          claimedAt: new Date(),
-          orderId: updated._id,
-          $inc: { currentUses: 1 },
-        });
-      }
-
-      // 2. Record coupon usage (if applied)
-      if (updated.appliedCoupon && updated.appliedCoupon.code) {
-        const coupon = await Coupon.findOne({ code: updated.appliedCoupon.code.toUpperCase() });
-        if (coupon) {
-          await Coupon.updateOne({ _id: coupon._id }, { $inc: { currentUses: 1 } });
-
-          const couponOriginalTotal = Number(updated.totalAmount) || 0;
-          const couponFinalTotal = updated.finalAmount !== undefined && updated.finalAmount !== null
-            ? Number(updated.finalAmount)
-            : couponOriginalTotal;
-          const discountAmount = couponOriginalTotal - couponFinalTotal;
-
-          await CouponUsage.create({
-            couponId: coupon._id,
-            code: coupon.code,
-            type: coupon.type,
-            customerIdentifier: updated.customerIdentifier || 'unknown',
-            agentId: coupon.agentId || null,
-            orderId: updated._id,
-            discountAmount: Math.max(0, discountAmount),
-          });
-
-          // Update agent stats for referral / collaborator
-          if ((coupon.type === 'referral' || coupon.type === 'collaborator') && coupon.agentId) {
-            const update = { $inc: { totalOrders: 1 } };
-            if (coupon.type === 'referral') {
-              update.$inc.totalReferrals = 1;
-              const agent = await Agent.findById(coupon.agentId);
-              if (agent) {
-                update.$inc.rewardPoints = agent.rewardPointsPerReferral || 100;
-              }
-            }
-            if (coupon.type === 'collaborator') {
-              update.$inc.packsUsedThisMonth = 1;
-            }
-            await Agent.findByIdAndUpdate(coupon.agentId, update);
-          }
-        }
-      }
-
-      // 3. Award purchase reward points (if customer identifier exists)
-      if (updated.customerIdentifier) {
-        const existingPoints = await Reward.findOne({ orderId: updated._id, source: 'purchase' });
-        if (!existingPoints) {
-          const pointsEarned = Math.floor((Number(updated.totalAmount) || 0) / 10);
-          if (pointsEarned > 0) {
-            await Reward.create({
-              identifier: updated.customerIdentifier,
-              type: 'reward_points',
-              value: pointsEarned,
-              label: `Points from order #${updated._id.toString().slice(-6)}`,
-              source: 'purchase',
-              orderId: updated._id,
-              expiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
-            });
-            console.log(`[PaymentController] Awarded ${pointsEarned} points to ${updated.customerIdentifier}`);
-          }
-        } else {
-          console.log(`[PaymentController] Points already awarded for order ${updated._id} — skipping`);
-        }
-      }
-
-      // 4. Register shipment in Shiprocket (via cron)
-      // Mark as PENDING so the cron job picks it up and calls Shiprocket.
-      // Do NOT call shiprocket directly here — the cron handles retries
-      // and respects MAX_RETRIES.
-      if (updated.customer?.pincode) {
-        try {
-          await Order.findByIdAndUpdate(updated._id, {
-            $set: { shipmentStatus: 'PENDING' }
-          });
-          console.log(`[PaymentController] Order ${updated._id} queued for shipment (PENDING)`);
-        } catch (updateErr) {
-          console.error(`[PaymentController] Failed to set shipmentStatus=PENDING for order ${updated._id}:`, updateErr.message);
-        }
-      }
+      await executePostPaymentActions(updated);
     }
 
     res.json({ success: true });

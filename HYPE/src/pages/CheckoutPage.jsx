@@ -224,66 +224,91 @@ const CheckoutPage = () => {
     });
   };
 
+  const createOrderPayload = () => {
+    const items = [];
+    cartItems.forEach((it) => {
+      const price = typeof it.price === 'string' ? parseFloat(it.price.replace(/[^0-9.]/g, '')) : Number(it.price);
+      items.push({
+        id: it.id,
+        name: it.name + (it.variation && it.variation !== "default" ? ` (${it.variation})` : ""),
+        price: price || 0,
+        quantity: it.quantity || 1,
+        type: "product",
+      });
+    });
+    packItems.forEach((p) => {
+      const subItems = (p.items || []).map((sub) => {
+        const detail = sub.name || sub.id;
+        return { id: sub.id, name: detail, quantity: sub.quantity || 1 };
+      });
+      items.push({
+        id: p.packId || p.instanceId,
+        name: p.packName,
+        price: Number(p.packPrice) || 0,
+        quantity: p.quantity || 1,
+        type: "pack",
+        subItems,
+      });
+    });
+    return {
+      customer: {
+        name: formData.name,
+        email: formData.email,
+        phone: phoneValue,
+        address: formData.address,
+        city: formData.city,
+        state: formData.state,
+        country: formData.country,
+        pincode: formData.pincode,
+      },
+      items,
+      customerIdentifier: routeState.verifiedIdentifier || phoneValue || null,
+      appliedReward: appliedReward || null,
+      appliedCoupon: appliedCoupon || null,
+      finalAmount: checkoutSummary.finalTotal,
+    };
+  };
+
+  const handleFreeOrder = async () => {
+    setIsPaymentLoading(true);
+    try {
+      const resp = await fetch("https://hyperbitedeploy.onrender.com/api/payment/create-order", {
+      // const resp = await fetch("http://localhost:5000/api/payment/create-order", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(createOrderPayload()),
+      });
+      if (resp.ok) {
+        const data = await resp.json();
+        setRazorpayOrderId(data.orderId);
+      }
+    } catch {}
+    await new Promise(resolve => setTimeout(resolve, 500));
+    clearCart();
+    setIsPaymentLoading(false);
+    setSuccessData({ points: 0, email: formData.email });
+    setShowSuccessModal(true);
+  };
+
   const initiateRazorpay = async () => {
     if (!formData.pincode.trim()) {
       setPincodeError("Please enter a pincode");
       return;
     }
 
+    if (checkoutSummary.finalTotal <= 0) {
+      await handleFreeOrder();
+      return;
+    }
+
     try {
       setIsPaymentLoading(true);
-
-      const items = [];
-      cartItems.forEach((it) => {
-        const price = typeof it.price === 'string' ? parseFloat(it.price.replace(/[^0-9.]/g, '')) : Number(it.price);
-        items.push({
-          id: it.id,
-          name: it.name + (it.variation && it.variation !== "default" ? ` (${it.variation})` : ""),
-          price: price || 0,
-          quantity: it.quantity || 1,
-          type: "product",
-        });
-      });
-      packItems.forEach((p) => {
-        const subItems = (p.items || []).map((sub) => {
-          const detail = sub.name || sub.id;
-          return {
-            id: sub.id,
-            name: detail,
-            quantity: sub.quantity || 1,
-          };
-        });
-        items.push({
-          id: p.packId || p.instanceId,
-          name: p.packName,
-          price: Number(p.packPrice) || 0,
-          quantity: p.quantity || 1,
-          type: "pack",
-          subItems,
-        });
-      });
 
       const resp = await fetch("https://hyperbitedeploy.onrender.com/api/payment/create-order", {
       // const resp = await fetch("http://localhost:5000/api/payment/create-order", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          customer: {
-            name: formData.name,
-            email: formData.email,
-            phone: phoneValue,
-            address: formData.address,
-            city: formData.city,
-            state: formData.state,
-            country: formData.country,
-            pincode: formData.pincode,
-          },
-          items,
-          customerIdentifier: routeState.verifiedIdentifier || phoneValue || null,
-          appliedReward: appliedReward || null,
-          appliedCoupon: appliedCoupon || null,
-          finalAmount: checkoutSummary.finalTotal,
-        }),
+        body: JSON.stringify(createOrderPayload()),
       });
 
       if (!resp.ok) {
