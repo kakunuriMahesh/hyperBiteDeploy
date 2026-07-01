@@ -428,29 +428,27 @@ const CheckoutPage = () => {
       style={{
         position: "fixed", top: 0, left: 0, width: "100%", height: "100%",
         backgroundColor: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center",
-        zIndex: 9999, backdropFilter: "blur(4px)",
+        zIndex: 9999, backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)",
       }}
     >
-      <div style={{
-        backgroundColor: "#fff", borderRadius: "20px", padding: "40px 32px",
-        maxWidth: "420px", width: "90%", textAlign: "center",
-        boxShadow: "0 20px 60px rgba(0,0,0,0.2)",
+      <div className="card animate-scale-in" style={{
+        padding: "40px 32px", maxWidth: "420px", width: "90%", textAlign: "center",
       }}>
         <div style={{
           width: "80px", height: "80px", borderRadius: "50%",
-          background: "linear-gradient(135deg, #ef4444 0%, #dc2626 100%)",
+          background: "linear-gradient(135deg, #f43f5e 0%, #e11d48 100%)",
           display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 20px",
-          boxShadow: "0 4px 16px rgba(239,68,68,0.3)",
+          boxShadow: "0 4px 20px rgba(244,63,94,0.3)",
         }}>
           <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
             <line x1="18" y1="6" x2="6" y2="18" />
             <line x1="6" y1="6" x2="18" y2="18" />
           </svg>
         </div>
-        <h2 style={{ fontFamily: "'Nunito Sans', sans-serif", fontSize: "22px", fontWeight: 800, color: "#1f2937", marginBottom: "8px" }}>
+        <h2 style={{ fontFamily: "'Nunito Sans', sans-serif", fontSize: "22px", fontWeight: 800, color: "var(--text-primary)", marginBottom: "8px" }}>
           Discount No Longer Available
         </h2>
-        <p style={{ fontFamily: "'Inter', sans-serif", fontSize: "14px", color: "#6b7280", marginBottom: "24px" }}>
+        <p style={{ fontFamily: "'Inter', sans-serif", fontSize: "14px", color: "var(--text-secondary)", marginBottom: "24px" }}>
           {validationError}
         </p>
         <button
@@ -458,14 +456,8 @@ const CheckoutPage = () => {
             localStorage.removeItem('cart_lookup');
             navigate('/cart', { state: { clearApplied: true } });
           }}
-          style={{
-            padding: "12px 32px", border: "none", borderRadius: "12px",
-            background: "linear-gradient(135deg, #6366f1, #4f46e5)",
-            color: "#fff", fontSize: "15px", fontWeight: 600, cursor: "pointer",
-            fontFamily: "'Inter', sans-serif", transition: 'all 0.2s',
-          }}
-          onMouseEnter={(e) => { e.currentTarget.style.opacity = '0.9' }}
-          onMouseLeave={(e) => { e.currentTarget.style.opacity = '1' }}
+          className="btn-primary"
+          style={{ padding: "12px 32px", fontSize: "15px" }}
         >
           Go to Cart
         </button>
@@ -478,52 +470,51 @@ const CheckoutPage = () => {
       style={{
         position: "fixed", top: 0, left: 0, width: "100%", height: "100%",
         backgroundColor: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center",
-        zIndex: 9999, backdropFilter: "blur(4px)",
+        zIndex: 9999, backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)",
       }}
       onClick={() => { setShowSuccessModal(false); navigate("/"); }}
     >
-      <div onClick={(e) => e.stopPropagation()} style={{
-        backgroundColor: "#fff", borderRadius: "20px", padding: "40px 32px",
-        maxWidth: "420px", width: "90%", textAlign: "center",
-        boxShadow: "0 20px 60px rgba(0,0,0,0.2)",
+      <div onClick={(e) => e.stopPropagation()} className="card animate-scale-in" style={{
+        padding: "40px 32px", maxWidth: "420px", width: "90%", textAlign: "center",
       }}>
         <div style={{
           width: "80px", height: "80px", borderRadius: "50%",
-          background: "linear-gradient(135deg, #22c55e 0%, #16a34a 100%)",
+          background: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
           display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 20px",
-          boxShadow: "0 4px 16px rgba(34,197,94,0.3)",
+          boxShadow: "0 4px 20px rgba(16,185,129,0.3)",
         }}>
           <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="20 6 9 17 4 12" />
           </svg>
         </div>
-        <h2 style={{ fontFamily: "'Nunito Sans', sans-serif", fontSize: "26px", fontWeight: 800, color: "#1f2937", marginBottom: "8px" }}>
+        <h2 style={{ fontFamily: "'Nunito Sans', sans-serif", fontSize: "26px", fontWeight: 800, color: "var(--text-primary)", marginBottom: "8px" }}>
           Payment Successful!
         </h2>
-        <p style={{ fontFamily: "'Inter', sans-serif", fontSize: "14px", color: "#6b7280", marginBottom: "24px" }}>
+        <p style={{ fontFamily: "'Inter', sans-serif", fontSize: "14px", color: "var(--text-secondary)", marginBottom: "24px" }}>
           Thank you for your order
         </p>
-        <div style={{ background: "linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)", borderRadius: "12px", padding: "20px", marginBottom: "20px", border: "1px solid #fde68a" }}>
-          <p style={{ fontFamily: "'Inter', sans-serif", fontSize: "13px", color: "#92400e", marginBottom: "8px", fontWeight: 500 }}>🎉 You earned</p>
-          <p style={{ fontFamily: "'Nunito Sans', sans-serif", fontSize: "40px", fontWeight: 800, color: "#d97706", margin: "0 0 4px 0", lineHeight: 1 }}>{successData.points}</p>
-          <p style={{ fontFamily: "'Inter', sans-serif", fontSize: "14px", color: "#92400e", fontWeight: 600, margin: 0 }}>HyperBite Points</p>
+        <div className="card" style={{
+          padding: "20px", marginBottom: "20px",
+          background: "rgba(255,251,235,0.7)",
+          border: "1px solid rgba(245,158,11,0.2)",
+        }}>
+          <p style={{ fontFamily: "'Inter', sans-serif", fontSize: "13px", color: "var(--accent-dark)", marginBottom: "8px", fontWeight: 500 }}>🎉 You earned</p>
+          <p style={{ fontFamily: "'Nunito Sans', sans-serif", fontSize: "40px", fontWeight: 800, color: "var(--accent)", margin: "0 0 4px 0", lineHeight: 1 }}>{successData.points}</p>
+          <p style={{ fontFamily: "'Inter', sans-serif", fontSize: "14px", color: "var(--accent-dark)", fontWeight: 600, margin: 0 }}>HyperBite Points</p>
         </div>
         {successData.email && (
-          <div style={{ background: "#f3f4f6", borderRadius: "8px", padding: "12px 16px", marginBottom: "24px" }}>
-            <p style={{ fontFamily: "'Inter', sans-serif", fontSize: "12px", color: "#6b7280", margin: "0 0 4px 0" }}>Track your points with</p>
-            <p style={{ fontFamily: "'Inter', sans-serif", fontSize: "14px", color: "#1f2937", fontWeight: 600, margin: 0, wordBreak: "break-all" }}>{successData.email}</p>
+          <div className="card" style={{
+            padding: "12px 16px", marginBottom: "24px",
+            background: "rgba(248,250,252,0.7)",
+          }}>
+            <p style={{ fontFamily: "'Inter', sans-serif", fontSize: "12px", color: "var(--text-secondary)", margin: "0 0 4px 0" }}>Track your points with</p>
+            <p style={{ fontFamily: "'Inter', sans-serif", fontSize: "14px", color: "var(--text-primary)", fontWeight: 600, margin: 0, wordBreak: "break-all" }}>{successData.email}</p>
           </div>
         )}
         <button
           onClick={() => { setShowSuccessModal(false); navigate("/"); }}
-          style={{
-            width: "100%", padding: "14px", fontFamily: "'Inter', sans-serif", fontSize: "16px", fontWeight: 600,
-            background: "linear-gradient(135deg, #1e3a8a 0%, #1d4ed8 100%)", color: "#fff",
-            border: "none", borderRadius: "10px", cursor: "pointer", transition: "all 0.3s ease",
-            boxShadow: "0 4px 12px rgba(30,58,138,0.2)",
-          }}
-          onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 6px 16px rgba(30,58,138,0.3)"; }}
-          onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "0 4px 12px rgba(30,58,138,0.2)"; }}
+          className="btn-primary"
+          style={{ width: "100%", padding: "14px", fontSize: "16px" }}
         >
           Continue Shopping
         </button>
@@ -667,12 +658,16 @@ const CheckoutPage = () => {
   );
 
   const renderForm = () => (
-    <form onSubmit={handlePlaceOrder} style={{
-      backgroundColor: "#ffffff", padding: isMobile ? "16px" : "24px",
-      borderRadius: "12px",
-      boxShadow: "0 1px 4px rgba(0,0,0,0.06)", border: "1px solid #e5e7eb",
+    <form onSubmit={handlePlaceOrder} className="card" style={{
+      padding: isMobile ? "20px" : "28px",
     }}>
-      <h2 style={{ fontFamily: "'Nunito Sans', sans-serif", fontSize: isMobile ? "20px" : "22px", marginBottom: "24px", color: "#1f2937", fontWeight: 700 }}>
+      <h2 style={{
+        fontFamily: "'Nunito Sans', sans-serif",
+        fontSize: isMobile ? "20px" : "22px",
+        marginBottom: "24px",
+        color: "var(--text-primary)",
+        fontWeight: 700,
+      }}>
         Delivery Details
       </h2>
 
@@ -680,32 +675,40 @@ const CheckoutPage = () => {
         .custom-phone-input.PhoneInput {
           font-family: 'Inter', sans-serif;
           font-size: 14px;
+          height: 44px;
         }
         .custom-phone-input .PhoneInputInput {
           width: 100%;
-          padding: 10px 12px;
+          padding: 0 12px;
           border: none;
           outline: none;
           font-family: 'Inter', sans-serif;
           font-size: 14px;
-          background: #fff;
+          background: transparent;
           box-sizing: border-box;
+          height: 44px;
         }
         .custom-phone-input .PhoneInputCountry {
-          padding-left: 10px;
-          background: #fff;
+          padding-left: 12px;
+          background: transparent;
+        }
+        .PhoneInput--focus {
+          outline: none;
         }
       `}</style>
 
       <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(2, 1fr)", gap: "16px", marginBottom: "24px" }}>
         <div style={{ gridColumn: isMobile ? "1" : "1 / -1" }}>
-          <label style={{ fontFamily: "'Inter', sans-serif", fontSize: "13px", marginBottom: "6px", color: "#4b5563", fontWeight: 500, display: "flex", alignItems: "center", gap: "4px" }}>
-            Phone Number <span style={{ color: "#ef4444" }}>*</span>
-          </label>
-          <div style={{
-            border: formErrors.phone ? "1px solid #ef4444" : "1px solid #d1d5db",
-            borderRadius: "8px", overflow: "hidden",
+          <label style={{
+            fontFamily: "'Inter', sans-serif", fontSize: "13px", marginBottom: "6px",
+            color: "var(--text-secondary)", fontWeight: 500, display: "flex", alignItems: "center", gap: "4px",
           }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z" />
+            </svg>
+            Phone Number <span style={{ color: "var(--error)" }}>*</span>
+          </label>
+          <div className={`input-field ${formErrors.phone ? 'error' : ''}`} style={{ padding: 0, overflow: "hidden" }}>
             <PhoneInput
               international
               defaultCountry="IN"
@@ -716,22 +719,28 @@ const CheckoutPage = () => {
             />
           </div>
           {formErrors.phone && (
-            <p style={{ color: "#ef4444", fontSize: "12px", marginTop: "4px", fontFamily: "'Inter', sans-serif" }}>{formErrors.phone}</p>
+            <p style={{ color: "var(--error)", fontSize: "12px", marginTop: "4px", fontFamily: "'Inter', sans-serif" }}>{formErrors.phone}</p>
           )}
         </div>
 
         {[
-          { name: "name", label: "Full Name", type: "text" },
-          { name: "pincode", label: "Pincode", type: "text", inputMode: "numeric" },
-          { name: "city", label: "City / Town", type: "text" },
-          { name: "state", label: "State", type: "text" },
-          { name: "country", label: "Country", type: "text" },
+          { name: "name", label: "Full Name", type: "text", icon: "M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" },
+          { name: "pincode", label: "Pincode", type: "text", inputMode: "numeric", icon: "M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z" },
+          { name: "city", label: "City / Town", type: "text", icon: "M3 21h18M3 10h18M5 6l7-3 7 3M4 10v11m16-11v11M8 14v3m4-3v3m4-3v3" },
+          { name: "state", label: "State", type: "text", icon: "M3 21l6-6m0 0l6 6m-6-6V3" },
+          { name: "country", label: "Country", type: "text", icon: "M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" },
         ].map((field) => (
           <div key={field.name}>
-            <label style={{ fontFamily: "'Inter', sans-serif", fontSize: "13px", marginBottom: "6px", color: "#4b5563", fontWeight: 500, display: "flex", alignItems: "center", gap: "4px" }}>
-              {field.label} <span style={{ color: "#ef4444" }}>*</span>
+            <label style={{
+              fontFamily: "'Inter', sans-serif", fontSize: "13px", marginBottom: "6px",
+              color: "var(--text-secondary)", fontWeight: 500, display: "flex", alignItems: "center", gap: "4px",
+            }}>
+              {field.label} <span style={{ color: "var(--error)" }}>*</span>
               {field.name === "pincode" && pincode && (
-                <span style={{ background: "linear-gradient(135deg, #22c55e 0%, #16a34a 100%)", color: "#fff", padding: "2px 8px", borderRadius: "12px", fontSize: "11px", fontWeight: 500 }}>
+                <span className="badge badge-success">
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
                   Verified
                 </span>
               )}
@@ -740,133 +749,82 @@ const CheckoutPage = () => {
               type={field.type} name={field.name} value={formData[field.name]}
               onChange={(e) => { handleInputChange(e); if (formErrors[field.name]) setFormErrors((prev) => ({ ...prev, [field.name]: "" })); }}
               inputMode={field.inputMode || "text"}
-              style={{
-                width: "100%", padding: "10px 12px",
-                border: formErrors[field.name] ? "1px solid #ef4444"
-                  : pincodeError && field.name === "pincode" ? "1px solid #ef4444"
-                  : pincode && field.name === "pincode" ? "1px solid #22c55e" : "1px solid #d1d5db",
-                borderRadius: "8px", fontFamily: "'Inter', sans-serif", fontSize: "14px",
-                backgroundColor: "#fff", transition: "border-color 0.2s ease", boxSizing: "border-box",
-              }}
-              onFocus={(e) => { e.target.style.borderColor = "#3b82f6"; }}
-              onBlur={(e) => {
-                e.target.style.borderColor = formErrors[field.name] ? "#ef4444"
-                  : pincodeError && field.name === "pincode" ? "#ef4444"
-                  : pincode && field.name === "pincode" ? "#22c55e" : "#d1d5db";
-              }}
+              className={`input-field ${
+                formErrors[field.name] || (pincodeError && field.name === "pincode") ? 'error'
+                  : pincode && field.name === "pincode" ? 'success' : ''
+              }`}
             />
             {formErrors[field.name] && (
-              <p style={{ color: "#ef4444", fontSize: "12px", marginTop: "4px", fontFamily: "'Inter', sans-serif" }}>{formErrors[field.name]}</p>
+              <p style={{ color: "var(--error)", fontSize: "12px", marginTop: "4px", fontFamily: "'Inter', sans-serif" }}>{formErrors[field.name]}</p>
             )}
             {pincodeError && field.name === "pincode" && !formErrors[field.name] && (
-              <p style={{ color: "#ef4444", fontSize: "12px", marginTop: "4px", fontFamily: "'Inter', sans-serif" }}>{pincodeError}</p>
+              <p style={{ color: "var(--error)", fontSize: "12px", marginTop: "4px", fontFamily: "'Inter', sans-serif" }}>{pincodeError}</p>
             )}
           </div>
         ))}
       </div>
 
       <div style={{ marginBottom: "24px" }}>
-        <label style={{ fontFamily: "'Inter', sans-serif", fontSize: "13px", marginBottom: "6px", color: "#4b5563", fontWeight: 500, display: "flex", alignItems: "center", gap: "4px" }}>
-          Email <span style={{ color: "#9ca3af", fontSize: "11px" }}>(optional)</span>
+        <label style={{
+          fontFamily: "'Inter', sans-serif", fontSize: "13px", marginBottom: "6px",
+          color: "var(--text-secondary)", fontWeight: 500, display: "flex", alignItems: "center", gap: "4px",
+        }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+            <polyline points="22,6 12,13 2,6" />
+          </svg>
+          Email <span style={{ color: "var(--text-secondary)", fontSize: "11px", fontWeight: 400 }}>(optional)</span>
         </label>
         <input
           type="email" name="email" value={formData.email}
           onChange={(e) => { handleInputChange(e); }}
           placeholder="Enter your email for order updates"
-          style={{
-            width: "100%", padding: "10px 12px",
-            border: "1px solid #d1d5db",
-            borderRadius: "8px", fontFamily: "'Inter', sans-serif", fontSize: "14px",
-            backgroundColor: "#fff", boxSizing: "border-box",
-          }}
-          onFocus={(e) => { e.target.style.borderColor = "#3b82f6"; }}
-          onBlur={(e) => { e.target.style.borderColor = "#d1d5db"; }}
+          className="input-field"
         />
       </div>
 
       <div style={{ marginBottom: "32px" }}>
-        <label style={{ display: "block", fontFamily: "'Inter', sans-serif", fontSize: "13px", marginBottom: "6px", color: "#4b5563", fontWeight: 500 }}>
-          Full Address / Landmark Details <span style={{ color: "#ef4444" }}>*</span>
+        <label style={{
+          display: "block", fontFamily: "'Inter', sans-serif", fontSize: "13px",
+          marginBottom: "6px", color: "var(--text-secondary)", fontWeight: 500,
+        }}>
+          Full Address / Landmark Details <span style={{ color: "var(--error)" }}>*</span>
         </label>
         <textarea
           name="address" value={formData.address}
           onChange={(e) => { handleInputChange(e); if (formErrors.address) setFormErrors((prev) => ({ ...prev, address: "" })); }}
           placeholder="Enter your complete address with landmark details"
-          style={{
-            width: "100%", padding: "10px 12px",
-            border: formErrors.address ? "1px solid #ef4444" : "1px solid #d1d5db",
-            borderRadius: "8px", fontFamily: "'Inter', sans-serif", fontSize: "14px",
-            backgroundColor: "#fff", minHeight: "80px", transition: "border-color 0.2s ease", boxSizing: "border-box",
-          }}
-          onFocus={(e) => { e.target.style.borderColor = "#3b82f6"; }}
-          onBlur={(e) => { e.target.style.borderColor = formErrors.address ? "#ef4444" : "#d1d5db"; }}
+          className={`input-field ${formErrors.address ? 'error' : ''}`}
+          style={{ minHeight: "88px", resize: "vertical" }}
         />
         {formErrors.address && (
-          <p style={{ color: "#ef4444", fontSize: "12px", marginTop: "4px", fontFamily: "'Inter', sans-serif" }}>{formErrors.address}</p>
+          <p style={{ color: "var(--error)", fontSize: "12px", marginTop: "4px", fontFamily: "'Inter', sans-serif" }}>{formErrors.address}</p>
         )}
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(1, 1fr)", gap: "12px", marginBottom: "12px" }}>
-      {/*
-        <button
-          type="button" disabled={isFormSubmitting} onClick={handlePlaceOrder}
-          style={{
-            padding: "12px", fontFamily: "'Inter', sans-serif", fontSize: "14px",
-            background: isFormSubmitting ? "#9ca3af" : "linear-gradient(135deg, #22c55e 0%, #16a34a 100%)",
-            color: "#fff", border: "none", borderRadius: "8px",
-            cursor: isFormSubmitting ? "not-allowed" : "pointer", transition: "all 0.3s ease",
-            display: "flex", alignItems: "center", justifyContent: "center", gap: "8px",
-            fontWeight: 600, boxShadow: "0 2px 8px rgba(34,197,94,0.2)",
-          }}
-          onMouseEnter={(e) => { if (!isFormSubmitting) { e.target.style.transform = "translateY(-2px)"; e.target.style.boxShadow = "0 4px 12px rgba(34,197,94,0.3)"; } }}
-          onMouseLeave={(e) => { if (!isFormSubmitting) { e.target.style.transform = "translateY(0)"; e.target.style.boxShadow = "0 2px 8px rgba(34,197,94,0.2)"; } }}
-        >
-          {isFormSubmitting ? (
-            <><div style={{ width: "16px", height: "16px", border: "2px solid #fff", borderTop: "2px solid transparent", borderRadius: "50%", animation: "spin 1s linear infinite" }} /> Processing...</>
-          ) : (
-            <><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z" /></svg> Place via WhatsApp</>
-          )}
-        </button>
-      */}
-
-        <button
-          type="button" disabled={isPaymentLoading} onClick={handlePayNow}
-          style={{
-            padding: "12px", fontFamily: "'Inter', sans-serif", fontSize: "14px",
-            background: isPaymentLoading ? "#9ca3af" : "linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)",
-            color: "#fff", border: "none", borderRadius: "8px",
-            cursor: isPaymentLoading ? "not-allowed" : "pointer", transition: "all 0.3s ease",
-            display: "flex", alignItems: "center", justifyContent: "center", gap: "8px",
-            fontWeight: 600, boxShadow: "0 2px 8px rgba(59,130,246,0.2)",
-          }}
-          onMouseEnter={(e) => { if (!isPaymentLoading) { e.target.style.transform = "translateY(-2px)"; e.target.style.boxShadow = "0 4px 12px rgba(59,130,246,0.3)"; } }}
-          onMouseLeave={(e) => { if (!isPaymentLoading) { e.target.style.transform = "translateY(0)"; e.target.style.boxShadow = "0 2px 8px rgba(59,130,246,0.2)"; } }}
-        >
-          {isPaymentLoading ? (
-            <><div style={{ width: "16px", height: "16px", border: "2px solid #fff", borderTop: "2px solid transparent", borderRadius: "50%", animation: "spin 1s linear infinite" }} /> Processing...</>
-          ) : (
-            <><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 5h18M3 19h18M3 12h18" strokeLinecap="round" strokeLinejoin="round"/></svg> Pay Securely</>
-          )}
-        </button>
-      </div>
-
-      {/* <button
-        type="button" onClick={() => navigate("/cart")}
+      <button
+        type="button" disabled={isPaymentLoading} onClick={handlePayNow}
+        className="btn-primary"
         style={{
-          width: "100%", padding: "10px", fontFamily: "'Inter', sans-serif", fontSize: "13px",
-          backgroundColor: "#f3f4f6", color: "#4b5563", border: "none", borderRadius: "8px",
-          cursor: "pointer", transition: "all 0.2s ease",
+          width: "100%",
+          padding: isMobile ? "13px" : "15px",
+          fontSize: isMobile ? "14px" : "15px",
         }}
-        onMouseEnter={(e) => { e.target.style.backgroundColor = "#e5e7eb"; }}
-        onMouseLeave={(e) => { e.target.style.backgroundColor = "#f3f4f6"; }}
       >
-        Back to Cart
-      </button> */}
+        {isPaymentLoading ? (
+          <><div style={{ width: "16px", height: "16px", border: "2px solid rgba(255,255,255,0.3)", borderTop: "2px solid #fff", borderRadius: "50%", animation: "spin 1s linear infinite" }} /> Processing...</>
+        ) : (
+          <><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="1" y="4" width="22" height="16" rx="2" ry="2" />
+            <line x1="1" y1="10" x2="23" y2="10" />
+          </svg> Pay Securely</>
+        )}
+      </button>
     </form>
   );
 
   return (
-    <div style={{ backgroundColor: "#f9fafb", minHeight: "100vh", paddingTop: "80px" }}>
+    <div className="page-wrap" style={{ paddingTop: "80px" }}>
       {validationError && renderValidationError()}
       {showSuccessModal && renderSuccessModal()}
 
@@ -900,11 +858,9 @@ const CheckoutPage = () => {
 
         {isMobile ? (
           <div>
-            <div style={{
-              backgroundColor: "#ffffff", borderRadius: "16px",
-              border: "1px solid #e5e7eb",
-              boxShadow: orderExpanded ? "0 4px 20px rgba(0,0,0,0.08)" : "0 2px 8px rgba(0,0,0,0.04)",
+            <div className="card" style={{
               overflow: "hidden", marginBottom: 16,
+              boxShadow: orderExpanded ? "var(--shadow-lg)" : "var(--shadow-md)",
               transition: "box-shadow 0.3s ease",
             }}>
               {renderOrderSummaryHeader()}
@@ -915,10 +871,7 @@ const CheckoutPage = () => {
         ) : (
           <div style={{ display: "flex", gap: 24, alignItems: "flex-start" }}>
             <div style={{ flex: "0 0 380px", position: "sticky", top: 104 }}>
-              <div style={{
-                backgroundColor: "#ffffff", borderRadius: "16px",
-                border: "1px solid #e5e7eb",
-                boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+              <div className="card" style={{
                 overflow: "hidden",
                 transition: "box-shadow 0.3s ease",
               }}>
@@ -935,23 +888,32 @@ const CheckoutPage = () => {
         {(isPaymentLoading || isFormSubmitting) && (
           <div style={{
             position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
-            backgroundColor: "rgba(255,255,255,0.8)", display: "flex",
+            backgroundColor: "rgba(0,0,0,0.3)", display: "flex",
             alignItems: "center", justifyContent: "center", zIndex: 9999,
-            backdropFilter: "blur(8px)",
+            backdropFilter: "blur(12px)",
+            WebkitBackdropFilter: "blur(12px)",
           }}>
-            <div style={{
-              backgroundColor: "#ffffff", padding: "32px", borderRadius: "16px",
-              textAlign: "center", boxShadow: "0 8px 32px rgba(0,0,0,0.15)", minWidth: "280px",
+            <div className="card animate-scale-in" style={{
+              padding: "40px 36px", textAlign: "center", minWidth: "280px",
             }}>
               <div style={{
-                width: "48px", height: "48px", border: "3px solid #f3f4f6",
-                borderTop: "3px solid #3b82f6", borderRadius: "50%",
-                animation: "spin 1s linear infinite", margin: "0 auto 16px",
+                width: "48px", height: "48px",
+                border: "3px solid rgba(13,148,136,0.15)",
+                borderTop: "3px solid var(--accent)",
+                borderRadius: "50%",
+                animation: "spin 1s linear infinite",
+                margin: "0 auto 20px",
               }} />
-              <h3 style={{ fontFamily: "'Nunito Sans', sans-serif", fontSize: "18px", color: "#1f2937", marginBottom: "8px", fontWeight: 700 }}>
+              <h3 style={{
+                fontFamily: "'Nunito Sans', sans-serif", fontSize: "18px",
+                color: "var(--text-primary)", marginBottom: "8px", fontWeight: 700,
+              }}>
                 {isPaymentLoading ? "Securing Payment" : "Verifying Order"}
               </h3>
-              <p style={{ fontFamily: "'Inter', sans-serif", fontSize: "14px", color: "#6b7280" }}>
+              <p style={{
+                fontFamily: "'Inter', sans-serif", fontSize: "14px",
+                color: "var(--text-secondary)", margin: 0,
+              }}>
                 Please wait a moment...
               </p>
             </div>

@@ -1,3 +1,4 @@
+import "./theme.css";
 import { useState, useEffect, useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { openSpinWheel, selectIdentifier, selectCanSpin } from "./store/slices/rewardsSlice";

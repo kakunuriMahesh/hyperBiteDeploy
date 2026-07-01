@@ -36,32 +36,31 @@ const PackItemCard = ({
     navigate(`/customize-pack/${pack.packId}`);
   };
 
+  const itemCount = pack.items?.reduce((total, item) => total + (item.quantity || 0), 0) || 0;
+
   return (
     <div
       style={{
         display: "flex",
-        flexDirection: "row",
         gap: breakpoint === "mobile" ? "12px" : "16px",
         padding: breakpoint === "mobile" ? "12px" : "16px",
         marginBottom: breakpoint === "mobile" ? "8px" : "12px",
-        backgroundColor: "#ffffff",
-        borderRadius: "12px",
-        boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
-        border: "1px solid #e5e7eb",
-        transition: "all 0.2s ease",
+        backgroundColor: "#fff",
+        borderRadius: "14px",
+        boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
+        border: "1px solid #f1f0ee",
+        position: "relative",
       }}
     >
       <div
         style={{
           width: breakpoint === "mobile" ? "80px" : "100px",
           height: breakpoint === "mobile" ? "80px" : "100px",
-          borderRadius: "8px",
+          borderRadius: "10px",
           overflow: "hidden",
           backgroundColor: "#f8f9fa",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
           flexShrink: 0,
+          position: "relative",
         }}
       >
         <img
@@ -73,18 +72,32 @@ const PackItemCard = ({
             objectFit: "cover",
           }}
         />
+        <div style={{
+          position: "absolute",
+          top: "4px",
+          left: "4px",
+          background: "rgba(217,119,6,0.9)",
+          color: "#fff",
+          padding: "2px 6px",
+          borderRadius: "6px",
+          fontFamily: "'Inter', sans-serif",
+          fontSize: "9px",
+          fontWeight: 700,
+        }}>
+          Pack
+        </div>
       </div>
 
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "space-between", minWidth: 0 }}>
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0, gap: "4px" }}>
         <div>
           <h3
             style={{
               fontFamily: "'Nunito Sans', sans-serif",
               fontSize: breakpoint === "mobile" ? "14px" : "16px",
-              marginBottom: "2px",
-              color: "#1a1a1a",
+              color: "#1e293b",
               fontWeight: 700,
               lineHeight: 1.3,
+              margin: 0,
               whiteSpace: "nowrap",
               overflow: "hidden",
               textOverflow: "ellipsis",
@@ -95,115 +108,127 @@ const PackItemCard = ({
           <p
             style={{
               fontFamily: "'Inter', sans-serif",
-              fontSize: "11px",
-              color: "#9ca3af",
-              marginBottom: "4px",
+              fontSize: "12px",
+              color: "#64748b",
+              margin: "2px 0 0",
             }}
           >
-            {pack.items?.reduce((total, item) => total + (item.quantity || 0), 0) || 0} items in pack
+            {itemCount} item{itemCount !== 1 ? "s" : ""}
           </p>
-          <div style={{ display: "flex", alignItems: "baseline", gap: "6px", marginBottom: "6px" }}>
-            <span
-              style={{
-                fontFamily: "'Nunito Sans', sans-serif",
-                fontSize: breakpoint === "mobile" ? "16px" : "18px",
-                color: "#1a1a1a",
-                fontWeight: 700,
-              }}
-            >
-              ₹{(pack.packPrice || 0).toFixed(0)}
-            </span>
-            {pack.packOffPrice > 0 && pack.packOffPrice !== pack.packPrice && (
-              <>
-                <span
-                  style={{
-                    fontFamily: "'Inter', sans-serif",
-                    fontSize: "12px",
-                    color: "#9ca3af",
-                    textDecoration: "line-through",
-                  }}
-                >
-                  ₹{pack.packOffPrice.toFixed(0)}
-                </span>
-                <span
-                  style={{
-                    fontFamily: "'Inter', sans-serif",
-                    fontSize: "11px",
-                    color: "#16a34a",
-                    fontWeight: 600,
-                  }}
-                >
-                  {Math.round(((pack.packOffPrice - pack.packPrice) / pack.packOffPrice) * 100)}% off
-                </span>
-              </>
-            )}
-          </div>
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+        <div style={{ display: "flex", alignItems: "baseline", gap: "6px" }}>
+          <span
+            style={{
+              fontFamily: "'Nunito Sans', sans-serif",
+              fontSize: breakpoint === "mobile" ? "16px" : "18px",
+              color: "#1e293b",
+              fontWeight: 700,
+            }}
+          >
+            ₹{(pack.packPrice || 0).toFixed(0)}
+          </span>
+          {pack.packOffPrice > 0 && pack.packOffPrice !== pack.packPrice && (
+            <>
+              <span
+                style={{
+                  fontFamily: "'Inter', sans-serif",
+                  fontSize: "12px",
+                  color: "#94a3b8",
+                  textDecoration: "line-through",
+                }}
+              >
+                ₹{pack.packOffPrice.toFixed(0)}
+              </span>
+              <span
+                style={{
+                  fontFamily: "'Inter', sans-serif",
+                  fontSize: "11px",
+                  color: "#10b981",
+                  fontWeight: 600,
+                }}
+              >
+                {Math.round(((pack.packOffPrice - pack.packPrice) / pack.packOffPrice) * 100)}% off
+              </span>
+            </>
+          )}
+        </div>
+
+        <div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap", marginTop: "2px" }}>
           {pack.packPrice !== 250 && (
             <>
               <button
                 onClick={() => setShowDetails(!showDetails)}
                 style={{
-                  background: "none",
-                  border: "none",
-                  color: "#3b82f6",
-                  cursor: "pointer",
-                  fontSize: "11px",
-                  fontFamily: "'Inter', sans-serif",
-                  padding: 0,
                   display: "flex",
                   alignItems: "center",
-                  gap: "3px",
+                  gap: "4px",
+                  padding: "4px 10px",
+                  borderRadius: "8px",
+                  border: "1px solid #e5e3e0",
+                  background: "#fff",
+                  cursor: "pointer",
+                  fontFamily: "'Inter', sans-serif",
+                  fontSize: "11px",
+                  fontWeight: 600,
+                  color: "#64748b",
+                  transition: "all 0.15s ease",
                 }}
+                onMouseEnter={(e) => { e.currentTarget.style.borderColor = "#d97706"; e.currentTarget.style.color = "#d97706"; }}
+                onMouseLeave={(e) => { e.currentTarget.style.borderColor = "#e5e3e0"; e.currentTarget.style.color = "#64748b"; }}
               >
-                {showDetails ? "Hide" : "View"} {showDetails ? <FaChevronUp size={9} /> : <FaChevronDown size={9} />}
+                {showDetails ? <FaChevronUp size={10} /> : <FaChevronDown size={10} />}
+                {showDetails ? "Hide" : "View"} Items
               </button>
-             <div>
-        </div>
               {pack.packName !== "The Discovery Pack (10 Pcs)" && (
-                <>
-                  <span style={{ color: "#d1d5db", fontSize: "10px" }}>|</span>
-
-                  <button
-                    onClick={handleEdit}
-                    style={{
-                      background: "none",
-                      border: "none",
-                      color: "#3b82f6",
-                      cursor: "pointer",
-                      fontSize: "11px",
-                      fontFamily: "'Inter', sans-serif",
-                      padding: 0,
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "3px",
-                    }}
-                  >
-                    <FaEdit size={10} /> Edit
-                  </button>
-                </>
+                <button
+                  onClick={handleEdit}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "4px",
+                    padding: "4px 10px",
+                    borderRadius: "8px",
+                    border: "1px solid #e5e3e0",
+                    background: "#fff",
+                    cursor: "pointer",
+                    fontFamily: "'Inter', sans-serif",
+                    fontSize: "11px",
+                    fontWeight: 600,
+                    color: "#64748b",
+                    transition: "all 0.15s ease",
+                  }}
+                  onMouseEnter={(e) => { e.currentTarget.style.borderColor = "#d97706"; e.currentTarget.style.color = "#d97706"; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = "#e5e3e0"; e.currentTarget.style.color = "#64748b"; }}
+                >
+                  <FaEdit size={11} />
+                  Edit
+                </button>
               )}
-              <span style={{ color: "#d1d5db", fontSize: "10px" }}>|</span>
             </>
           )}
           <button
             onClick={() => removePackFromCart(pack.instanceId || pack.packId)}
             style={{
-              background: "none",
-              border: "none",
-              color: "#ef4444",
-              cursor: "pointer",
-              fontSize: "11px",
-              fontFamily: "'Inter', sans-serif",
-              padding: 0,
               display: "flex",
               alignItems: "center",
-              gap: "3px",
+              gap: "4px",
+              padding: "4px 10px",
+              borderRadius: "8px",
+              border: "1px solid #fecaca",
+              background: "#fff",
+              cursor: "pointer",
+              fontFamily: "'Inter', sans-serif",
+              fontSize: "11px",
+              fontWeight: 600,
+              color: "#ef4444",
+              transition: "all 0.15s ease",
             }}
+            onMouseEnter={(e) => { e.currentTarget.style.background = "#fef2f2"; e.currentTarget.style.borderColor = "#fca5a5"; }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = "#fff"; e.currentTarget.style.borderColor = "#fecaca"; }}
           >
-            <FaTrash size={10} /> Delete
+            <FaTrash size={10} />
+            Remove
           </button>
         </div>
 
@@ -211,29 +236,61 @@ const PackItemCard = ({
           <div
             style={{
               marginTop: "8px",
-              padding: "8px",
-              background: "#f9fafb",
-              borderRadius: "6px",
-              border: "1px solid #f0f0f0",
-              maxHeight: "120px",
-              overflowY: "auto",
+              borderRadius: "10px",
+              border: "1px solid #f1f0ee",
+              overflow: "hidden",
+              background: "#faf8f5",
             }}
           >
+            <div style={{
+              padding: "8px 12px",
+              borderBottom: "1px solid #f1f0ee",
+              fontFamily: "'Inter', sans-serif",
+              fontSize: "11px",
+              fontWeight: 700,
+              color: "#64748b",
+              textTransform: "uppercase",
+              letterSpacing: "0.04em",
+            }}>
+              Pack Contents ({itemCount} items)
+            </div>
             {pack.items?.map((item, i) => {
               const pDetails = item.name || item.id;
               return (
                 <div
                   key={i}
                   style={{
-                    fontSize: "11px",
-                    marginBottom: "3px",
-                    color: "#4b5563",
                     display: "flex",
                     justifyContent: "space-between",
+                    alignItems: "center",
+                    padding: "8px 12px",
+                    borderBottom: i < pack.items.length - 1 ? "1px solid #f1f0ee" : "none",
                   }}
                 >
-                  <span>{pDetails}</span>
-                  <span style={{ color: "#9ca3af" }}>×{item.quantity}</span>
+                  <span
+                    style={{
+                      fontFamily: "'Inter', sans-serif",
+                      fontSize: "12px",
+                      color: "#1e293b",
+                      fontWeight: 500,
+                    }}
+                  >
+                    {pDetails}
+                  </span>
+                  <span
+                    style={{
+                      fontFamily: "'Inter', sans-serif",
+                      fontSize: "12px",
+                      color: "#94a3b8",
+                      fontWeight: 600,
+                      background: "#fff",
+                      padding: "1px 8px",
+                      borderRadius: "4px",
+                      border: "1px solid #f1f0ee",
+                    }}
+                  >
+                    ×{item.quantity}
+                  </span>
                 </div>
               );
             })}
@@ -254,8 +311,8 @@ const PackItemCard = ({
           style={{
             display: "flex",
             alignItems: "center",
-            border: "1px solid #e5e7eb",
-            borderRadius: "6px",
+            border: "1px solid #e5e3e0",
+            borderRadius: "8px",
             overflow: "hidden",
           }}
         >
@@ -268,11 +325,11 @@ const PackItemCard = ({
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              background: "#f9fafb",
               border: "none",
-              borderRight: "1px solid #e5e7eb",
+              background: "#fff",
               cursor: pack.quantity > 1 ? "pointer" : "not-allowed",
-              color: pack.quantity > 1 ? "#1a1a1a" : "#d1d5db",
+              color: pack.quantity > 1 ? "#1e293b" : "#d1d5db",
+              borderRight: "1px solid #e5e3e0",
             }}
           >
             <FaMinus size={10} />
@@ -284,7 +341,7 @@ const PackItemCard = ({
               fontWeight: 600,
               minWidth: breakpoint === "mobile" ? "28px" : "36px",
               textAlign: "center",
-              color: "#1a1a1a",
+              color: "#1e293b",
               background: "#fff",
               lineHeight: breakpoint === "mobile" ? "28px" : "32px",
             }}
@@ -299,11 +356,11 @@ const PackItemCard = ({
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              background: "#f9fafb",
               border: "none",
-              borderLeft: "1px solid #e5e7eb",
+              background: "#fff",
               cursor: "pointer",
-              color: "#1a1a1a",
+              color: "#1e293b",
+              borderLeft: "1px solid #e5e3e0",
             }}
           >
             <FaPlus size={10} />
@@ -594,7 +651,7 @@ const Cart = () => {
 
   if (cartItems.length === 0 && packItems.length === 0 && inProgressPacks.length === 0) {
     return (
-      <div style={{ backgroundColor: "#f9fafb", minHeight: "100vh", paddingTop: "80px" }}>
+      <div className="page-wrap" style={{ paddingTop: "80px" }}>
         {/* Success Modal for empty cart after payment */}
         {showSuccessModal && (
           <div
@@ -781,92 +838,94 @@ const Cart = () => {
           style={{
             maxWidth: "1200px",
             margin: "0 auto",
-            padding: breakpoint === "mobile" ? "40px 20px" : "80px 40px",
+            padding: breakpoint === "mobile" ? "60px 20px" : "100px 40px",
             textAlign: "center",
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
             justifyContent: "center",
-            height: "calc(100vh - 80px)",
+            minHeight: "calc(100vh - 80px)",
           }}
         >
+          <div className="card"
+            style={{
+              padding: breakpoint === "mobile" ? "40px 24px" : "56px 48px",
+              maxWidth: "480px",
+              width: "100%",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+            }}
+          >
           <div
             style={{
-              width: "120px",
-              height: "120px",
+              width: "96px",
+              height: "96px",
               borderRadius: "50%",
-              background: "linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)",
+              background: "rgba(217,119,6,0.06)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               marginBottom: "24px",
-              boxShadow: "0 4px 12px rgba(59,130,246,0.1)",
+              border: "1.5px solid rgba(217,119,6,0.1)",
             }}
           >
-            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" strokeWidth="1.5">
-              <path d="M6 3h12M6 7h12M6 11h6" strokeLinecap="round" strokeLinejoin="round"/>
-              <circle cx="17" cy="17" r="4" stroke="#3b82f6"/>
-              <circle cx="7" cy="17" r="4" stroke="#3b82f6"/>
-              <path d="M11 17h2" stroke="#3b82f6" strokeLinecap="round"/>
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z" />
+              <path d="M3 6h18" /><path d="M16 10a4 4 0 01-8 0" />
+              <path d="M12 14v4" strokeWidth="1.8" />
+              <circle cx="12" cy="8" r="1" fill="var(--accent)" stroke="none" />
             </svg>
           </div>
           <h1
             style={{
               fontFamily: "'Nunito Sans', sans-serif",
-              fontSize: breakpoint === "mobile" ? "28px" : "36px",
-              marginBottom: "12px",
-              color: "#1f2937",
+              fontSize: breakpoint === "mobile" ? "24px" : "30px",
+              marginBottom: "8px",
+              color: "var(--text-primary)",
               fontWeight: 800,
+              letterSpacing: "-0.02em",
             }}
           >
-            Your Cart Awaits Adventure
+            Your Cart is Empty
           </h1>
           <p
             style={{
               fontFamily: "'Inter', sans-serif",
-              fontSize: breakpoint === "mobile" ? "16px" : "18px",
-              marginBottom: "32px",
-              color: "#6b7280",
-              maxWidth: "400px",
+              fontSize: breakpoint === "mobile" ? "14px" : "15px",
+              marginBottom: "28px",
+              color: "var(--text-secondary)",
+              maxWidth: "340px",
+              lineHeight: 1.6,
             }}
           >
             Discover our premium selection of nuts, dates, and seeds. Start filling your cart with nature's finest!
           </p>
           <button
             onClick={() => navigate("/products")}
+            className="btn-primary"
             style={{
-              padding: breakpoint === "mobile" ? "12px 24px" : "14px 28px",
-              fontFamily: "'Inter', sans-serif",
-              fontSize: "16px",
-              background: "linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)",
-              color: "#fff",
-              fontWeight: 600,
-              textTransform: "uppercase",
-              letterSpacing: "0.5px",
-              border: "none",
-              borderRadius: "8px",
-              cursor: "pointer",
-              transition: "all 0.3s ease",
-              boxShadow: "0 4px 12px rgba(59,130,246,0.2)",
-            }}
-            onMouseEnter={(e) => {
-              e.target.style.transform = "translateY(-2px)";
-              e.target.style.boxShadow = "0 6px 16px rgba(59,130,246,0.3)";
-            }}
-            onMouseLeave={(e) => {
-              e.target.style.transform = "translateY(0)";
-              e.target.style.boxShadow = "0 4px 12px rgba(59,130,246,0.2)";
+              padding: breakpoint === "mobile" ? "12px 28px" : "14px 36px",
+              fontSize: "15px",
+              width: "100%",
+              maxWidth: "260px",
             }}
           >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="5" y1="12" x2="19" y2="12" />
+              <polyline points="12 5 19 12 12 19" />
+            </svg>
             Explore Products
           </button>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div style={{ backgroundColor: "#f9fafb", minHeight: "100vh", paddingTop: "80px" }}>
+    <div className="page-wrap" style={{ paddingTop: "80px" }}>
+      <div className="page-content">
       <div
         style={{
           maxWidth: "1200px",
@@ -938,27 +997,22 @@ const Cart = () => {
               key={`${item.id}-${item.variation || "default"}-${index}`}
               style={{
                 display: "flex",
-                flexDirection: "row",
                 gap: breakpoint === "mobile" ? "12px" : "16px",
                 padding: breakpoint === "mobile" ? "12px" : "16px",
                 marginBottom: breakpoint === "mobile" ? "8px" : "12px",
-                backgroundColor: "#ffffff",
-                borderRadius: "12px",
-                boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
-                border: "1px solid #e5e7eb",
-                transition: "all 0.2s ease",
+                backgroundColor: "#fff",
+                borderRadius: "14px",
+                boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
+                border: "1px solid #f1f0ee",
               }}
             >
               <div
                 style={{
                   width: breakpoint === "mobile" ? "80px" : "100px",
                   height: breakpoint === "mobile" ? "80px" : "100px",
-                  borderRadius: "8px",
+                  borderRadius: "10px",
                   overflow: "hidden",
                   backgroundColor: "#f8f9fa",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
                   flexShrink: 0,
                 }}
               >
@@ -973,16 +1027,16 @@ const Cart = () => {
                 />
               </div>
 
-              <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "space-between", minWidth: 0 }}>
+              <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0, gap: "4px" }}>
                 <div>
                   <h3
                     style={{
                       fontFamily: "'Nunito Sans', sans-serif",
                       fontSize: breakpoint === "mobile" ? "14px" : "16px",
-                      marginBottom: "2px",
-                      color: "#1a1a1a",
+                      color: "#1e293b",
                       fontWeight: 700,
                       lineHeight: 1.3,
+                      margin: 0,
                     }}
                   >
                     {item.name}
@@ -991,44 +1045,50 @@ const Cart = () => {
                     <p
                       style={{
                         fontFamily: "'Inter', sans-serif",
-                        fontSize: "11px",
-                        color: "#9ca3af",
-                        marginBottom: "2px",
+                        fontSize: "12px",
+                        color: "#64748b",
+                        margin: "2px 0 0",
                       }}
                     >
-                      Variant: {item.variation}
+                      {item.variation}
                     </p>
                   )}
                   <p
                     style={{
                       fontFamily: "'Nunito Sans', sans-serif",
                       fontSize: breakpoint === "mobile" ? "16px" : "18px",
-                      color: "#1a1a1a",
+                      color: "#1e293b",
                       fontWeight: 700,
-                      marginBottom: "6px",
+                      margin: "4px 0 0",
                     }}
                   >
                     ₹{(typeof item.price === 'string' ? parseFloat(item.price.replace(/[^0-9.]/g, '')) : item.price).toFixed(0)}
                   </p>
                 </div>
 
-                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                   <button
                     onClick={() => removeFromCart(item.id, item.variation || "default")}
                     style={{
-                      background: "none",
-                      border: "none",
-                      color: "#ef4444",
-                      cursor: "pointer",
-                      fontSize: "11px",
-                      fontFamily: "'Inter', sans-serif",
-                      padding: 0,
                       display: "flex",
                       alignItems: "center",
-                      gap: "3px",
+                      gap: "4px",
+                      padding: "4px 10px",
+                      borderRadius: "8px",
+                      border: "1px solid #fecaca",
+                      background: "#fff",
+                      cursor: "pointer",
+                      fontFamily: "'Inter', sans-serif",
+                      fontSize: "11px",
+                      fontWeight: 600,
+                      color: "#ef4444",
+                      transition: "all 0.15s ease",
                     }}
+                    onMouseEnter={(e) => { e.currentTarget.style.background = "#fef2f2"; e.currentTarget.style.borderColor = "#fca5a5"; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.background = "#fff"; e.currentTarget.style.borderColor = "#fecaca"; }}
                   >
-                    <FaTrash size={10} /> Delete
+                    <FaTrash size={10} />
+                    Remove
                   </button>
                 </div>
               </div>
@@ -1046,8 +1106,8 @@ const Cart = () => {
                   style={{
                     display: "flex",
                     alignItems: "center",
-                    border: "1px solid #e5e7eb",
-                    borderRadius: "6px",
+                    border: "1px solid #e5e3e0",
+                    borderRadius: "8px",
                     overflow: "hidden",
                   }}
                 >
@@ -1060,11 +1120,11 @@ const Cart = () => {
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
-                      background: "#f9fafb",
                       border: "none",
-                      borderRight: "1px solid #e5e7eb",
+                      background: "#fff",
                       cursor: item.quantity > 1 ? "pointer" : "not-allowed",
-                      color: item.quantity > 1 ? "#1a1a1a" : "#d1d5db",
+                      color: item.quantity > 1 ? "#1e293b" : "#d1d5db",
+                      borderRight: "1px solid #e5e3e0",
                     }}
                   >
                     <FaMinus size={10} />
@@ -1076,7 +1136,7 @@ const Cart = () => {
                       fontWeight: 600,
                       minWidth: breakpoint === "mobile" ? "28px" : "36px",
                       textAlign: "center",
-                      color: "#1a1a1a",
+                      color: "#1e293b",
                       background: "#fff",
                       lineHeight: breakpoint === "mobile" ? "28px" : "32px",
                     }}
@@ -1091,11 +1151,11 @@ const Cart = () => {
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
-                      background: "#f9fafb",
                       border: "none",
-                      borderLeft: "1px solid #e5e7eb",
+                      background: "#fff",
                       cursor: "pointer",
-                      color: "#1a1a1a",
+                      color: "#1e293b",
+                      borderLeft: "1px solid #e5e3e0",
                     }}
                   >
                     <FaPlus size={10} />
@@ -1109,33 +1169,31 @@ const Cart = () => {
             const min = pack.packPrice || pack.total || 0;
             const currentTotal = pack.total || 0;
             const progress = min > 0 ? Math.min((currentTotal / min) * 100, 100) : 0;
+            const itemCount = pack.items?.reduce((total, item) => total + (item.quantity || 0), 0) || 0;
+            const needsMore = currentTotal < min;
             return (
               <div
                 key={`inprogress-${pack.packId}-${idx}`}
                 style={{
                   display: "flex",
-                  flexDirection: "row",
                   gap: breakpoint === "mobile" ? "12px" : "16px",
                   padding: breakpoint === "mobile" ? "12px" : "16px",
                   marginBottom: breakpoint === "mobile" ? "8px" : "12px",
-                  backgroundColor: "#ffffff",
-                  borderRadius: "12px",
-                  boxShadow: "0 1px 4px rgba(245,158,11,0.1)",
-                  border: "1px solid #fef3c7",
-                  transition: "all 0.2s ease",
+                  backgroundColor: "#fff",
+                  borderRadius: "14px",
+                  boxShadow: "0 1px 3px rgba(217,119,6,0.06)",
+                  border: "1px solid #fde68a",
                 }}
               >
                 <div
                   style={{
                     width: breakpoint === "mobile" ? "80px" : "100px",
                     height: breakpoint === "mobile" ? "80px" : "100px",
-                    borderRadius: "8px",
+                    borderRadius: "10px",
                     overflow: "hidden",
                     backgroundColor: "#fffbeb",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
                     flexShrink: 0,
+                    position: "relative",
                   }}
                 >
                   <img
@@ -1147,18 +1205,32 @@ const Cart = () => {
                       objectFit: "cover",
                     }}
                   />
+                  <div style={{
+                    position: "absolute",
+                    top: "4px",
+                    left: "4px",
+                    background: "rgba(217,119,6,0.9)",
+                    color: "#fff",
+                    padding: "2px 6px",
+                    borderRadius: "6px",
+                    fontFamily: "'Inter', sans-serif",
+                    fontSize: "9px",
+                    fontWeight: 700,
+                  }}>
+                    Draft
+                  </div>
                 </div>
 
-                <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "space-between", minWidth: 0 }}>
+                <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0, gap: "4px" }}>
                   <div>
                     <h3
                       style={{
                         fontFamily: "'Nunito Sans', sans-serif",
                         fontSize: breakpoint === "mobile" ? "14px" : "16px",
-                        marginBottom: "2px",
-                        color: "#1a1a1a",
+                        color: "#1e293b",
                         fontWeight: 700,
                         lineHeight: 1.3,
+                        margin: 0,
                       }}
                     >
                       {pack.packName}
@@ -1166,21 +1238,21 @@ const Cart = () => {
                     <p
                       style={{
                         fontFamily: "'Inter', sans-serif",
-                        fontSize: "11px",
-                        color: "#9ca3af",
-                        marginBottom: "4px",
+                        fontSize: "12px",
+                        color: "#64748b",
+                        margin: "2px 0 0",
                       }}
                     >
-                      {pack.items?.reduce((total, item) => total + (item.quantity || 0), 0) || 0} items
+                      {itemCount} item{itemCount !== 1 ? "s" : ""}
                     </p>
                   </div>
 
-                  <div style={{ margin: "4px 0" }}>
+                  <div style={{ margin: "2px 0" }}>
                     <div
                       style={{
-                        height: "4px",
+                        height: "6px",
                         backgroundColor: "#f3f4f6",
-                        borderRadius: "2px",
+                        borderRadius: "3px",
                         overflow: "hidden",
                       }}
                     >
@@ -1188,7 +1260,8 @@ const Cart = () => {
                         style={{
                           height: "100%",
                           width: `${progress}%`,
-                          background: "linear-gradient(90deg, #f59e0b 0%, #eab308 100%)",
+                          background: "linear-gradient(90deg, #f59e0b, #d97706)",
+                          borderRadius: "3px",
                           transition: "width 0.3s ease",
                         }}
                       />
@@ -1198,21 +1271,21 @@ const Cart = () => {
                         marginTop: "4px",
                         fontFamily: "'Inter', sans-serif",
                         fontSize: "12px",
-                        color: "#1a1a1a",
-                        fontWeight: 600,
+                        color: "#64748b",
+                        fontWeight: 500,
                       }}
                     >
-                      ₹{currentTotal.toFixed(0)} / ₹{min.toFixed(0)}
+                      <span style={{ fontWeight: 700, color: "#1e293b" }}>₹{currentTotal.toFixed(0)}</span> / ₹{min.toFixed(0)}
                     </div>
                   </div>
 
-                  <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
-                    {currentTotal < min ? (
+                  <div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
+                    {needsMore ? (
                       <p
                         style={{
                           fontFamily: "'Inter', sans-serif",
-                          fontSize: "11px",
-                          color: "#ef4444",
+                          fontSize: "12px",
+                          color: "#dc2626",
                           fontWeight: 600,
                           margin: 0,
                         }}
@@ -1221,8 +1294,8 @@ const Cart = () => {
                         <Link
                           to={`/customize-pack/${pack.packId}`}
                           style={{
-                            color: "#3b82f6",
-                            textDecoration: "underline",
+                            color: "#d97706",
+                            fontWeight: 700,
                           }}
                         >
                           complete
@@ -1232,15 +1305,16 @@ const Cart = () => {
                       <button
                         onClick={() => finalizeInProgressPack(pack.packId)}
                         style={{
-                          padding: "4px 10px",
-                          background: "linear-gradient(135deg, #22c55e 0%, #16a34a 100%)",
+                          padding: "6px 14px",
+                          background: "linear-gradient(135deg, #22c55e, #16a34a)",
                           color: "#fff",
                           border: "none",
-                          borderRadius: "4px",
+                          borderRadius: "8px",
                           cursor: "pointer",
                           fontFamily: "'Inter', sans-serif",
-                          fontSize: "11px",
+                          fontSize: "12px",
                           fontWeight: 600,
+                          boxShadow: "0 2px 6px rgba(34,197,94,0.2)",
                         }}
                       >
                         Add to Cart
@@ -1249,19 +1323,25 @@ const Cart = () => {
                     <button
                       onClick={() => removeInProgressPack(pack.packId)}
                       style={{
-                        background: "none",
-                        border: "none",
-                        color: "#ef4444",
-                        cursor: "pointer",
-                        fontSize: "11px",
-                        fontFamily: "'Inter', sans-serif",
-                        padding: 0,
                         display: "flex",
                         alignItems: "center",
-                        gap: "3px",
+                        gap: "4px",
+                        padding: "4px 10px",
+                        borderRadius: "8px",
+                        border: "1px solid #fecaca",
+                        background: "#fff",
+                        cursor: "pointer",
+                        fontFamily: "'Inter', sans-serif",
+                        fontSize: "11px",
+                        fontWeight: 600,
+                        color: "#ef4444",
+                        transition: "all 0.15s ease",
                       }}
+                      onMouseEnter={(e) => { e.currentTarget.style.background = "#fef2f2"; e.currentTarget.style.borderColor = "#fca5a5"; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.background = "#fff"; e.currentTarget.style.borderColor = "#fecaca"; }}
                     >
-                      <FaTrash size={10} /> Discard
+                      <FaTrash size={10} />
+                      Discard
                     </button>
                   </div>
                 </div>
@@ -2087,6 +2167,7 @@ const Cart = () => {
           {checkoutLoading ? 'Validating...' : `Proceed to Checkout (${cartItems.reduce((s, i) => s + i.quantity, 0) + packItems.reduce((s, p) => s + p.quantity, 0)} items)`}
         </button>
         </div>
+      </div>
       </div>
     </div>
     </div>
